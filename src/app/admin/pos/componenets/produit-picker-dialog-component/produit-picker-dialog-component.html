@@ -1,0 +1,232 @@
+<h2 mat-dialog-title class="dialog-title">
+  <div class="title-left">
+    <div class="title-icon">
+      <mat-icon>inventory_2</mat-icon>
+    </div>
+    <div>
+      <div class="title-main">Sélection des articles</div>
+      <div class="title-sub">
+        Tarif actif : <strong>{{ data?.tarifNom || '-' }}</strong>
+      </div>
+    </div>
+  </div>
+
+  <button mat-icon-button type="button" (click)="close()">
+    <mat-icon>close</mat-icon>
+  </button>
+</h2>
+
+<mat-dialog-content class="dialog-content">
+  <div class="picker-shell">
+
+    <div class="top-bar">
+      <div class="search-zone">
+        <mat-form-field appearance="outline" class="search-field">
+          <mat-label>Rechercher un article</mat-label>
+          <input matInput [ngModel]="search()" (ngModelChange)="onSearchChange($event)"
+            placeholder="Nom, code-barres, référence, catégorie..." />
+          <mat-icon matPrefix>search</mat-icon>
+
+          <button *ngIf="search()" matSuffix mat-icon-button type="button" (click)="clearSearch()">
+            <mat-icon>close</mat-icon>
+          </button>
+        </mat-form-field>
+
+        <button mat-flat-button type="button" class="scan-btn" (click)="openScanner()">
+          <mat-icon>qr_code_scanner</mat-icon>
+          Scanner
+        </button>
+      </div>
+
+      <div class="summary-cards">
+        <div class="summary-card">
+          <span>Articles</span>
+          <strong>{{ filteredProduits().length }}</strong>
+        </div>
+
+        <div class="summary-card active">
+          <span>Sélectionnés</span>
+          <strong>{{ totalSelectionnes() }}</strong>
+        </div>
+
+        <div class="summary-card">
+          <span>Qté totale</span>
+          <strong>{{ totalQuantite() }}</strong>
+        </div>
+
+        <div class="summary-card strong">
+          <span>Total</span>
+          <strong>{{ totalMontant() | number:'1.2-2' }} USD</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="scanner-box" *ngIf="scannerOpen()">
+      <div class="scanner-head">
+        <div class="scanner-title">
+          <mat-icon>camera_alt</mat-icon>
+          <span>Scan code-barres</span>
+        </div>
+
+        <button mat-stroked-button type="button" (click)="closeScanner()">
+          <mat-icon>close</mat-icon>
+          Fermer scan
+        </button>
+      </div>
+
+      <div class="scanner-body">
+        <zxing-scanner [formats]="allowedFormats" (scanSuccess)="onCodeResult($event)"></zxing-scanner>
+      </div>
+    </div>
+
+    <div class="content-grid">
+      <div class="catalog-panel">
+        <div class="panel-head">
+          <div>
+            <h3>Catalogue tarifé</h3>
+            <p>Choisis les articles sans fermer la fenêtre</p>
+          </div>
+        </div>
+
+        <div class="catalog-grid" *ngIf="filteredProduits().length; else emptyState">
+          <div class="product-card" *ngFor="let p of filteredProduits(); trackBy: trackByProduit"
+            [class.selected]="isSelected(p.id)">
+            <div class="product-media">
+              <img [src]="getImage(p)" [alt]="p.nom" />
+
+              <div class="stock-badge" [ngClass]="getStockClass(p)">
+                Stock: {{ getStock(p) }}
+              </div>
+            </div>
+
+            <div class="product-body">
+              <div class="product-top">
+                <div class="product-name">{{ p.nom }}</div>
+                <mat-checkbox [checked]="isSelected(p.id)" (change)="toggleProduit(p)"></mat-checkbox>
+              </div>
+
+              <div class="product-meta">
+                <span>{{ p.codeBarres || '-' }}</span>
+                <span>{{ p.categorieNom || '-' }}</span>
+              </div>
+
+              <div class="price-row">
+                <div class="price-main">
+                  {{ getPrix(p) | number:'1.2-2' }} USD
+                </div>
+
+                <div class="price-extra" *ngIf="p.montantRemise">
+                  Remise: {{ p.montantRemise | number:'1.2-2' }}
+                </div>
+              </div>
+
+              <div class="qty-actions" *ngIf="isSelected(p.id)">
+                <button mat-mini-fab type="button" (click)="decrement(p)">
+                  <mat-icon>remove</mat-icon>
+                </button>
+
+                <mat-form-field appearance="outline" class="qty-field">
+                  <input matInput type="number" [ngModel]="getQuantite(p.id)"
+                    (ngModelChange)="setQuantite(p, $event)" />
+                </mat-form-field>
+
+                <button mat-mini-fab type="button" (click)="increment(p)">
+                  <mat-icon>add</mat-icon>
+                </button>
+              </div>
+
+              <div class="product-actions">
+                <button mat-flat-button type="button" class="add-btn" (click)="ajouterProduit(p)">
+                  <mat-icon>add_shopping_cart</mat-icon>
+                  Ajouter
+                </button>
+
+                <button *ngIf="isSelected(p.id)" mat-stroked-button type="button" class="remove-btn"
+                  (click)="retirerProduit(p.id)">
+                  <mat-icon>remove_circle</mat-icon>
+                  Retirer
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <ng-template #emptyState>
+          <div class="empty-state">
+            <mat-icon>inventory</mat-icon>
+            <h3>Aucun produit trouvé</h3>
+            <p>Modifie ta recherche ou scanne un code-barres.</p>
+          </div>
+        </ng-template>
+      </div>
+
+      <div class="selection-panel">
+        <div class="panel-head sticky">
+          <div>
+            <h3>Panier temporaire</h3>
+            <p>Les ajouts restent ici jusqu’à validation</p>
+          </div>
+
+          <button mat-stroked-button type="button" color="warn" (click)="viderSelection()"
+            [disabled]="!totalSelectionnes()">
+            <mat-icon>delete_sweep</mat-icon>
+            Vider
+          </button>
+        </div>
+
+        <div class="selection-list" *ngIf="totalSelectionnes(); else emptySelection">
+          <div class="selection-item" *ngFor="let item of selectedItems().values()">
+            <div class="selection-thumb">
+              <img [src]="getImage(item.produit)" [alt]="item.produit.nom" />
+            </div>
+
+            <div class="selection-info">
+              <strong>{{ item.produit.nom }}</strong>
+              <small>{{ item.produit.codeBarres || '-' }}</small>
+              <small>PU: {{ getPrix(item.produit) | number:'1.2-2' }} USD</small>
+            </div>
+
+            <div class="selection-qty">
+              <button mat-icon-button type="button" (click)="decrement(item.produit)">
+                <mat-icon>remove</mat-icon>
+              </button>
+
+              <span>{{ item.quantite }}</span>
+
+              <button mat-icon-button type="button" (click)="increment(item.produit)">
+                <mat-icon>add</mat-icon>
+              </button>
+            </div>
+
+            <div class="selection-total">
+              {{ getSousTotalSelection(item.produit.id) | number:'1.2-2' }} USD
+            </div>
+
+            <button mat-icon-button color="warn" type="button" (click)="retirerProduit(item.produit.id)">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+        </div>
+
+        <ng-template #emptySelection>
+          <div class="empty-selection">
+            <mat-icon>shopping_cart</mat-icon>
+            <p>Aucun article sélectionné pour le moment.</p>
+          </div>
+        </ng-template>
+      </div>
+    </div>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="dialog-actions">
+  <button mat-stroked-button type="button" (click)="close()">
+    <mat-icon>close</mat-icon>
+    Fermer
+  </button>
+
+  <button mat-flat-button color="primary" type="button" (click)="validerSelection()" [disabled]="!totalSelectionnes()">
+    <mat-icon>done_all</mat-icon>
+    Ajouter au panier
+  </button>
+</mat-dialog-actions>

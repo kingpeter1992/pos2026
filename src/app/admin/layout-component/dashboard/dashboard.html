@@ -1,0 +1,103 @@
+<div class="dashboard-shell">
+  <div class="dashboard-toolbar">
+    <div class="toolbar-left">
+      <div class="title-block">
+        <h2>POS KPI Dashboard</h2>
+        <p>Suivi des ventes, clients, approvisionnement et ruptures</p>
+      </div>
+    </div>
+
+    <div class="toolbar-right">
+      <button mat-stroked-button color="primary">
+        <mat-icon>calendar_month</mat-icon>
+        Aujourd’hui
+      </button>
+
+      <button pButton type="button" icon="pi pi-download" label="Exporter" class="p-button-sm p-button-outlined"></button>
+      <button pButton type="button" icon="pi pi-refresh" label="Actualiser" class="p-button-sm"></button>
+    </div>
+  </div>
+
+  <div class="headline-card">
+    <div class="headline-title">
+      Retail KPI Dashboard Showing Sales Revenue, Customers & Out Of Stock Items
+    </div>
+  </div>
+
+  <div class="chart-grid top-grid">
+    <p-card class="chart-card">
+      <ng-template pTemplate="header">
+        <div class="card-header">Total Clients & Visiteurs</div>
+      </ng-template>
+      <div class="chart-box">
+        <p-chart type="bar" [data]="customersChartData" [options]="customersChartOptions"></p-chart>
+      </div>
+    </p-card>
+
+    <p-card class="chart-card">
+      <ng-template pTemplate="header">
+        <div class="card-header">Ventes par division</div>
+      </ng-template>
+      <div class="chart-box">
+        <p-chart type="bar" [data]="divisionChartData" [options]="divisionChartOptions"></p-chart>
+      </div>
+    </p-card>
+
+    <p-card class="chart-card">
+      <ng-template pTemplate="header">
+        <div class="card-header">Prix moyen & unités par transaction</div>
+      </ng-template>
+      <div class="chart-box">
+        <p-chart type="line" [data]="avgChartData" [options]="avgChartOptions"></p-chart>
+      </div>
+    </p-card>
+  </div>
+
+  <div class="kpi-strip">
+    <div class="kpi-tile" *ngFor="let kpi of kpis">
+      <div class="kpi-icon">
+        <i [class]="kpi.icon"></i>
+      </div>
+
+      <div class="kpi-body">
+        <div class="kpi-value">{{ kpi.value }}</div>
+        <div class="kpi-label">{{ kpi.label }}</div>
+      </div>
+
+      <p-tag [value]="kpi.trend" severity="success"></p-tag>
+    </div>
+  </div>
+
+  <div class="chart-grid bottom-grid">
+    <p-card class="chart-card">
+      <ng-template pTemplate="header">
+        <div class="card-header">Top 7 articles vendus</div>
+      </ng-template>
+      <div class="chart-box">
+        <p-chart type="bar" [data]="topArticlesChartData" [options]="topArticlesChartOptions"></p-chart>
+      </div>
+    </p-card>
+
+    <p-card class="chart-card">
+      <ng-template pTemplate="header">
+        <div class="card-header">Ventes par ville</div>
+      </ng-template>
+      <div class="chart-box">
+        <p-chart type="pie" [data]="cityChartData" [options]="cityChartOptions"></p-chart>
+      </div>
+    </p-card>
+
+    <p-card class="chart-card">
+      <ng-template pTemplate="header">
+        <div class="card-header">Produits en rupture</div>
+      </ng-template>
+      <div class="chart-box">
+        <p-chart type="bar" [data]="stockChartData" [options]="stockChartOptions"></p-chart>
+      </div>
+    </p-card>
+  </div>
+
+  <div class="dashboard-footer-note">
+    Ce tableau de bord est piloté par les données POS et peut être relié dynamiquement à vos ventes, stocks et achats.
+  </div>
+</div>

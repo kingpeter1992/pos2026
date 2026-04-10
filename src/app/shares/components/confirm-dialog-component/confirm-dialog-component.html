@@ -1,0 +1,17 @@
+<h2 mat-dialog-title>
+  ⚠️ {{ data.title || 'Confirmation' }}
+</h2>
+
+<mat-dialog-content class="my-2">
+  <p>{{ data.message }}</p>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-stroked-button color="warn" (click)="cancel()">
+    {{ data.cancelText || 'Annuler' }}
+  </button>
+
+  <button mat-raised-button color="primary" (click)="confirm()">
+    {{ data.confirmText || 'Confirmer' }}
+  </button>
+</mat-dialog-actions>

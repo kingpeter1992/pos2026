@@ -1,0 +1,413 @@
+<div class="erp-page">
+
+  <!-- TOP BAR -->
+  <section class="erp-topbar">
+    <div class="topbar-left">
+      <div class="topbar-icon">
+        <mat-icon>inventory_2</mat-icon>
+      </div>
+
+      <div class="topbar-text">
+        <div class="breadcrumb">Achats / Approvisionnement / Réceptions fournisseurs</div>
+        <h1>Historique des réceptions</h1>
+        <p>Suivi des réceptions d'achat, contrôle des montants, analyse des frais et consultation détaillée des entrées
+        </p>
+      </div>
+    </div>
+
+    <div class="topbar-right">
+      <button mat-stroked-button type="button" class="ghost-btn" (click)="refresh()">
+        <mat-icon>sync</mat-icon>
+        Actualiser
+      </button>
+
+
+
+    </div>
+  </section>
+
+  <!-- CONTENT -->
+  <div class="erp-layout">
+
+    <!-- MAIN -->
+    <div class="erp-main">
+
+      <!-- FILTER PANEL -->
+      <mat-card class="erp-card filter-panel">
+        <div class="card-toolbar">
+          <div class="toolbar-title">
+            <div class="toolbar-icon soft blue">
+              <mat-icon>manage_search</mat-icon>
+            </div>
+            <div>
+              <h3>Centre de recherche</h3>
+              <span>Filtrer rapidement les réceptions selon le statut, la période, le fournisseur ou le dépôt</span>
+            </div>
+          </div>
+
+          <div class="toolbar-actions">
+            <button mat-stroked-button type="button" (click)="resetFilters()">
+              <mat-icon>restart_alt</mat-icon>
+              Réinitialiser
+            </button>
+
+            <button mat-stroked-button type="button" (click)="openAdvancedFilters()">
+              <mat-icon>tune</mat-icon>
+              Avancé
+            </button>
+          </div>
+        </div>
+
+        <form [formGroup]="filterForm" class="erp-form">
+          <div class="erp-grid erp-grid-4">
+
+            <mat-form-field appearance="outline">
+              <mat-label>Statut</mat-label>
+              <mat-select formControlName="statut">
+                <mat-option [value]="null">Tous</mat-option>
+                <mat-option value="BROUILLON">Brouillon</mat-option>
+                <mat-option value="VALIDE">Validée</mat-option>
+                <mat-option value="PARTIEL">Partielle</mat-option>
+                <mat-option value="ANNULE">Annulée</mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Recherche</mat-label>
+              <input matInput formControlName="keyword" placeholder="Référence réception, commande, fournisseur...">
+              <mat-icon matSuffix>search</mat-icon>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>À partir du</mat-label>
+              <input matInput [matDatepicker]="picker1" formControlName="dateDebut">
+              <mat-datepicker-toggle matIconSuffix [for]="picker1"></mat-datepicker-toggle>
+              <mat-datepicker #picker1></mat-datepicker>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Au</mat-label>
+              <input matInput [matDatepicker]="picker2" formControlName="dateFin">
+              <mat-datepicker-toggle matIconSuffix [for]="picker2"></mat-datepicker-toggle>
+              <mat-datepicker #picker2></mat-datepicker>
+            </mat-form-field>
+          </div>
+
+          <div class="erp-grid erp-grid-4">
+            <mat-form-field appearance="outline">
+              <mat-label>Fournisseur</mat-label>
+              <input matInput formControlName="fournisseur" placeholder="Nom du fournisseur">
+              <mat-icon matSuffix>business</mat-icon>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Dépôt</mat-label>
+              <input matInput formControlName="depot" placeholder="Nom du dépôt">
+              <mat-icon matSuffix>warehouse</mat-icon>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Réf. commande</mat-label>
+              <input matInput formControlName="refCommande" placeholder="Commande liée">
+              <mat-icon matSuffix>receipt_long</mat-icon>
+            </mat-form-field>
+
+            <div class="action-box">
+              <button mat-flat-button color="primary" type="button" class="primary-btn full-btn" (click)="search()">
+                <mat-icon>search</mat-icon>
+                Lancer la recherche
+              </button>
+            </div>
+          </div>
+
+          <div class="quick-filters">
+            <mat-checkbox formControlName="valides">Validées</mat-checkbox>
+            <mat-checkbox formControlName="brouillons">Brouillons</mat-checkbox>
+            <mat-checkbox formControlName="partielles">Partielles</mat-checkbox>
+            <mat-checkbox formControlName="annulees">Annulées</mat-checkbox>
+            <mat-checkbox formControlName="avecCommande">Avec commande</mat-checkbox>
+            <mat-checkbox formControlName="sansCommande">Sans commande</mat-checkbox>
+            <mat-checkbox formControlName="vingtDernieres">20 dernières</mat-checkbox>
+          </div>
+        </form>
+      </mat-card>
+
+      <!-- KPI -->
+      <section class="erp-kpis">
+        <mat-card class="erp-kpi kpi-blue">
+          <div class="kpi-head">
+            <span>Réceptions</span>
+            <mat-icon>inventory_2</mat-icon>
+          </div>
+          <div class="kpi-value">{{ totalReceptions() }}</div>
+          <div class="kpi-foot">Nombre total des réceptions affichées</div>
+        </mat-card>
+
+        <mat-card class="erp-kpi kpi-indigo">
+          <div class="kpi-head">
+            <span>Marchandise</span>
+            <mat-icon>shopping_bag</mat-icon>
+          </div>
+          <div class="kpi-value">{{ totalMarchandise() | number:'1.2-2' }}</div>
+          <div class="kpi-foot">Valeur cumulée de la marchandise reçue</div>
+        </mat-card>
+
+        <mat-card class="erp-kpi kpi-amber">
+          <div class="kpi-head">
+            <span>Frais</span>
+            <mat-icon>local_shipping</mat-icon>
+          </div>
+          <div class="kpi-value">{{ totalFrais() | number:'1.2-2' }}</div>
+          <div class="kpi-foot">Frais répartis sur les réceptions</div>
+        </mat-card>
+
+        <mat-card class="erp-kpi kpi-emerald">
+          <div class="kpi-head">
+            <span>Total général</span>
+            <mat-icon>payments</mat-icon>
+          </div>
+          <div class="kpi-value">{{ totalGeneral() | number:'1.2-2' }}</div>
+          <div class="kpi-foot">Montant total des réceptions sélectionnées</div>
+        </mat-card>
+      </section>
+
+      <!-- TABLE -->
+      <mat-card class="erp-card table-panel">
+        <div class="card-toolbar">
+          <div class="toolbar-title">
+            <div class="toolbar-icon soft slate">
+              <mat-icon>table_view</mat-icon>
+            </div>
+            <div>
+              <h3>Registre des réceptions</h3>
+              <span>{{ filteredReceptions().length }} enregistrement(s) trouvés</span>
+            </div>
+          </div>
+
+          <div class="toolbar-actions">
+            <span class="toolbar-chip">{{ filteredReceptions().length }} lignes</span>
+            <button mat-stroked-button type="button" (click)="exportExcel()">
+              <mat-icon>description</mat-icon>
+              Excel
+            </button>
+          </div>
+        </div>
+
+        <div class="erp-table-wrap">
+          <table mat-table [dataSource]="filteredReceptions()" class="erp-table">
+
+            <ng-container matColumnDef="select">
+              <th mat-header-cell *matHeaderCellDef></th>
+              <td mat-cell *matCellDef="let row">
+                <div class="row-selector" [class.active]="selectedReception()?.id === row.id"></div>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="refReception">
+              <th mat-header-cell *matHeaderCellDef>Référence</th>
+              <td mat-cell *matCellDef="let row">
+                <a class="doc-link" (click)="openDetail(row); $event.stopPropagation()">
+                  {{ row.refReception || ('REC-' + row.id) }}
+                </a>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="dateReception">
+              <th mat-header-cell *matHeaderCellDef>Date réception</th>
+              <td mat-cell *matCellDef="let row">
+                {{ row.dateReception | date:'dd/MM/yyyy' }}
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="fournisseurNom">
+              <th mat-header-cell *matHeaderCellDef>Fournisseur</th>
+              <td mat-cell *matCellDef="let row">
+                {{ row.fournisseurNom || '-' }}
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="depotNom">
+              <th mat-header-cell *matHeaderCellDef>Dépôt</th>
+              <td mat-cell *matCellDef="let row">
+                {{ row.depotNom || '-' }}
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="refCommande">
+              <th mat-header-cell *matHeaderCellDef>Commande liée</th>
+              <td mat-cell *matCellDef="let row">
+                {{ row.refCommande || '-' }}
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="statut">
+              <th mat-header-cell *matHeaderCellDef>Statut</th>
+              <td mat-cell *matCellDef="let row">
+                <span class="erp-badge" [ngClass]="getStatutClass(row.statut)">
+                  <span class="dot"></span>
+                  {{ row.statut || '-' }}
+                </span>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="totalMarchandise">
+              <th mat-header-cell *matHeaderCellDef class="th-right">Marchandise</th>
+              <td mat-cell *matCellDef="let row" class="td-right strong">
+                {{ row.totalMarchandise | number:'1.2-2' }}
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="totalFrais">
+              <th mat-header-cell *matHeaderCellDef class="th-right">Frais</th>
+              <td mat-cell *matCellDef="let row" class="td-right">
+                {{ row.totalFrais | number:'1.2-2' }}
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="totalGeneral">
+              <th mat-header-cell *matHeaderCellDef class="th-right">Total général</th>
+              <td mat-cell *matCellDef="let row" class="td-right strong">
+                {{ row.totalGeneral | number:'1.2-2' }}
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns" (click)="selectRow(row)"
+              [class.selected-row]="selectedReception()?.id === row.id">
+            </tr>
+          </table>
+        </div>
+      </mat-card>
+    </div>
+
+    <!-- SIDEBAR -->
+    <aside class="erp-sidebar">
+
+      <mat-card class="erp-card side-panel">
+        <div class="side-head">
+          <mat-icon>campaign</mat-icon>
+          <span>Alertes</span>
+          <strong>{{ alertes.length }}</strong>
+        </div>
+
+        <div class="side-empty" *ngIf="!alertes.length">
+          <mat-icon>notifications_none</mat-icon>
+          <p>Aucune alerte disponible</p>
+        </div>
+
+      <div class="alert-stack" *ngIf="alertes().length">
+      <div class="alert-row" *ngFor="let alerte of alertes()">
+        <div class="alert-pill">{{ alerte.nb }}</div>
+        <div class="alert-text">{{ alerte.libelle }}</div>
+      </div>
+    </div>
+      </mat-card>
+
+      <mat-card class="erp-card side-panel">
+        <div class="side-head">
+          <mat-icon>flash_on</mat-icon>
+          <span>Actions rapides</span>
+        </div>
+
+        <div class="side-actions">
+
+
+
+          <button mat-stroked-button type="button" [disabled]="!selectedReception()" (click)="detailLignes()">
+            <mat-icon>view_list</mat-icon>
+            Détails lignes
+          </button>
+
+          <button mat-stroked-button type="button" [disabled]="!selectedReception()" (click)="printBonReception()">
+            <mat-icon>print</mat-icon>
+            Bon réception
+          </button>
+        </div>
+      </mat-card>
+
+      <mat-card class="erp-card side-panel" *ngIf="selectedReception() as selected">
+        <div class="side-head">
+          <mat-icon>description</mat-icon>
+          <span>Réception sélectionnée</span>
+        </div>
+
+        <div class="selected-summary">
+          <div class="summary-row">
+            <label>Référence</label>
+            <strong>{{ selected.refReception || '-' }}</strong>
+          </div>
+
+          <div class="summary-row">
+            <label>Fournisseur</label>
+            <strong>{{ selected.fournisseurNom || '-' }}</strong>
+          </div>
+
+          <div class="summary-row">
+            <label>Dépôt</label>
+            <strong>{{ selected.depotNom || '-' }}</strong>
+          </div>
+
+          <div class="summary-row">
+            <label>Date</label>
+            <strong>{{ selected.dateReception | date:'dd/MM/yyyy' }}</strong>
+          </div>
+
+          <div class="summary-row">
+            <label>Commande</label>
+            <strong>{{ selected.refCommande || '-' }}</strong>
+          </div>
+
+          <div class="summary-row">
+            <label>Statut</label>
+            <strong>{{ selected.statut || '-' }}</strong>
+          </div>
+
+          <div class="summary-row">
+            <label>Marchandise</label>
+            <strong>{{ selected.totalMarchandise | number:'1.2-2' }}</strong>
+          </div>
+
+          <div class="summary-row">
+            <label>Frais</label>
+            <strong>{{ selected.totalFrais | number:'1.2-2' }}</strong>
+          </div>
+
+          <div class="summary-row total">
+            <label>Total général</label>
+            <strong>{{ selected.totalGeneral | number:'1.2-2' }}</strong>
+          </div>
+        </div>
+      </mat-card>
+
+      <mat-card class="erp-card side-panel">
+        <div class="side-head">
+          <mat-icon>hub</mat-icon>
+          <span>Modules liés</span>
+        </div>
+
+        <div class="module-list">
+          <button mat-stroked-button type="button" routerLink="/admin/achats/commandes">
+            <mat-icon>shopping_cart</mat-icon>
+            Commandes
+          </button>
+
+          <button mat-stroked-button type="button" routerLink="/admin/stock/actuel">
+            <mat-icon>inventory</mat-icon>
+            Stock
+          </button>
+
+          <button mat-stroked-button type="button">
+            <mat-icon>receipt</mat-icon>
+            Facture
+          </button>
+
+          <button mat-stroked-button type="button" routerLink="/admin/fournisseurs/create">
+            <mat-icon>business</mat-icon>
+            Fournisseur
+          </button>
+        </div>
+      </mat-card>
+
+    </aside>
+  </div>
+</div>

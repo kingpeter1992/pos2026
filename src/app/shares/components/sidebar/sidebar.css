@@ -1,0 +1,44 @@
+.sidebar {
+  background-color: #ffffff;
+  border-right: 1px solid #e5e5e5;
+  min-height: 100vh;
+}
+
+.sidebar .nav-link {
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sidebar .nav-link:hover {
+  background-color: #f0f0f0;
+}
+
+.sidebar .nav-content a:hover {
+  background-color: #f8f9fa;
+}
+
+.hover-bg:hover {
+  background-color: #f8f9fa;
+}
+
+.sidebar .nav-content {
+  transition: all 0.3s ease;
+}
+
+
+.sidebar-wrapper {
+  width: 250px;
+  background-color: #fff;
+  border-right: 1px solid #ddd;
+  min-height: 100vh;
+
+  ::ng-deep .p-panelmenu .p-menuitem-link {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+  }
+
+  ::ng-deep .p-panelmenu .p-menuitem-icon {
+    margin-right: 0.5rem;
+  }
+}

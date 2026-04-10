@@ -1,0 +1,209 @@
+<div class="erp-dialog-shell">
+
+  <!-- ================= HEADER ================= -->
+  <div class="dialog-header">
+    <div class="dialog-header-left">
+      <div class="dialog-icon">
+        <mat-icon>{{ isEditMode ? 'edit_note' : 'rule_settings' }}</mat-icon>
+      </div>
+
+      <div class="dialog-header-text">
+        <div class="dialog-breadcrumb">
+          Paramétrage / Tarifs / Règles tarifaires
+        </div>
+
+        <h2>
+          {{ isEditMode ? 'Modifier la règle tarifaire' : 'Créer une règle tarifaire' }}
+        </h2>
+
+        <p>
+          Définissez la marge, la remise maximale et le mode d’arrondi appliqué
+          à une catégorie de produit pour un tarif donné.
+        </p>
+      </div>
+    </div>
+
+    <button mat-icon-button (click)="close()" [disabled]="saving">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <!-- ================= CONTEXT (EDIT) ================= -->
+  <div class="context-banner" *ngIf="isEditMode">
+    <div class="context-item">
+      <span class="label">Tarif</span>
+      <span class="value">
+        {{ data?.tarifNom || ('Tarif #' + data?.tarifVenteId) }}
+      </span>
+    </div>
+
+    <div class="context-item">
+      <span class="label">Mode</span>
+      <span class="value">Modification</span>
+    </div>
+  </div>
+
+  <!-- ================= FORM ================= -->
+  <mat-dialog-content class="dialog-content">
+    <form [formGroup]="form" class="dialog-form">
+
+      <!-- ===== SECTION TARIF ===== -->
+      <div class="form-section" *ngIf="!isEditMode">
+        <div class="section-title">
+          <mat-icon>sell</mat-icon>
+          <span>Tarif de vente</span>
+        </div>
+
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>Tarif</mat-label>
+
+          <mat-select formControlName="tarifVenteId">
+            <mat-option
+              *ngFor="let t of tarifs; trackBy: trackByTarifId"
+              [value]="t.id">
+
+              <div class="tarif-option">
+                <span class="tarif-code">{{ t.code }}</span>
+                <span class="tarif-name">{{ t.nom }}</span>
+              </div>
+
+            </mat-option>
+          </mat-select>
+
+          <mat-error *ngIf="form.get('tarifVenteId')?.hasError('required')">
+            Le tarif de vente est obligatoire
+          </mat-error>
+        </mat-form-field>
+      </div>
+
+      <!-- ===== SECTION CATEGORIE ===== -->
+      <div class="form-section">
+        <div class="section-title">
+          <mat-icon>category</mat-icon>
+          <span>Catégorie produit</span>
+        </div>
+
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>Catégorie</mat-label>
+
+          <mat-select formControlName="categorieId">
+            <mat-option
+              *ngFor="let c of categories; trackBy: trackByCategorieId"
+              [value]="c.id">
+
+              {{ c.nom }}
+
+            </mat-option>
+          </mat-select>
+
+          <mat-error *ngIf="form.get('categorieId')?.hasError('required')">
+            La catégorie est obligatoire
+          </mat-error>
+        </mat-form-field>
+      </div>
+
+      <!-- ===== SECTION REGLE ===== -->
+      <div class="form-section">
+        <div class="section-title">
+          <mat-icon>percent</mat-icon>
+          <span>Politique commerciale</span>
+        </div>
+
+        <div class="form-grid two">
+
+          <mat-form-field appearance="outline">
+            <mat-label>Taux de marge (%)</mat-label>
+            <input matInput type="number" formControlName="tauxMarge" />
+
+            <mat-error *ngIf="form.get('tauxMarge')?.hasError('required')">
+              Le taux de marge est obligatoire
+            </mat-error>
+
+            <mat-error *ngIf="form.get('tauxMarge')?.hasError('min')">
+              La valeur doit être ≥ 0
+            </mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Taux remise max (%)</mat-label>
+            <input matInput type="number" formControlName="tauxRemiseMax" />
+
+            <mat-error *ngIf="form.get('tauxRemiseMax')?.hasError('required')">
+              Le taux de remise est obligatoire
+            </mat-error>
+
+            <mat-error *ngIf="form.get('tauxRemiseMax')?.hasError('min')">
+              La valeur doit être ≥ 0
+            </mat-error>
+          </mat-form-field>
+
+        </div>
+      </div>
+
+      <!-- ===== SECTION ARRONDI ===== -->
+      <div class="form-section">
+        <div class="section-title">
+          <mat-icon>functions</mat-icon>
+          <span>Mode d'arrondi</span>
+        </div>
+
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>Mode d’arrondi</mat-label>
+
+          <mat-select formControlName="modeArrondi">
+            <mat-option
+              *ngFor="let m of modesArrondi"
+              [value]="m.value">
+
+              {{ m.label }}
+
+            </mat-option>
+          </mat-select>
+
+          <mat-error *ngIf="form.get('modeArrondi')?.hasError('required')">
+            Le mode d’arrondi est obligatoire
+          </mat-error>
+        </mat-form-field>
+      </div>
+
+      <!-- ===== SECTION ACTIVATION ===== -->
+      <div class="form-section">
+        <div class="section-title">
+          <mat-icon>toggle_on</mat-icon>
+          <span>Activation</span>
+        </div>
+
+        <div class="toggle-box">
+          <div class="toggle-text">
+            <div class="toggle-title">Règle active</div>
+            <div class="toggle-subtitle">
+              Cette règle sera utilisée dans le calcul des prix de vente
+            </div>
+          </div>
+
+          <mat-slide-toggle formControlName="actif"></mat-slide-toggle>
+        </div>
+      </div>
+
+    </form>
+  </mat-dialog-content>
+
+  <!-- ================= ACTIONS ================= -->
+  <mat-dialog-actions align="end" class="dialog-actions">
+
+    <button mat-stroked-button (click)="close()" [disabled]="saving">
+      <mat-icon>close</mat-icon>
+      Annuler
+    </button>
+
+    <button mat-raised-button color="primary" (click)="submit()" [disabled]="saving">
+      <mat-icon>{{ saving ? 'hourglass_top' : (isEditMode ? 'save' : 'add_task') }}</mat-icon>
+
+      {{ saving
+        ? 'Enregistrement...'
+        : (isEditMode ? 'Mettre à jour' : 'Enregistrer') }}
+    </button>
+
+  </mat-dialog-actions>
+
+</div>

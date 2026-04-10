@@ -1,0 +1,279 @@
+<div class="historique-page">
+
+  <div class="page-header">
+    <div>
+      <h2>Historique des ventes</h2>
+      <p>Suivi détaillé des tickets de caisse avec réimpression et analyse rapide</p>
+    </div>
+
+    <div class="header-actions">
+      <button mat-stroked-button type="button" (click)="resetFilters()">
+        <mat-icon>restart_alt</mat-icon>
+        Réinitialiser
+      </button>
+
+      <button mat-stroked-button type="button" (click)="refresh()">
+        <mat-icon>refresh</mat-icon>
+        Actualiser
+      </button>
+    </div>
+  </div>
+
+  <div class="kpi-grid">
+    <mat-card class="kpi-card">
+      <div class="kpi-icon blue">
+        <mat-icon>receipt_long</mat-icon>
+      </div>
+      <div class="kpi-content">
+        <span class="label">Nombre de ventes</span>
+        <strong>{{ totalVentes() }}</strong>
+      </div>
+    </mat-card>
+
+    <mat-card class="kpi-card">
+      <div class="kpi-icon green">
+        <mat-icon>payments</mat-icon>
+      </div>
+      <div class="kpi-content">
+        <span class="label">Montant total</span>
+        <strong>{{ totalMontant() | number:'1.2-2' }} USD</strong>
+      </div>
+    </mat-card>
+
+    <mat-card class="kpi-card">
+      <div class="kpi-icon orange">
+        <mat-icon>shopping_basket</mat-icon>
+      </div>
+      <div class="kpi-content">
+        <span class="label">Articles vendus</span>
+        <strong>{{ totalArticles() }}</strong>
+      </div>
+    </mat-card>
+
+    <mat-card class="kpi-card">
+      <div class="kpi-icon purple">
+        <mat-icon>monitoring</mat-icon>
+      </div>
+      <div class="kpi-content">
+        <span class="label">Panier moyen</span>
+        <strong>{{ panierMoyen() | number:'1.2-2' }} USD</strong>
+      </div>
+    </mat-card>
+  </div>
+
+  <mat-card class="filter-card">
+    <div class="filter-header">
+      <div>
+        <h3>Centre de recherche</h3>
+        <p>Le filtre par défaut prend le mois en cours</p>
+      </div>
+    </div>
+
+    <form [formGroup]="filterForm" class="filter-form">
+      <mat-form-field appearance="outline">
+        <mat-label>Recherche</mat-label>
+        <input
+          matInput
+          formControlName="search"
+          placeholder="Ticket, client, produit, caissier..."
+        />
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Date début</mat-label>
+        <input matInput type="date" formControlName="dateDebut" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Date fin</mat-label>
+        <input matInput type="date" formControlName="dateFin" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Mode de paiement</mat-label>
+        <mat-select formControlName="modePaiement">
+          <mat-option value="">Tous</mat-option>
+          <mat-option value="CASH">Cash</mat-option>
+          <mat-option value="CARTE">Carte</mat-option>
+          <mat-option value="MOBILE_MONEY">Mobile Money</mat-option>
+          <mat-option value="VIREMENT">Virement</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </form>
+  </mat-card>
+
+  <mat-card class="table-card">
+    <div class="table-toolbar">
+      <div>
+        <h3>Registre des ventes</h3>
+        <span>{{ ventesFiltrees().length }} ticket(s) trouvé(s)</span>
+      </div>
+    </div>
+
+    <div *ngIf="venteStore.loading()" class="loading-box">
+      <mat-icon>hourglass_top</mat-icon>
+      <span>Chargement des ventes...</span>
+    </div>
+
+    <div *ngIf="!venteStore.loading() && ventesFiltrees().length === 0" class="empty-box">
+      <mat-icon>receipt</mat-icon>
+      <span>Aucune vente trouvée pour cette période</span>
+    </div>
+
+    <div class="table-wrapper" *ngIf="!venteStore.loading() && ventesFiltrees().length > 0">
+      <table mat-table [dataSource]="ventesFiltrees()" multiTemplateDataRows>
+
+        <ng-container matColumnDef="date">
+          <th mat-header-cell *matHeaderCellDef>Date</th>
+          <td mat-cell *matCellDef="let v">
+            <div class="date-cell">
+              <strong>{{ v.dateVente | date:'dd/MM/yyyy' }}</strong>
+              <span>{{ v.dateVente | date:'HH:mm:ss' }}</span>
+            </div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="ticket">
+          <th mat-header-cell *matHeaderCellDef>Ticket</th>
+          <td mat-cell *matCellDef="let v">
+            <div class="ticket-cell">
+              <strong>{{ v.ticketNumero }}</strong>
+              <span>Caissier : {{ v.caissier || '-' }}</span>
+            </div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="client">
+          <th mat-header-cell *matHeaderCellDef>Client</th>
+          <td mat-cell *matCellDef="let v">
+            <div class="client-cell">
+              <strong>{{ v.clientNom || 'CLIENT DIVERS' }}</strong>
+              <span>{{ getLignesCount(v) }} ligne(s) / {{ getQuantiteTotale(v) }} article(s)</span>
+            </div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="paiement">
+          <th mat-header-cell *matHeaderCellDef>Paiement</th>
+          <td mat-cell *matCellDef="let v">
+            <mat-chip>{{ v.modePaiement }}</mat-chip>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="articles">
+          <th mat-header-cell *matHeaderCellDef>Articles</th>
+          <td mat-cell *matCellDef="let v">
+            {{ getQuantiteTotale(v) }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="montantRecu">
+          <th mat-header-cell *matHeaderCellDef>Reçu</th>
+          <td mat-cell *matCellDef="let v">
+            {{ v.montantRecu | number:'1.2-2' }} USD
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="monnaie">
+          <th mat-header-cell *matHeaderCellDef>Monnaie</th>
+          <td mat-cell *matCellDef="let v">
+            {{ v.monnaie | number:'1.2-2' }} USD
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="total">
+          <th mat-header-cell *matHeaderCellDef>Total</th>
+          <td mat-cell *matCellDef="let v">
+            <strong class="amount">{{ v.totalGeneral | number:'1.2-2' }} USD</strong>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef class="actions-col">Actions</th>
+          <td mat-cell *matCellDef="let v" class="actions-col">
+            <div class="row-actions">
+              <button mat-icon-button type="button" (click)="toggleDetails(v.id)" matTooltip="Voir le détail">
+                <mat-icon>{{ isExpanded(v.id) ? 'expand_less' : 'visibility' }}</mat-icon>
+              </button>
+
+              <button mat-icon-button type="button" (click)="reprintTicket(v)" matTooltip="Réimprimer le ticket">
+                <mat-icon>print</mat-icon>
+              </button>
+            </div>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+
+        <tr
+          mat-row
+          *matRowDef="let row; columns: displayedColumns"
+          class="vente-row">
+        </tr>
+
+      </table>
+    </div>
+
+    <div class="detail-list" *ngIf="!venteStore.loading()">
+      <mat-accordion multi>
+        <mat-expansion-panel
+          *ngFor="let vente of ventesFiltrees()"
+          [expanded]="isExpanded(vente.id)">
+          <mat-expansion-panel-header (click)="$event.stopPropagation(); toggleDetails(vente.id)">
+            <mat-panel-title>
+              {{ vente.ticketNumero }} — {{ vente.clientNom || 'CLIENT DIVERS' }}
+            </mat-panel-title>
+            <mat-panel-description>
+              {{ vente.totalGeneral | number:'1.2-2' }} USD
+            </mat-panel-description>
+          </mat-expansion-panel-header>
+
+          <div class="sale-detail-header">
+            <div><strong>Date :</strong> {{ vente.dateVente | date:'dd/MM/yyyy HH:mm:ss' }}</div>
+            <div><strong>Caissier :</strong> {{ vente.caissier }}</div>
+            <div><strong>Paiement :</strong> {{ vente.modePaiement }}</div>
+          </div>
+
+          <div class="detail-table-wrapper">
+            <table class="detail-table">
+              <thead>
+                <tr>
+                  <th>Produit</th>
+                  <th>Qté</th>
+                  <th>PU</th>
+                  <th>Remise</th>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let ligne of vente.lignes">
+                  <td>{{ ligne.produitNom }}</td>
+                  <td>{{ ligne.quantite }}</td>
+                  <td>{{ ligne.prixUnitaire | number:'1.2-2' }} USD</td>
+                  <td>{{ ligne.remise | number:'1.2-2' }} USD</td>
+                  <td><strong>{{ ligne.totalLigne | number:'1.2-2' }} USD</strong></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="detail-summary">
+            <div>Sous-total : <strong>{{ vente.sousTotal | number:'1.2-2' }} USD</strong></div>
+            <div>Remise : <strong>{{ vente.totalRemise | number:'1.2-2' }} USD</strong></div>
+            <div>Total général : <strong>{{ vente.totalGeneral | number:'1.2-2' }} USD</strong></div>
+            <div>Montant reçu : <strong>{{ vente.montantRecu | number:'1.2-2' }} USD</strong></div>
+            <div>Monnaie : <strong>{{ vente.monnaie | number:'1.2-2' }} USD</strong></div>
+          </div>
+
+          <div class="detail-actions">
+            <button mat-stroked-button type="button" (click)="reprintTicket(vente)">
+              <mat-icon>print</mat-icon>
+              Réimprimer le ticket
+            </button>
+          </div>
+        </mat-expansion-panel>
+      </mat-accordion>
+    </div>
+  </mat-card>
+</div>

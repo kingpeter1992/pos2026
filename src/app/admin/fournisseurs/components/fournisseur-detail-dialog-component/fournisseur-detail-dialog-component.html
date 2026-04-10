@@ -1,0 +1,43 @@
+<h2 mat-dialog-title>
+  <mat-icon>{{ isEditMode ? 'edit' : 'add' }}</mat-icon>
+  {{ isEditMode ? 'Modifier fournisseur' : 'Nouveau fournisseur' }}
+</h2>
+
+<mat-dialog-content>
+
+  <form [formGroup]="form" class="form-grid">
+
+    <mat-form-field appearance="outline">
+      <mat-label>Nom</mat-label>
+      <input matInput formControlName="nom">
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Téléphone</mat-label>
+      <input matInput formControlName="telephone">
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Email</mat-label>
+      <input matInput formControlName="email">
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Adresse</mat-label>
+      <textarea matInput formControlName="adresse"></textarea>
+    </mat-form-field>
+
+  </form>
+
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+
+  <button mat-button (click)="close()">Annuler</button>
+
+  <button mat-raised-button color="primary" (click)="save()" [disabled]="form.invalid">
+    <mat-icon>save</mat-icon>
+    {{ isEditMode ? 'Modifier' : 'Enregistrer' }}
+  </button>
+
+</mat-dialog-actions>

@@ -1,0 +1,315 @@
+:host {
+  display: block;
+}
+
+.product-list-shell {
+  padding: 18px;
+  background: #f4f6f8;
+  min-height: 100vh;
+  color: #243447;
+}
+
+/* HEADER */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid #dbe3ea;
+  border-left: 6px solid #0f4c81;
+  border-radius: 18px;
+  padding: 20px 22px;
+  box-shadow: 0 6px 18px rgba(15, 76, 129, 0.06);
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.header-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #0f4c81, #2d9cdb);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 18px rgba(15, 76, 129, 0.18);
+}
+
+.header-icon mat-icon {
+  font-size: 30px;
+  width: 30px;
+  height: 30px;
+}
+
+.header-text h1 {
+  margin: 0;
+  font-size: 1.55rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.header-text p {
+  margin: 6px 0 0;
+  color: #64748b;
+  max-width: 760px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.action-btn {
+  border-radius: 10px;
+}
+
+::ng-deep .create-btn.p-button {
+  background: #0f766e !important;
+  border-color: #0f766e !important;
+  border-radius: 10px !important;
+}
+
+/* KPI */
+.mini-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.mini-kpi-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
+}
+
+.mini-kpi-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+}
+
+.mini-kpi-icon.blue {
+  background: linear-gradient(135deg, #0f4c81, #3b82f6);
+}
+
+.mini-kpi-icon.green {
+  background: linear-gradient(135deg, #0f766e, #14b8a6);
+}
+
+.mini-kpi-icon.cyan {
+  background: linear-gradient(135deg, #0891b2, #22d3ee);
+}
+
+.mini-kpi-icon.amber {
+  background: linear-gradient(135deg, #b45309, #f59e0b);
+}
+
+.mini-kpi-label {
+  font-size: 0.88rem;
+  color: #64748b;
+}
+
+.mini-kpi-value {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #1f2937;
+  margin-top: 2px;
+}
+
+/* TABLE */
+.table-card {
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.05);
+}
+
+.table-toolbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  padding: 18px 18px 8px;
+  flex-wrap: wrap;
+}
+
+.toolbar-left h3 {
+  margin: 0;
+  color: #243447;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.toolbar-left span {
+  color: #64748b;
+  font-size: 0.92rem;
+}
+
+.search-box input {
+  min-width: 320px;
+  border-radius: 10px;
+}
+
+.loading-wrapper {
+  padding: 18px;
+}
+
+/* CELLS */
+.image-cell {
+  display: flex;
+  justify-content: center;
+}
+
+.product-thumb {
+  width: 58px;
+  height: 58px;
+  border-radius: 12px;
+  object-fit: cover;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+}
+
+.empty-thumb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  background: #f8fafc;
+}
+
+.product-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.product-name {
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.product-desc {
+  color: #64748b;
+  font-size: 0.88rem;
+  max-width: 320px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.barcode-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.barcode-text {
+  font-family: "Courier New", monospace;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+.category-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #eef6fb;
+  color: #0f4c81;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.price-value {
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.stock-min {
+  font-weight: 700;
+  color: #b45309;
+}
+
+.actions-cell {
+  text-align: center;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 28px 12px;
+  color: #64748b;
+}
+
+.empty-state i {
+  font-size: 2rem;
+  margin-bottom: 10px;
+  color: #94a3b8;
+}
+
+.empty-state h4 {
+  margin: 0 0 8px;
+  color: #334155;
+}
+
+/* PRIMENG OVERRIDES */
+::ng-deep .products-table .p-datatable-thead > tr > th {
+  background: #f8fafc;
+  color: #334155;
+  font-weight: 700;
+}
+
+::ng-deep .p-card .p-card-body,
+::ng-deep .p-card .p-card-content {
+  padding: 0;
+}
+
+/* RESPONSIVE */
+@media (max-width: 1200px) {
+  .mini-kpis {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .product-list-shell {
+    padding: 12px;
+  }
+
+  .header-text h1 {
+    font-size: 1.25rem;
+  }
+
+  .mini-kpis {
+    grid-template-columns: 1fr;
+  }
+
+  .search-box input {
+    min-width: 100%;
+    width: 100%;
+  }
+
+  .header-actions {
+    width: 100%;
+  }
+}

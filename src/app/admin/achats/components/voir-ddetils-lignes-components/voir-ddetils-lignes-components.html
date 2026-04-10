@@ -1,0 +1,233 @@
+<div class="detail-dialog">
+
+  <div class="dialog-header">
+    <div class="header-left">
+      <div class="header-icon">
+        <mat-icon>receipt_long</mat-icon>
+      </div>
+
+      <div class="header-text">
+        <h2>Détails des lignes de commande</h2>
+        <p>Consultation détaillée des articles de la commande sélectionnée</p>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <button mat-stroked-button type="button" (click)="close()">
+        <mat-icon>close</mat-icon>
+        Fermer
+      </button>
+    </div>
+  </div>
+
+  <mat-divider></mat-divider>
+
+  <div class="loading-zone" *ngIf="loading()">
+    <mat-spinner diameter="45"></mat-spinner>
+    <p>Chargement des détails...</p>
+  </div>
+
+  <ng-container *ngIf="!loading()">
+
+    <div class="commande-summary" *ngIf="commande() as cmd">
+      <div class="summary-card">
+        <label>ID commande</label>
+        <span>#{{ cmd.id }}</span>
+      </div>
+
+      <div class="summary-card">
+        <label>Référence</label>
+        <span>{{ cmd.reference || cmd.refCommande || '-' }}</span>
+      </div>
+
+      <div class="summary-card">
+        <label>Fournisseur</label>
+        <span>{{ cmd.fournisseurNom || '-' }}</span>
+      </div>
+
+      <div class="summary-card">
+        <label>Date</label>
+        <span>{{ cmd.dateCommande | date:'dd/MM/yyyy' }}</span>
+      </div>
+
+      <div class="summary-card">
+        <label>Statut</label>
+        <span class="status-badge" [ngClass]="getStatutClass()">
+          {{ cmd.statut || '-' }}
+        </span>
+      </div>
+
+      <div class="summary-card">
+        <label>Devise</label>
+        <span>{{ cmd.devise || 'USD' }}</span>
+      </div>
+    </div>
+
+    <!-- KPI -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-icon">
+          <mat-icon>inventory_2</mat-icon>
+        </div>
+        <div class="kpi-content">
+          <span class="kpi-label">Nombre de lignes</span>
+          <strong>{{ lignes().length }}</strong>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon">
+          <mat-icon>shopping_cart</mat-icon>
+        </div>
+        <div class="kpi-content">
+          <span class="kpi-label">Qté commandée</span>
+          <strong>{{ totalQuantite() }}</strong>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon">
+          <mat-icon>move_to_inbox</mat-icon>
+        </div>
+        <div class="kpi-content">
+          <span class="kpi-label">Qté reçue</span>
+          <strong>{{ totalQuantiteRecue() }}</strong>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon">
+          <mat-icon>pending_actions</mat-icon>
+        </div>
+        <div class="kpi-content">
+          <span class="kpi-label">Reste à recevoir</span>
+          <strong>{{ totalQuantiteRestante() }}</strong>
+        </div>
+      </div>
+
+      <div class="kpi-card kpi-card-wide">
+        <div class="kpi-icon">
+          <mat-icon>monitoring</mat-icon>
+        </div>
+        <div class="kpi-content">
+          <span class="kpi-label">Taux de réception global</span>
+          <strong>{{ tauxReceptionGlobal() }}%</strong>
+
+          <div class="progress-shell">
+            <div class="progress-bar" [style.width.%]="tauxReceptionGlobal()"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-zone" *ngIf="lignes().length > 0; else emptyState">
+      <table mat-table [dataSource]="lignes()" class="erp-table">
+
+        <ng-container matColumnDef="numero">
+          <th mat-header-cell *matHeaderCellDef>#</th>
+          <td mat-cell *matCellDef="let ligne; let i = index">
+            {{ i + 1 }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="produit">
+          <th mat-header-cell *matHeaderCellDef>Produit</th>
+          <td mat-cell *matCellDef="let ligne">
+            <div class="product-cell">
+              <strong>{{ getProduitLabel(ligne) }}</strong>
+              <small>ID: {{ ligne?.produitId || '-' }}</small>
+            </div>
+          </td>
+        </ng-container>
+
+        <!-- SUIVI QUANTITE -->
+        <ng-container matColumnDef="suiviQuantite">
+          <th mat-header-cell *matHeaderCellDef>Suivi réception</th>
+          <td mat-cell *matCellDef="let ligne">
+            <div class="qty-tracking-cell">
+
+              <div class="qty-top">
+                <div class="qty-pair">
+                  <span class="qty-label">Cmd</span>
+                  <strong>{{ getQuantiteCommandee(ligne) }}</strong>
+                </div>
+
+                <div class="qty-separator">/</div>
+
+                <div class="qty-pair qty-pair-received">
+                  <span class="qty-label">Reçue</span>
+                  <strong>{{ getQuantiteRecue(ligne) }}</strong>
+                </div>
+
+                <div class="qty-separator">/</div>
+
+                <div class="qty-pair qty-pair-rest">
+                  <span class="qty-label">Reste</span>
+                  <strong>{{ getQuantiteRestante(ligne) }}</strong>
+                </div>
+              </div>
+
+              <div class="progress-shell line-progress">
+                <div
+                  class="progress-bar"
+                  [style.width]="getBarWidth(ligne)">
+                </div>
+              </div>
+
+              <div class="qty-bottom">
+                <span class="etat-badge" [ngClass]="getEtatReceptionClass(ligne)">
+                  {{ getEtatReceptionLabel(ligne) }}
+                </span>
+
+                <span class="taux-value">
+                  {{ getTauxReception(ligne) }}%
+                </span>
+              </div>
+
+            </div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="prixUnitaire">
+          <th mat-header-cell *matHeaderCellDef>Prix unitaire</th>
+          <td mat-cell *matCellDef="let ligne">
+            {{ getPrixUnitaire(ligne) | number:'1.2-2' }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="remise">
+          <th mat-header-cell *matHeaderCellDef>Remise</th>
+          <td mat-cell *matCellDef="let ligne">
+            {{ getRemise(ligne) | number:'1.2-2' }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="total">
+          <th mat-header-cell *matHeaderCellDef>Total ligne</th>
+          <td mat-cell *matCellDef="let ligne">
+            <strong>{{ getTotalLigne(ligne) | number:'1.2-2' }}</strong>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+      </table>
+    </div>
+
+    <ng-template #emptyState>
+      <div class="empty-state">
+        <mat-icon>inventory</mat-icon>
+        <h3>Aucune ligne trouvée</h3>
+        <p>Cette commande ne contient encore aucun article.</p>
+      </div>
+    </ng-template>
+
+    <div class="dialog-footer">
+      <button mat-raised-button color="primary" type="button" (click)="close()">
+        <mat-icon>check_circle</mat-icon>
+        Fermer
+      </button>
+    </div>
+
+  </ng-container>
+</div>

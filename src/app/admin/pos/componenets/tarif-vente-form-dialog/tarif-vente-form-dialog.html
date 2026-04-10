@@ -1,0 +1,69 @@
+<h2 mat-dialog-title>
+  <mat-icon>{{ isEditMode ? 'edit' : 'add_circle' }}</mat-icon>
+  {{ isEditMode ? 'Modifier le tarif de vente' : 'Créer un tarif de vente' }}
+</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="form" class="dialog-form">
+
+    <div class="grid two">
+      <mat-form-field appearance="outline">
+        <mat-label>Code</mat-label>
+        <input matInput formControlName="code" />
+       <mat-error *ngIf="form.get('code')?.hasError('required')">
+  Le code est obligatoire
+</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Nom</mat-label>
+        <input matInput formControlName="nom" />
+        <mat-error *ngIf="form.get('nom')?.hasError('required')">
+          Le nom est obligatoire
+        </mat-error>
+      </mat-form-field>
+    </div>
+
+    <div class="grid one">
+      <mat-form-field appearance="outline">
+        <mat-label>Description</mat-label>
+        <textarea
+          matInput
+          rows="4"
+          formControlName="description">
+        </textarea>
+      </mat-form-field>
+    </div>
+
+    <div class="toggle-grid">
+      <mat-slide-toggle formControlName="actif">
+        Tarif actif
+      </mat-slide-toggle>
+
+      <mat-slide-toggle formControlName="parDefaut">
+        Définir comme tarif par défaut
+      </mat-slide-toggle>
+    </div>
+
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button
+    mat-stroked-button
+    type="button"
+    [disabled]="saving"
+    (click)="close()">
+    Annuler
+  </button>
+
+  <button
+    mat-raised-button
+    color="primary"
+    type="button"
+    [disabled]="saving"
+    (click)="submit()">
+    <mat-icon>{{ isEditMode ? 'save' : 'add_task' }}</mat-icon>
+    {{ saving ? 'Enregistrement...' : (isEditMode ? 'Mettre à jour' : 'Créer') }}
+  </button>
+</mat-dialog-actions>

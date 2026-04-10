@@ -1,0 +1,70 @@
+.dialog-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 800;
+}
+
+.dialog-content {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 1000px;
+}
+
+.dialog-header {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.info-card,
+.mini-kpi {
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+
+  label,
+  span {
+    display: block;
+    font-size: 12px;
+    color: #64748b;
+    font-weight: 700;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+  }
+
+  strong {
+    font-size: 15px;
+    color: #0f172a;
+    font-weight: 800;
+  }
+}
+
+.mini-kpis {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.table-wrap {
+  max-height: 460px;
+  overflow: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+}
+
+.full-table {
+  width: 100%;
+}
+
+.th-right,
+.td-right {
+  text-align: right;
+}
+
+.strong {
+  font-weight: 800;
+  color: #0f172a;
+}

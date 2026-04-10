@@ -1,0 +1,159 @@
+<h2 mat-dialog-title class="dialog-title">
+  <mat-icon>{{ isEdit ? 'edit_note' : 'add_box' }}</mat-icon>
+  <span>{{ title }}</span>
+</h2>
+
+<div mat-dialog-content class="dialog-content">
+  <form [formGroup]="form" class="dialog-form">
+
+    <div class="section-card">
+      <div class="section-title">
+        <mat-icon>qr_code_2</mat-icon>
+        <span>Identification</span>
+      </div>
+
+      <div class="form-grid two-cols">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Code-barres</mat-label>
+          <input matInput formControlName="codeBarres" placeholder="Laisser vide pour génération automatique">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Nom du produit</mat-label>
+          <input matInput formControlName="nom" placeholder="Ex: Sucre 1Kg">
+          <mat-error *ngIf="f['nom'].hasError('required')">
+            Le nom du produit est obligatoire
+          </mat-error>
+          <mat-error *ngIf="f['nom'].hasError('maxlength')">
+            Maximum 150 caractères
+          </mat-error>
+        </mat-form-field>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-title">
+        <mat-icon>category</mat-icon>
+        <span>Classification</span>
+      </div>
+
+      <div class="form-grid two-cols">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Catégorie</mat-label>
+          <mat-select formControlName="categorieId">
+            <mat-option [value]="null">-- Choisir une catégorie --</mat-option>
+            <mat-option *ngFor="let c of categories" [value]="c.id">
+              {{ c.nom }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Prix de vente</mat-label>
+          <input matInput type="number" formControlName="prixVente">
+          <mat-error *ngIf="f['prixVente'].hasError('required')">
+            Le prix est obligatoire
+          </mat-error>
+        </mat-form-field>
+      </div>
+
+      <div class="form-grid two-cols">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Stock minimum</mat-label>
+          <input matInput type="number" formControlName="stockMinimum">
+        </mat-form-field>
+
+         <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Stock Maximum</mat-label>
+          <input matInput type="number" formControlName="stockMaximum">
+        </mat-form-field>
+
+        <div class="toggle-box">
+          <mat-slide-toggle formControlName="actif">
+            Produit actif
+          </mat-slide-toggle>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-title">
+        <mat-icon>description</mat-icon>
+        <span>Description</span>
+      </div>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Description du produit</mat-label>
+        <textarea matInput rows="4" formControlName="description"></textarea>
+      </mat-form-field>
+    </div>
+
+    <div class="section-card">
+      <div class="section-title">
+        <mat-icon>image</mat-icon>
+        <span>Images</span>
+      </div>
+
+      <div class="upload-area">
+        <label class="upload-box">
+          <input type="file" multiple accept="image/*" (change)="onImagesSelected($event)" hidden>
+          <div class="upload-content">
+            <i class="pi pi-cloud-upload"></i>
+            <h4>Ajouter des images</h4>
+            <p>Choisissez une image principale</p>
+          </div>
+        </label>
+      </div>
+
+      <div class="preview-grid" *ngIf="existingImages.length > 0 || previews.length > 0">
+
+        <div class="preview-card" *ngFor="let img of existingImages; let i = index">
+          <div class="preview-image-wrapper">
+            <img [src]="img.url" alt="image existante">
+            <span class="main-badge" *ngIf="img.principale">Principale</span>
+          </div>
+
+          <div class="preview-actions">
+            <button mat-stroked-button type="button" color="primary" (click)="setExistingAsMain(i)">
+              Principale
+            </button>
+            <button mat-icon-button color="warn" type="button" (click)="removeExistingImage(i)">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+        </div>
+
+        <div class="preview-card" *ngFor="let img of previews; let i = index">
+          <div class="preview-image-wrapper">
+            <img [src]="img" alt="nouvelle image">
+            <span class="main-badge" *ngIf="selectedImages[i]?.principale">Principale</span>
+          </div>
+
+          <div class="preview-actions">
+            <button mat-stroked-button type="button" color="primary" (click)="setNewAsMain(i)">
+              Principale
+            </button>
+            <button mat-icon-button color="warn" type="button" (click)="removeNewImage(i)">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </form>
+</div>
+
+<div mat-dialog-actions align="end" class="dialog-actions">
+  <button mat-stroked-button type="button" (click)="close()">Annuler</button>
+
+  <button
+    pButton
+    type="button"
+    icon="pi pi-check"
+    [label]="actionLabel"
+    class="save-btn"
+    (click)="save()">
+  </button>
+</div>

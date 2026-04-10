@@ -1,0 +1,166 @@
+<div class="categorie-page">
+
+  <!-- Header SAP style -->
+  <div class="page-hero">
+    <div class="hero-left">
+      <div class="hero-badge">
+        <mat-icon>category</mat-icon>
+      </div>
+
+      <div class="hero-text">
+        <h1>Gestion des catégories</h1>
+        <p>
+          Organisez vos produits par familles pour faciliter la création, la recherche
+          et l’analyse des ventes.
+        </p>
+      </div>
+    </div>
+
+    <div class="hero-actions">
+      <button
+        mat-stroked-button
+        color="primary"
+        class="sap-btn"
+        (click)="refresh()"
+        [disabled]="loading">
+        <mat-icon>refresh</mat-icon>
+        Actualiser
+      </button>
+
+      <button
+        pButton
+        type="button"
+        icon="pi pi-plus"
+        label="Nouvelle catégorie"
+        class="p-button-sm create-btn"
+        (click)="openCreateDialog()">
+      </button>
+    </div>
+  </div>
+
+  <!-- KPI -->
+  <div class="kpi-grid">
+    <p-card class="kpi-card">
+      <div class="kpi-content">
+        <div class="kpi-icon blue">
+          <i class="pi pi-list"></i>
+        </div>
+        <div>
+          <div class="kpi-value">{{ kpiTotal }}</div>
+          <div class="kpi-label">Total catégories</div>
+        </div>
+      </div>
+    </p-card>
+
+    <p-card class="kpi-card">
+      <div class="kpi-content">
+        <div class="kpi-icon green">
+          <i class="pi pi-check-circle"></i>
+        </div>
+        <div>
+          <div class="kpi-value">{{ kpiActives }}</div>
+          <div class="kpi-label">Catégories actives</div>
+        </div>
+      </div>
+    </p-card>
+  </div>
+
+  <!-- Toolbar -->
+  <p-card class="table-card">
+    <div class="table-toolbar">
+      <div class="toolbar-left">
+        <h3>Liste des catégories</h3>
+        <span>{{ filteredCategories.length }} élément(s)</span>
+      </div>
+
+      <div class="toolbar-right">
+        <span class="p-input-icon-left search-box">
+          <i class="pi pi-search"></i>
+          <input
+            pInputText
+            type="text"
+            [(ngModel)]="searchTerm"
+            (input)="applyFilter()"
+            placeholder="Rechercher une catégorie..." />
+        </span>
+      </div>
+    </div>
+
+    <p-divider></p-divider>
+
+    <div *ngIf="loading" class="loading-wrapper">
+      <p-skeleton height="3rem" styleClass="mb-2"></p-skeleton>
+      <p-skeleton height="3rem" styleClass="mb-2"></p-skeleton>
+      <p-skeleton height="3rem"></p-skeleton>
+    </div>
+
+    <p-table
+      *ngIf="!loading"
+      [value]="filteredCategories"
+      [paginator]="true"
+      [rows]="10"
+      [responsiveLayout]="'scroll'"
+      styleClass="p-datatable-sm p-datatable-gridlines p-datatable-striped categories-table">
+
+      <ng-template pTemplate="header">
+        <tr>
+          <th style="width: 80px;">#</th>
+          <th>Nom</th>
+          <th>Description</th>
+          <th style="width: 140px;">Statut</th>
+          <th style="width: 180px;">Date création</th>
+          <th style="width: 110px; text-align: center;">Actions</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-categorie let-rowIndex="rowIndex">
+        <tr>
+          <td>{{ rowIndex + 1 }}</td>
+          <td>
+            <div class="cell-title">
+              <span class="title-dot"></span>
+              <span class="title-text">{{ categorie.nom }}</span>
+            </div>
+          </td>
+
+          <td>
+            <span class="description-text">
+              {{ categorie.description || 'Aucune description' }}
+            </span>
+          </td>
+
+          <td>
+            <p-tag
+              [value]="categorie.actif ? 'Active' : 'Inactive'"
+              [severity]="getSeverity(categorie.actif)">
+            </p-tag>
+          </td>
+
+          <td>{{ categorie.dateCreation | date:'dd/MM/yyyy HH:mm' }}</td>
+
+          <td class="actions-cell">
+            <button
+              mat-icon-button
+              color="primary"
+              matTooltip="Modifier"
+              (click)="openEditDialog(categorie)">
+              <mat-icon>edit</mat-icon>
+            </button>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="6">
+            <div class="empty-state">
+              <i class="pi pi-folder-open"></i>
+              <h4>Aucune catégorie trouvée</h4>
+              <p>Ajoutez une nouvelle catégorie pour commencer.</p>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>

@@ -1,0 +1,171 @@
+<div class="erp-page">
+
+  <!-- HEADER -->
+  <section class="erp-topbar">
+    <div class="topbar-left">
+      <div class="topbar-icon">
+        <mat-icon>apartment</mat-icon>
+      </div>
+
+      <div class="topbar-text">
+        <div class="breadcrumb">Achats / Paramétrage / Fournisseurs</div>
+        <h1>Gestion des fournisseurs</h1>
+        <p>Création, mise à jour, consultation et suivi des partenaires fournisseurs</p>
+      </div>
+    </div>
+
+    <div class="topbar-right">
+      <button
+        mat-flat-button
+        color="primary"
+        type="button"
+        class="primary-btn"
+        (click)="openCreateDialog()">
+        <mat-icon>add</mat-icon>
+        Nouveau fournisseur
+      </button>
+    </div>
+  </section>
+
+  <!-- MAIN CARD -->
+  <mat-card class="erp-card supplier-card">
+
+    <!-- TOOLBAR -->
+    <div class="card-toolbar">
+      <div class="toolbar-title">
+        <div class="toolbar-icon soft blue">
+          <mat-icon>groups</mat-icon>
+        </div>
+        <div>
+          <h3>Registre des fournisseurs</h3>
+          <span>Recherche, consultation et administration des fournisseurs</span>
+        </div>
+      </div>
+
+      <div class="toolbar-actions">
+        <div class="toolbar-search">
+          <mat-form-field appearance="outline">
+            <mat-label>Recherche</mat-label>
+            <input
+              matInput
+              [(ngModel)]="searchKeyword"
+              [ngModelOptions]="{ standalone: true }"
+              (keyup.enter)="onSearch()"
+              placeholder="Nom, téléphone ou email" />
+            <button mat-icon-button matSuffix type="button" (click)="onSearch()">
+              <mat-icon>search</mat-icon>
+            </button>
+          </mat-form-field>
+        </div>
+
+        <button
+          mat-stroked-button
+          type="button"
+          class="ghost-btn"
+          (click)="onSearch()">
+          <mat-icon>manage_search</mat-icon>
+          Rechercher
+        </button>
+
+        <button
+          mat-flat-button
+          color="primary"
+          type="button"
+          class="primary-btn"
+          (click)="openCreateDialog()">
+          <mat-icon>add_circle</mat-icon>
+          Nouveau
+        </button>
+      </div>
+    </div>
+
+    <!-- TABLE -->
+    <div class="erp-table-wrap" *ngIf="!loading; else loadingTpl">
+      <table mat-table [dataSource]="dataSource" class="erp-table">
+
+        <ng-container matColumnDef="id">
+          <th mat-header-cell *matHeaderCellDef>#</th>
+          <td mat-cell *matCellDef="let row">
+            <span class="mini-code">{{ row.id }}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="nom">
+          <th mat-header-cell *matHeaderCellDef>Nom</th>
+          <td mat-cell *matCellDef="let row">
+            <div class="main-cell">
+              <strong>{{ row.nom }}</strong>
+            </div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="telephone">
+          <th mat-header-cell *matHeaderCellDef>Téléphone</th>
+          <td mat-cell *matCellDef="let row">{{ row.telephone || '-' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="email">
+          <th mat-header-cell *matHeaderCellDef>Email</th>
+          <td mat-cell *matCellDef="let row">{{ row.email || '-' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="ville">
+          <th mat-header-cell *matHeaderCellDef>Ville</th>
+          <td mat-cell *matCellDef="let row">{{ row.ville || '-' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="pays">
+          <th mat-header-cell *matHeaderCellDef>Pays</th>
+          <td mat-cell *matCellDef="let row">{{ row.pays || '-' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="actif">
+          <th mat-header-cell *matHeaderCellDef>Statut</th>
+          <td mat-cell *matCellDef="let row">
+            <span class="erp-badge" [ngClass]="row.actif ? 'success' : 'danger'">
+              <span class="dot"></span>
+              {{ row.actif ? 'Actif' : 'Inactif' }}
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef class="text-center">Actions</th>
+          <td mat-cell *matCellDef="let row" class="text-center">
+            <div class="action-buttons">
+              <button mat-icon-button class="btn-view" (click)="openDetails(row)" matTooltip="Voir détail">
+                <mat-icon>visibility</mat-icon>
+              </button>
+
+              <button mat-icon-button class="btn-edit" (click)="openEditDialog(row)" matTooltip="Modifier">
+                <mat-icon>edit</mat-icon>
+              </button>
+
+              <button mat-icon-button class="btn-delete" (click)="remove(row)" matTooltip="Supprimer">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="erp-row"></tr>
+      </table>
+
+      <mat-paginator
+        [pageSize]="10"
+        [pageSizeOptions]="[5,10,20,50]"
+        showFirstLastButtons>
+      </mat-paginator>
+    </div>
+
+    <!-- LOADING -->
+    <ng-template #loadingTpl>
+      <div class="loading-box">
+        <mat-progress-spinner mode="indeterminate" diameter="46"></mat-progress-spinner>
+        <p>Chargement des fournisseurs...</p>
+      </div>
+    </ng-template>
+
+  </mat-card>
+</div>

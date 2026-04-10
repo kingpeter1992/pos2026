@@ -1,0 +1,21 @@
+.page { padding: 16px; }
+.header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; }
+.muted { margin: 2px 0 0; opacity:.7; font-size: 13px; }
+
+.card { border-radius: 14px; }
+.table-wrap { overflow:auto; }
+
+.u { display:flex; flex-direction:column; }
+.u-name { font-weight: 600; }
+.u-email { font-size: 12px; opacity: .75; }
+
+.status { display:inline-flex; align-items:center; gap:6px; padding: 4px 10px; border-radius: 999px; background:#e8f5e9; }
+.status.blocked { background:#ffebee; }
+.status-ico { font-size:18px; height:18px; width:18px; }
+
+.roles-grid { display:grid; grid-template-columns: repeat(2, minmax(220px, 1fr)); gap: 6px 14px; }
+.chips { margin-top: 8px; display:block; }
+
+.actions { display:flex; flex-direction:column; gap:8px; align-items:flex-start; }
+.btn-spinner { margin-right: 8px; vertical-align: middle; }
+.hint { display:flex; align-items:center; gap:6px; font-size: 12px; opacity:.75; }

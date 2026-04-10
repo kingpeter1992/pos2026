@@ -1,0 +1,52 @@
+<h2 mat-dialog-title class="dialog-title">
+  <mat-icon>{{ isEdit ? 'edit' : 'add_circle' }}</mat-icon>
+  <span>{{ title }}</span>
+</h2>
+
+<div mat-dialog-content class="dialog-content">
+  <form [formGroup]="form" class="dialog-form">
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Nom de la catégorie</mat-label>
+      <input matInput formControlName="nom" placeholder="Ex: Boissons" />
+      <mat-error *ngIf="f['nom'].hasError('required')">
+        Le nom est obligatoire
+      </mat-error>
+      <mat-error *ngIf="f['nom'].hasError('maxlength')">
+        Maximum 120 caractères
+      </mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Description</mat-label>
+      <textarea
+        matInput
+        rows="5"
+        formControlName="description"
+        placeholder="Description de la catégorie"></textarea>
+      <mat-error *ngIf="f['description'].hasError('maxlength')">
+        Maximum 500 caractères
+      </mat-error>
+    </mat-form-field>
+    <div class="switch-row">
+  <mat-slide-toggle formControlName="actif">
+    Catégorie active
+  </mat-slide-toggle>
+</div>
+
+  </form>
+</div>
+
+<div mat-dialog-actions align="end" class="dialog-actions">
+  <button mat-stroked-button type="button" (click)="close()">
+    Annuler
+  </button>
+
+  <button
+    pButton
+    type="button"
+    [label]="actionLabel"
+    icon="pi pi-check"
+    class="save-btn"
+    (click)="save()">
+  </button>
+</div>

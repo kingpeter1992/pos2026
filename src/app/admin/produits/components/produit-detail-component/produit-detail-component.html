@@ -1,0 +1,105 @@
+<div class="detail-shell" *ngIf="produit as p">
+  <div class="detail-header">
+    <button mat-stroked-button color="primary" (click)="back()">
+      <mat-icon>arrow_back</mat-icon>
+      Retour
+    </button>
+
+    <div class="title-block">
+      <h1>{{ p.nom }}</h1>
+      <p>Fiche produit détaillée</p>
+    </div>
+  </div>
+
+  <div class="detail-grid">
+    <div class="left-panel">
+      <div class="main-image-card">
+        <img *ngIf="imageActive; else noImage" [src]="imageActive!" [alt]="p.nom" />
+        <ng-template #noImage>
+          <div class="empty-image">
+            <i class="pi pi-image"></i>
+          </div>
+        </ng-template>
+      </div>
+
+      <div class="thumb-grid" *ngIf="p.images?.length">
+        <div
+          class="thumb"
+          *ngFor="let img of p.images"
+          [class.active]="imageActive === img.url"
+          (click)="selectImage(img.url)">
+          <img [src]="img.url" [alt]="img.nomFichier || p.nom" />
+        </div>
+      </div>
+    </div>
+
+    <div class="right-panel">
+      <div class="info-card">
+        <h3>Informations générales</h3>
+
+        <div class="info-row">
+          <span class="label">Nom</span>
+          <span class="value">{{ p.nom }}</span>
+        </div>
+
+        <div class="info-row">
+          <span class="label">Code-barres</span>
+          <span class="value mono">{{ p.codeBarres }}</span>
+        </div>
+
+        <div class="info-row">
+          <span class="label">Catégorie</span>
+          <span class="value">{{ p.categorieNom || 'Non catégorisé' }}</span>
+        </div>
+
+        <div class="info-row">
+          <span class="label">Prix de vente</span>
+          <span class="value">{{ p.prixVente | number:'1.2-2' }}</span>
+        </div>
+
+        <div class="info-row">
+          <span class="label">Stock minimum</span>
+          <span class="value">{{ p.stockMinimum }}</span>
+        </div>
+
+          <div class="info-row">
+          <span class="label">Stock Maximun</span>
+          <span class="value">{{ p.stockMaximum }}</span>
+        </div>
+
+        <div class="info-row">
+          <span class="label">Statut</span>
+          <span class="value">
+            <p-tag
+              [value]="p.actif ? 'Actif' : 'Inactif'"
+              [severity]="p.actif ? 'success' : 'danger'">
+            </p-tag>
+          </span>
+        </div>
+
+        <div class="info-row description-row">
+          <span class="label">Description</span>
+          <span class="value">{{ p.description || 'Aucune description' }}</span>
+        </div>
+      </div>
+
+      <div class="info-card">
+        <h3>Étiquette code-barres</h3>
+        <div class="barcode-block">
+
+  <!-- Image barcode -->
+          <img
+            class="barcode-img"
+            [src]="getBarcodeUrl(produit.id)"
+            alt="barcode" />
+
+          <!-- Texte barcode -->
+          <div class="barcode-text">
+            {{ produit.codeBarres }}
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

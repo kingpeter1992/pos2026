@@ -1,0 +1,425 @@
+<div class="erp-form-page">
+  <mat-card class="erp-shell">
+
+    <!-- HEADER -->
+    <div class="erp-header">
+      <div class="erp-header-left">
+        <div class="erp-header-icon">
+          <mat-icon>inventory_2</mat-icon>
+        </div>
+
+        <div class="erp-header-text">
+          <div class="erp-breadcrumb">
+            <mat-icon>home</mat-icon>
+            <span>Achats</span>
+            <mat-icon class="sep">chevron_right</mat-icon>
+            <span>Réceptions</span>
+          </div>
+
+          <div class="erp-title-row">
+            <h1>Nouvelle réception fournisseur</h1>
+            <span class="status-chip draft">
+              <mat-icon>schedule</mat-icon>
+              En préparation
+            </span>
+          </div>
+
+          <p>
+            Enregistrer la réception des produits, contrôler les quantités reçues
+            et mouvementer automatiquement le stock.
+          </p>
+        </div>
+      </div>
+
+      <div class="erp-header-actions">
+        <button mat-stroked-button type="button" class="btn-light" (click)="cancel()">
+          <mat-icon>arrow_back</mat-icon>
+          Retour
+        </button>
+
+        <button
+          mat-flat-button
+          color="primary"
+          type="button"
+          class="btn-save"
+          [disabled]="submitting || loading"
+          (click)="submit()">
+          <mat-icon>save</mat-icon>
+          {{ submitting ? 'Enregistrement...' : 'Valider la réception' }}
+        </button>
+      </div>
+    </div>
+
+    <mat-divider></mat-divider>
+
+    <!-- CONTENT -->
+    <div class="erp-content" *ngIf="!loading; else loadingTpl">
+      <form *ngIf="form" [formGroup]="form" class="erp-form">
+
+        <!-- KPI -->
+        <section class="kpi-grid">
+          <div class="kpi-card primary">
+            <div class="kpi-top">
+              <span class="kpi-icon"><mat-icon>receipt_long</mat-icon></span>
+              <span class="kpi-label">Nombre de lignes</span>
+            </div>
+            <div class="kpi-value">{{ getTotalLignes() }}</div>
+            <div class="kpi-footer">Total des lignes de la commande</div>
+          </div>
+
+          <div class="kpi-card success">
+            <div class="kpi-top">
+              <span class="kpi-icon"><mat-icon>inventory</mat-icon></span>
+              <span class="kpi-label">Qté totale reçue</span>
+            </div>
+            <div class="kpi-value">{{ getTotalQuantiteRecue() }}</div>
+            <div class="kpi-footer">Somme des quantités saisies</div>
+          </div>
+
+          <div class="kpi-card warning">
+            <div class="kpi-top">
+              <span class="kpi-icon"><mat-icon>lock</mat-icon></span>
+              <span class="kpi-label">Lignes bloquées</span>
+            </div>
+            <div class="kpi-value">{{ getLignesBloqueesCount() }}</div>
+            <div class="kpi-footer">Déjà totalement réceptionnées</div>
+          </div>
+
+          <div class="kpi-card info" *ngIf="commande">
+            <div class="kpi-top">
+              <span class="kpi-icon"><mat-icon>description</mat-icon></span>
+              <span class="kpi-label">Commande liée</span>
+            </div>
+            <div class="kpi-value ref-text">
+              {{ commande.refCommande || commande.reference || '-' }}
+            </div>
+            <div class="kpi-footer">Référence de la commande d’achat</div>
+          </div>
+        </section>
+
+        <!-- INFOS GENERALES -->
+        <section class="section-card">
+          <div class="section-head">
+            <div class="section-head-left">
+              <div class="section-icon">
+                <mat-icon>assignment</mat-icon>
+              </div>
+              <div>
+                <h2>Informations générales</h2>
+                <p>Données principales de la réception</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-grid grid-4">
+            <mat-form-field appearance="outline">
+              <mat-label>ID commande</mat-label>
+              <input matInput formControlName="commandeAchatId" readonly />
+              <mat-error *ngIf="form.get('commandeAchatId')?.hasError('required')">
+                La commande est obligatoire
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Référence bon réception</mat-label>
+              <input
+                matInput
+                formControlName="referenceBonReception"
+                placeholder="BR-2026-0001" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Date réception</mat-label>
+              <input matInput type="date" formControlName="dateReception" />
+              <mat-error *ngIf="form.get('dateReception')?.hasError('required')">
+                La date de réception est obligatoire
+              </mat-error>
+            </mat-form-field>
+
+              <!-- DEPOT -->
+              <mat-form-field appearance="outline">
+                <mat-label>Dépôt de réception</mat-label>
+
+                <mat-select formControlName="depotId">
+                 <mat-option *ngFor="let d of depots" [value]="d.id">
+                  🏬 {{ d.nom }} — {{ d.id || 'N/A' }}
+                </mat-option>
+                </mat-select>
+
+                <mat-icon matPrefix>warehouse</mat-icon>
+
+                <mat-error *ngIf="form.get('depotId')?.hasError('required')">
+                  Le dépôt est obligatoire
+                </mat-error>
+              </mat-form-field>
+
+              <!-- FOURNISSEUR -->
+              <mat-form-field appearance="outline">
+                <mat-label>Fournisseur</mat-label>
+                <input
+                  matInput
+                  [value]="commande?.fournisseurNom || '-'"
+                  readonly>
+                <mat-icon matPrefix>business</mat-icon>
+              </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Observateur</mat-label>
+              <input
+                matInput
+                formControlName="observateur"
+                placeholder="Nom de l'observateur" />
+            </mat-form-field>
+          </div>
+        </section>
+
+        <!-- CHARGES -->
+        <section class="section-card">
+          <div class="section-head">
+            <div class="section-head-left">
+              <div class="section-icon alt">
+                <mat-icon>local_shipping</mat-icon>
+              </div>
+              <div>
+                <h2>Charges liées à la réception</h2>
+                <p>Fret, douane, manutention et autres charges</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-grid grid-4">
+            <mat-form-field appearance="outline">
+              <mat-label>Fret / Transport</mat-label>
+              <input
+                matInput
+                type="number"
+                min="0"
+                step="0.01"
+                formControlName="fraisTransport"
+                (input)="onFraisChange('fraisTransport')" />
+              <span matTextSuffix>USD</span>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Douane</mat-label>
+              <input
+                matInput
+                type="number"
+                min="0"
+                step="0.01"
+                formControlName="fraisDouane"
+                (input)="onFraisChange('fraisDouane')" />
+              <span matTextSuffix>USD</span>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Manutention</mat-label>
+              <input
+                matInput
+                type="number"
+                min="0"
+                step="0.01"
+                formControlName="fraisManutention"
+                (input)="onFraisChange('fraisManutention')" />
+              <span matTextSuffix>USD</span>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Autres charges</mat-label>
+              <input
+                matInput
+                type="number"
+                min="0"
+                step="0.01"
+                formControlName="autresFrais"
+                (input)="onFraisChange('autresFrais')" />
+              <span matTextSuffix>USD</span>
+            </mat-form-field>
+          </div>
+
+          <div class="charges-summary">
+            <div class="charges-item">
+              <span>Total marchandises</span>
+              <strong>{{ getMontantTotalEstime() | number:'1.2-2' }}</strong>
+            </div>
+
+            <div class="charges-item">
+              <span>Total charges</span>
+              <strong>{{ getTotalFrais() | number:'1.2-2' }}</strong>
+            </div>
+
+            <div class="charges-item total-general">
+              <span>Total général estimé</span>
+              <strong>{{ getTotalGeneralEstime() | number:'1.2-2' }}</strong>
+            </div>
+          </div>
+        </section>
+
+        <!-- LIGNES -->
+        <section class="section-card">
+          <div class="section-head">
+            <div class="section-head-left">
+              <div class="section-icon alt">
+                <mat-icon>view_list</mat-icon>
+              </div>
+              <div>
+                <h2>Lignes de réception</h2>
+                <p>Contrôle des quantités, prix et commentaires par produit</p>
+              </div>
+            </div>
+
+            <div class="section-head-right">
+              <span class="table-badge">
+                <mat-icon>table_rows</mat-icon>
+                {{ lignesFormArray.controls.length }} ligne(s)
+              </span>
+            </div>
+          </div>
+
+          <div class="table-shell">
+            <div class="table-wrapper">
+              <table class="erp-table">
+                <thead>
+                  <tr>
+                    <th>Produit</th>
+                    <th class="text-center">Qté commandée</th>
+                    <th class="text-center">Déjà reçue</th>
+                    <th class="text-center">Reste</th>
+                    <th class="text-center">Qté reçue</th>
+                    <th class="text-center">Prix unitaire</th>
+                    <th>Commentaire</th>
+                  </tr>
+                </thead>
+
+                <tbody formArrayName="lignes">
+                  <tr
+                    *ngFor="let ligne of lignesFormArray.controls; let i = index"
+                    [formGroupName]="i"
+                    [class.row-blocked]="ligne.get('bloquee')?.value">
+
+                    <td class="product-cell">
+                      <div class="product-box">
+                        <div class="product-avatar">
+                          <mat-icon>inventory_2</mat-icon>
+                        </div>
+                        <div class="product-meta">
+                          <div class="product-name">
+                            {{ ligne.get('produitNom')?.value }}
+                          </div>
+                          <div class="product-sub">
+                            Ligne #{{ i + 1 }}
+                          </div>
+                          <div class="blocked-text" *ngIf="ligne.get('bloquee')?.value">
+                            Déjà totalement réceptionnée
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+
+                    <td class="text-center strong">
+                      {{ ligne.get('quantiteCommandee')?.value }}
+                    </td>
+
+                    <td class="text-center">
+                      <span class="pill neutral">
+                        {{ ligne.get('quantiteDejaRecue')?.value }}
+                      </span>
+                    </td>
+
+                    <td class="text-center">
+                      <span
+                        class="pill"
+                        [ngClass]="ligne.get('bloquee')?.value ? 'success' : 'warning'">
+                        {{ ligne.get('quantiteRestante')?.value }}
+                      </span>
+                    </td>
+
+                    <td class="text-center qte-cell">
+                      <mat-form-field appearance="outline" class="qte-field compact-field">
+                        <input
+                          matInput
+                          type="number"
+                          min="0"
+                          formControlName="quantiteRecue"
+                          [readonly]="ligne.get('bloquee')?.value"
+                          (input)="onQuantiteChange(i)" />
+                        <mat-error *ngIf="ligne.get('quantiteRecue')?.hasError('required')">
+                          Obligatoire
+                        </mat-error>
+                        <mat-error *ngIf="ligne.get('quantiteRecue')?.hasError('min')">
+                          Valeur invalide
+                        </mat-error>
+                      </mat-form-field>
+                    </td>
+
+                    <td class="text-center pu-cell">
+                      <mat-form-field appearance="outline" class="pu-field compact-field">
+                        <input
+                          matInput
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          formControlName="prixUnitaire"
+                          [readonly]="ligne.get('bloquee')?.value"
+                          placeholder="0.00" />
+                      </mat-form-field>
+                    </td>
+
+                    <td class="comment-cell">
+                      <mat-form-field appearance="outline" class="comment-field compact-field">
+                        <input
+                          matInput
+                          formControlName="commentaire"
+                          [readonly]="ligne.get('bloquee')?.value"
+                          placeholder="Commentaire ligne" />
+                      </mat-form-field>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ACTION BAR -->
+        <div class="bottom-action-bar">
+          <div class="bottom-action-left">
+            <mat-icon>info</mat-icon>
+            <span>Vérifie les quantités reçues et les charges avant validation définitive.</span>
+          </div>
+
+          <div class="bottom-action-right">
+            <button mat-stroked-button type="button" (click)="cancel()">
+              Annuler
+            </button>
+
+            <button
+              mat-flat-button
+              color="primary"
+              type="button"
+              [disabled]="submitting || loading"
+              (click)="submit()">
+              <mat-icon>check_circle</mat-icon>
+              {{ submitting ? 'Enregistrement...' : 'Valider la réception' }}
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- LOADING -->
+    <ng-template #loadingTpl>
+      <div class="loading-box">
+        <div class="loading-card">
+          <mat-progress-spinner
+            mode="indeterminate"
+            diameter="42">
+          </mat-progress-spinner>
+          <h3>Chargement en cours</h3>
+          <p>Récupération des informations de la commande fournisseur...</p>
+        </div>
+      </div>
+    </ng-template>
+
+  </mat-card>
+</div>

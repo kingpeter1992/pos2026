@@ -1,0 +1,99 @@
+<h2 mat-dialog-title class="dialog-title">
+  <mat-icon>receipt_long</mat-icon>
+  Détail des lignes de réception
+</h2>
+
+<mat-dialog-content class="dialog-content">
+  <div class="dialog-header">
+    <div class="info-card">
+      <label>Référence</label>
+      <strong>{{ data?.refReception || '-' }}</strong>
+    </div>
+
+    <div class="info-card">
+      <label>Fournisseur</label>
+      <strong>{{ data?.fournisseurNom || '-' }}</strong>
+    </div>
+
+    <div class="info-card">
+      <label>Dépôt</label>
+      <strong>{{ data?.depotNom || '-' }}</strong>
+    </div>
+
+    <div class="info-card">
+      <label>Date</label>
+      <strong>{{ data?.dateReception | date:'dd/MM/yyyy' }}</strong>
+    </div>
+  </div>
+
+  <div class="mini-kpis">
+    <div class="mini-kpi">
+      <span>Quantité totale</span>
+      <strong>{{ totalQuantite() | number:'1.2-2' }}</strong>
+    </div>
+
+    <div class="mini-kpi">
+      <span>Montant achat</span>
+      <strong>{{ totalAchat() | number:'1.2-2' }}</strong>
+    </div>
+
+    <div class="mini-kpi">
+      <span>Part frais</span>
+      <strong>{{ totalFrais() | number:'1.2-2' }}</strong>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table mat-table [dataSource]="lignes()" class="full-table">
+
+      <ng-container matColumnDef="produit">
+        <th mat-header-cell *matHeaderCellDef>Produit</th>
+        <td mat-cell *matCellDef="let row">{{ row.produitNom || '-' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="categorie">
+        <th mat-header-cell *matHeaderCellDef>Catégorie</th>
+        <td mat-cell *matCellDef="let row">{{ row.categorieNom || '-' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="quantiteRecue">
+        <th mat-header-cell *matHeaderCellDef class="th-right">Qté reçue</th>
+        <td mat-cell *matCellDef="let row" class="td-right">{{ row.quantiteRecue | number:'1.2-2' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="prixAchatUnitaire">
+        <th mat-header-cell *matHeaderCellDef class="th-right">Prix achat</th>
+        <td mat-cell *matCellDef="let row" class="td-right">{{ row.prixAchatUnitaire | number:'1.2-2' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="montantAchat">
+        <th mat-header-cell *matHeaderCellDef class="th-right">Montant achat</th>
+        <td mat-cell *matCellDef="let row" class="td-right strong">{{ row.montantAchat | number:'1.2-2' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="partFrais">
+        <th mat-header-cell *matHeaderCellDef class="th-right">Part frais</th>
+        <td mat-cell *matCellDef="let row" class="td-right">{{ row.partFrais | number:'1.2-2' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="fraisUnitaire">
+        <th mat-header-cell *matHeaderCellDef class="th-right">Frais unitaire</th>
+        <td mat-cell *matCellDef="let row" class="td-right">{{ row.fraisUnitaire | number:'1.2-2' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="coutUnitaireFinal">
+        <th mat-header-cell *matHeaderCellDef class="th-right">Coût final</th>
+        <td mat-cell *matCellDef="let row" class="td-right strong">{{ row.coutUnitaireFinal | number:'1.2-2' }}</td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns; trackBy: trackByLine"></tr>
+    </table>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-stroked-button type="button" (click)="close()">
+    Fermer
+  </button>
+</mat-dialog-actions>

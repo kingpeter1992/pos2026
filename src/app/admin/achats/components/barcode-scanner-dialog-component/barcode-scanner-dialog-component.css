@@ -1,0 +1,40 @@
+.scanner-content {
+  min-height: 320px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.state-box,
+.error-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  text-align: center;
+  padding: 24px;
+}
+
+.video-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+video {
+  width: 100%;
+  max-width: 640px;
+  height: 360px;
+  object-fit: cover;
+  border-radius: 12px;
+  background: #000;
+  border: 1px solid #ddd;
+}
+
+.hint {
+  margin: 0;
+  font-size: 14px;
+  color: #666;
+}

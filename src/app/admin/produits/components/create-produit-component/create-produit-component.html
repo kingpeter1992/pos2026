@@ -1,0 +1,336 @@
+<div class="product-shell">
+
+  <!-- Header -->
+  <section class="page-header">
+    <div class="header-left">
+      <div class="header-icon">
+        <mat-icon>inventory_2</mat-icon>
+      </div>
+
+      <div class="header-text">
+        <h1>Création produit</h1>
+        <p>
+          Enregistrez un nouveau produit, associez sa catégorie, ajoutez ses images
+          et générez automatiquement son code-barres.
+        </p>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <button mat-stroked-button color="primary" class="action-btn">
+        <mat-icon>refresh</mat-icon>
+        Réinitialiser
+      </button>
+    </div>
+  </section>
+
+  <!-- KPI -->
+  <section class="mini-kpis">
+    <div class="mini-kpi-card">
+      <div class="mini-kpi-icon blue">
+        <i class="pi pi-box"></i>
+      </div>
+      <div>
+        <div class="mini-kpi-label">Module</div>
+        <div class="mini-kpi-value">Produits</div>
+      </div>
+    </div>
+
+    <div class="mini-kpi-card">
+      <div class="mini-kpi-icon green">
+        <i class="pi pi-images"></i>
+      </div>
+      <div>
+        <div class="mini-kpi-label">Images sélectionnées</div>
+        <div class="mini-kpi-value">{{ selectedImages.length }}</div>
+      </div>
+    </div>
+
+    <div class="mini-kpi-card">
+      <div class="mini-kpi-icon amber">
+        <i class="pi pi-tag"></i>
+      </div>
+      <div>
+        <div class="mini-kpi-label">Catégories chargées</div>
+        <div class="mini-kpi-value">{{ categories.length }}</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Layout -->
+  <div class="content-grid">
+
+    <!-- Form zone -->
+    <div class="form-panel">
+      <div class="panel-head">
+        <h2>Informations du produit</h2>
+        <span>Complétez les champs obligatoires</span>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="save()" class="product-form">
+
+        <div class="section-card">
+          <div class="section-title">
+            <mat-icon>qr_code_2</mat-icon>
+            <span>Identification</span>
+          </div>
+
+          <div class="form-grid two-cols">
+            <div class="barcode-field-block">
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Code-barres</mat-label>
+                <input matInput formControlName="codeBarres" placeholder="Laisser vide pour génération automatique" />
+                <mat-hint>
+                  Scanner le produit ou laisser vide pour génération automatique
+                </mat-hint>
+              </mat-form-field>
+
+              <div class="barcode-actions">
+                <button mat-stroked-button color="primary" type="button" *ngIf="!barcodeScannerOpen"
+                  (click)="startBarcodeScanner()">
+                  <mat-icon>qr_code_scanner</mat-icon>
+                  Scanner le code-barres
+                </button>
+
+                <button mat-stroked-button color="warn" type="button" *ngIf="barcodeScannerOpen"
+                  (click)="stopBarcodeScanner()">
+                  <mat-icon>close</mat-icon>
+                  Fermer le scan
+                </button>
+              </div>
+
+              <div class="camera-error" *ngIf="barcodeScannerError">
+                {{ barcodeScannerError }}
+              </div>
+
+              <div class="camera-panel" *ngIf="barcodeScannerOpen">
+                <video #barcodeVideoRef autoplay playsinline muted class="barcode-video">
+                </video>
+
+                <div class="camera-controls">
+                  <small>Présentez uniquement le code-barres devant la caméra</small>
+                </div>
+              </div>
+
+            </div>
+                <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Nom du produit</mat-label>
+          <input matInput formControlName="nom" placeholder="Ex: Sucre 1Kg">
+          <mat-error *ngIf="f['nom'].hasError('required')">
+            Le nom du produit est obligatoire
+          </mat-error>
+          <mat-error *ngIf="f['nom'].hasError('maxlength')">
+            Maximum 150 caractères
+          </mat-error>
+        </mat-form-field>
+          </div>
+        </div>
+
+        <div class="section-card">
+          <div class="section-title">
+            <mat-icon>category</mat-icon>
+            <span>Classification</span>
+          </div>
+
+          <div class="form-grid two-cols">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Catégorie</mat-label>
+              <mat-select formControlName="categorieId">
+                <mat-option [value]="null">-- Choisir une catégorie --</mat-option>
+                <mat-option *ngFor="let c of categories" [value]="c.id">
+                  {{ c.nom }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Prix de vente</mat-label>
+              <input matInput type="number" formControlName="prixVente" placeholder="0.00">
+              <span matTextPrefix>$&nbsp;</span>
+            </mat-form-field>
+          </div>
+
+          <div class="form-grid two-cols">
+            <div class="form-grid one-col">
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Stock minimum</mat-label>
+                <input matInput type="number" formControlName="stockMinimum" placeholder="0">
+                <mat-hint>Seuil d’alerte pour le réapprovisionnement</mat-hint>
+              </mat-form-field>
+            </div>
+
+            <div class="form-grid one-col">
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Stock Maximun</mat-label>
+                <input matInput type="number" formControlName="stockMaximum" placeholder="0">
+                <mat-hint>Seuil d’alerte pour le surstock</mat-hint>
+              </mat-form-field>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="section-card">
+          <div class="section-title">
+            <mat-icon>description</mat-icon>
+            <span>Description</span>
+          </div>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Description du produit</mat-label>
+            <textarea matInput rows="5" formControlName="description"
+              placeholder="Description détaillée du produit"></textarea>
+          </mat-form-field>
+        </div>
+
+        <div class="section-card">
+          <div class="section-title">
+            <mat-icon>image</mat-icon>
+            <span>Images du produit</span>
+          </div>
+
+          <div class="image-actions">
+            <label class="upload-box">
+              <input type="file" multiple accept="image/*" (change)="onImagesSelected($event)" hidden>
+              <div class="upload-content">
+                <i class="pi pi-images"></i>
+                <h4>Choisir depuis la galerie</h4>
+                <p>Maximum {{ MAX_FILES }} images</p>
+              </div>
+            </label>
+
+            <div class="camera-box">
+              <button mat-stroked-button color="primary" type="button" *ngIf="!cameraOpen" (click)="startCamera()">
+                <mat-icon>photo_camera</mat-icon>
+                Ouvrir la webcam
+              </button>
+
+              <button mat-stroked-button color="warn" type="button" *ngIf="cameraOpen" (click)="stopCamera()">
+                <mat-icon>videocam_off</mat-icon>
+                Fermer la webcam
+              </button>
+            </div>
+          </div>
+
+          <div class="camera-error" *ngIf="cameraError">
+            {{ cameraError }}
+          </div>
+
+          <div class="camera-panel" *ngIf="cameraOpen">
+            <video #videoRef autoplay playsinline muted></video>
+            <div class="camera-controls">
+              <button pButton type="button" icon="pi pi-camera" label="Prendre la photo" class="save-btn"
+                (click)="captureFromCamera(videoRef)">
+              </button>
+            </div>
+          </div>
+          <div class="preview-grid" *ngIf="previews.length > 0">
+            <div class="preview-card" *ngFor="let img of previews; let i = index">
+              <div class="preview-image-wrapper">
+                <img [src]="img" alt="Aperçu image produit">
+                <span class="main-badge" *ngIf="selectedImages[i]?.principale">Principale</span>
+              </div>
+              <div class="preview-meta">
+                <small>{{ selectedImages[i]?.nomFichier }}</small>
+              </div>
+              <div class="preview-actions">
+                <button type="button" mat-stroked-button color="primary" (click)="setAsMain(i)">
+                  {{ selectedImages[i]?.principale ? 'Image principale' : 'Définir principale' }}
+                </button>
+                <button type="button" mat-icon-button color="warn" (click)="removeImage(i)">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button mat-stroked-button type="button" class="secondary-btn">
+            Annuler
+          </button>
+
+          <button pButton type="submit" icon="pi pi-save" [label]="loading ? 'Enregistrement...' : 'Créer le produit'"
+            class="save-btn" [disabled]="loading">
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Right summary -->
+    <aside class="side-panel">
+      <div class="side-card sticky">
+        <div class="panel-head">
+          <h3>Résumé</h3>
+          <span>Prévisualisation métier</span>
+        </div>
+
+        <div class="summary-block">
+          <div class="summary-label">Nom</div>
+          <div class="summary-value">{{ form.get('nom')?.value || 'Non renseigné' }}</div>
+        </div>
+
+        <div class="summary-block">
+          <div class="summary-label">Code-barres</div>
+          <div class="summary-value mono">
+            {{ form.get('codeBarres')?.value || 'Génération automatique' }}
+          </div>
+        </div>
+
+        <div class="summary-block">
+          <div class="summary-label">Prix de vente</div>
+          <div class="summary-value">
+            {{ form.get('prixVente')?.value || 0 }}
+          </div>
+        </div>
+
+        <div class="summary-block">
+          <div class="summary-label">Stock minimum</div>
+          <div class="summary-value">
+            {{ form.get('stockMinimum')?.value || 0 }}
+          </div>
+        </div>
+
+        <div class="summary-block">
+          <div class="summary-label">Stock Maximum</div>
+          <div class="summary-value">
+            {{ form.get('stockMaximum')?.value || 0 }}
+          </div>
+        </div>
+
+        <div class="summary-block">
+          <div class="summary-label">Images</div>
+          <div class="summary-value">
+            {{ selectedImages.length }} image(s)
+          </div>
+        </div>
+
+        <div class="barcode-preview" *ngIf="produitCree">
+          <h4>Code-barres généré</h4>
+          <img [src]="getBarcodeUrl(produitCree.id)" alt="Barcode produit">
+          <div class="barcode-text">{{ produitCree.codeBarres }}</div>
+        </div>
+      </div>
+
+      <div class="side-card" *ngIf="produitCree">
+        <div class="panel-head">
+          <h3>Produit créé</h3>
+          <span>Confirmation</span>
+        </div>
+
+        <div class="success-card">
+          <i class="pi pi-check-circle"></i>
+          <div>
+            <strong>{{ produitCree.nom }}</strong>
+            <p>Produit enregistré avec succès</p>
+          </div>
+        </div>
+
+        <div class="created-images" *ngIf="produitCree.images?.length">
+          <img *ngFor="let img of produitCree.images" [src]="img.url" [alt]="img.nomFichier || 'image produit'"
+            alt="" />
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>

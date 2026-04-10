@@ -1,0 +1,204 @@
+<div class="product-list-shell">
+
+  <!-- HEADER -->
+  <section class="page-header">
+    <div class="header-left">
+      <div class="header-icon">
+        <mat-icon>inventory_2</mat-icon>
+      </div>
+
+      <div class="header-text">
+        <h1>Catalogue produits</h1>
+        <p>
+          Consultez, recherchez et pilotez les produits enregistrés dans votre système POS.
+        </p>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <button mat-stroked-button color="primary" class="action-btn" (click)="refresh()">
+        <mat-icon>refresh</mat-icon>
+        Actualiser
+      </button>
+
+      <button pButton type="button" icon="pi pi-plus"
+        routerLink="/admin/produits/create"
+      label="Nouveau produit" class="create-btn"></button>
+    </div>
+  </section>
+
+  <!-- KPI -->
+  <section class="mini-kpis">
+    <div class="mini-kpi-card">
+      <div class="mini-kpi-icon blue">
+        <i class="pi pi-box"></i>
+      </div>
+      <div>
+        <div class="mini-kpi-label">Total produits</div>
+        <div class="mini-kpi-value">{{ kpiTotal }}</div>
+      </div>
+    </div>
+
+    <div class="mini-kpi-card">
+      <div class="mini-kpi-icon green">
+        <i class="pi pi-check-circle"></i>
+      </div>
+      <div>
+        <div class="mini-kpi-label">Produits actifs</div>
+        <div class="mini-kpi-value">{{ kpiActifs }}</div>
+      </div>
+    </div>
+
+    <div class="mini-kpi-card">
+      <div class="mini-kpi-icon cyan">
+        <i class="pi pi-images"></i>
+      </div>
+      <div>
+        <div class="mini-kpi-label">Avec images</div>
+        <div class="mini-kpi-value">{{ kpiAvecImages }}</div>
+      </div>
+    </div>
+
+    <div class="mini-kpi-card">
+      <div class="mini-kpi-icon amber">
+        <i class="pi pi-tag"></i>
+      </div>
+      <div>
+        <div class="mini-kpi-label">Sans catégorie</div>
+        <div class="mini-kpi-value">{{ kpiSansCategorie }}</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TABLE CARD -->
+  <section class="table-section">
+    <p-card class="table-card">
+      <div class="table-toolbar">
+        <div class="toolbar-left">
+          <h3>Liste des produits</h3>
+          <span>{{ filteredProduits.length }} produit(s)</span>
+        </div>
+
+        <div class="toolbar-right">
+          <span class="p-input-icon-left search-box">
+            <i class="pi pi-search"></i>
+            <input
+              pInputText
+              type="text"
+              [(ngModel)]="searchTerm"
+              (input)="applyFilter()"
+              placeholder="Rechercher par nom, code, catégorie..." />
+          </span>
+        </div>
+      </div>
+
+      <p-divider></p-divider>
+
+      <div *ngIf="loading" class="loading-wrapper">
+        <p-skeleton height="3rem" styleClass="mb-2"></p-skeleton>
+        <p-skeleton height="3rem" styleClass="mb-2"></p-skeleton>
+        <p-skeleton height="3rem"></p-skeleton>
+      </div>
+
+      <p-table
+        *ngIf="!loading"
+        [value]="filteredProduits"
+        [paginator]="true"
+        [rows]="10"
+        [responsiveLayout]="'scroll'"
+        styleClass="p-datatable-sm p-datatable-gridlines p-datatable-striped products-table">
+
+        <ng-template pTemplate="header">
+          <tr>
+            <th style="width: 90px;">Image</th>
+            <th>Produit</th>
+            <th style="width: 180px;">Code-barres</th>
+            <th style="width: 160px;">Catégorie</th>
+            <th style="width: 140px;">Prix vente</th>
+            <th style="width: 140px;">Stock min</th>
+            <th style="width: 120px;">Statut</th>
+            <th style="width: 120px; text-align: center;">Actions</th>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-produit>
+          <tr>
+            <td>
+              <div class="image-cell">
+                <img
+                  *ngIf="getImagePrincipale(produit); else noImage"
+                  [src]="getImagePrincipale(produit)!"
+                  alt="image produit"
+                  class="product-thumb" />
+
+                <ng-template #noImage>
+                  <div class="product-thumb empty-thumb">
+                    <i class="pi pi-image"></i>
+                  </div>
+                </ng-template>
+              </div>
+            </td>
+
+            <td>
+              <div class="product-main">
+                <div class="product-name">{{ produit.nom }}</div>
+                <div class="product-desc">
+                  {{ produit.description || 'Aucune description' }}
+                </div>
+              </div>
+            </td>
+
+            <td>
+              <div class="barcode-cell">
+                <div class="barcode-text">{{ produit.codeBarres }}</div>
+              </div>
+            </td>
+
+            <td>
+              <span class="category-pill">
+                {{ produit.categorieNom || 'Non catégorisé' }}
+              </span>
+            </td>
+
+            <td>
+              <div class="price-value">{{ produit.prixVente | number:'1.2-2' }}</div>
+            </td>
+
+            <td>
+              <div class="stock-min">{{ produit.stockMinimum }}</div>
+            </td>
+
+            <td>
+              <p-tag
+                [value]="produit.actif ? 'Actif' : 'Inactif'"
+                [severity]="getSeverity(produit.actif)">
+              </p-tag>
+            </td>
+
+            <td class="actions-cell">
+              <button
+                mat-icon-button
+                color="primary"
+                matTooltip="Modifier"
+                (click)="openEditDialog(produit)">
+                <mat-icon>edit</mat-icon>
+              </button>
+            </td>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="8">
+              <div class="empty-state">
+                <i class="pi pi-folder-open"></i>
+                <h4>Aucun produit trouvé</h4>
+                <p>Ajoutez un produit pour commencer votre catalogue.</p>
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </p-card>
+  </section>
+</div>

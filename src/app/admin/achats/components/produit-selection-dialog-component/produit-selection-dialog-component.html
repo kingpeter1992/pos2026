@@ -1,0 +1,113 @@
+<div class="dialog-shell">
+  <div class="dialog-header">
+    <div>
+      <h2>Sélectionner un produit</h2>
+      <p>Choisissez un produit à affecter à la ligne</p>
+    </div>
+
+    <button mat-stroked-button color="warn" type="button" (click)="cancel()">
+      <mat-icon>close</mat-icon>
+      Fermer
+    </button>
+  </div>
+
+  <div class="toolbar">
+    <mat-form-field appearance="outline" class="search-field">
+      <mat-label>Rechercher un produit</mat-label>
+      <input
+        matInput
+        [(ngModel)]="search"
+        (input)="onSearchChange()"
+        placeholder="Nom, code-barres, référence, catégorie">
+      <button
+        *ngIf="search"
+        matSuffix
+        mat-icon-button
+        type="button"
+        (click)="search=''; onSearchChange()">
+        <mat-icon>close</mat-icon>
+      </button>
+      <mat-icon matSuffix>search</mat-icon>
+    </mat-form-field>
+
+    <button mat-stroked-button color="primary" type="button" (click)="loadProduits()">
+      <mat-icon>refresh</mat-icon>
+      Actualiser
+    </button>
+  </div>
+
+  <div class="table-wrapper">
+    <div class="loading-box" *ngIf="loading">
+      <mat-spinner diameter="42"></mat-spinner>
+      <p>Chargement des produits...</p>
+    </div>
+
+    <div class="empty-box" *ngIf="!loading && filteredProduits.length === 0">
+      <mat-icon>inventory_2</mat-icon>
+      <p>Aucun produit trouvé.</p>
+    </div>
+
+    <table mat-table [dataSource]="filteredProduits" *ngIf="!loading && filteredProduits.length > 0" class="product-table">
+
+      <ng-container matColumnDef="image">
+        <th mat-header-cell *matHeaderCellDef>Image</th>
+        <td mat-cell *matCellDef="let produit">
+          <img [src]="getImageUrl(produit)" alt="Produit" class="product-image">
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="codeBarres">
+        <th mat-header-cell *matHeaderCellDef>Code-barres</th>
+        <td mat-cell *matCellDef="let produit">
+          <span class="mono">{{ produit.codeBarres || '-' }}</span>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="nom">
+        <th mat-header-cell *matHeaderCellDef>Produit</th>
+        <td mat-cell *matCellDef="let produit">
+          <div class="product-main">
+            <strong>{{ produit.nom }}</strong>
+            <small *ngIf="produit.reference">Réf: {{ produit.reference }}</small>
+          </div>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="categorie">
+        <th mat-header-cell *matHeaderCellDef>Catégorie</th>
+        <td mat-cell *matCellDef="let produit">
+          {{ getCategorieNom(produit) || '-' }}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="prixAchat">
+        <th mat-header-cell *matHeaderCellDef>Prix achat</th>
+        <td mat-cell *matCellDef="let produit">
+          {{ produit.prixAchat ?? 0 }}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="prixVente">
+        <th mat-header-cell *matHeaderCellDef>Prix vente</th>
+        <td mat-cell *matCellDef="let produit">
+          {{ produit.prixVente ?? 0 }}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="action">
+        <th mat-header-cell *matHeaderCellDef>Action</th>
+        <td mat-cell *matCellDef="let produit">
+          <button mat-raised-button color="primary" type="button" (click)="choisirProduit(produit)">
+            Sélectionner
+          </button>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+      <tr
+        mat-row
+        *matRowDef="let row; columns: displayedColumns; trackBy: trackByProduit">
+      </tr>
+    </table>
+  </div>
+</div>

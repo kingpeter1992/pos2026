@@ -1,0 +1,339 @@
+<div class="dashboard-page">
+
+  <!-- HEADER -->
+  <div class="dashboard-header">
+    <div class="header-left">
+      <div class="header-icon">
+        <mat-icon>monitoring</mat-icon>
+      </div>
+      <div>
+        <div class="breadcrumb">Achats / Commandes</div>
+        <h1>Tableau de bord des commandes</h1>
+        <p>Suivi global des commandes fournisseurs, réception, exécution et retards</p>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <button class="btn secondary" (click)="refresh()">
+        <mat-icon>refresh</mat-icon>
+        Actualiser
+      </button>
+<!--
+      <button class="btn secondary" (click)="exportExcel()">
+        <mat-icon>table_view</mat-icon>
+        Excel
+      </button>
+
+      <button class="btn secondary" (click)="exportPdf()">
+        <mat-icon>picture_as_pdf</mat-icon>
+        PDF
+      </button> -->
+
+      <button class="btn primary" (click)="createCommande()">
+        <mat-icon>add_shopping_cart</mat-icon>
+        Nouvelle commande
+      </button>
+    </div>
+  </div>
+
+  <!-- FILTER -->
+  <div class="filter-card">
+    <div class="filter-title">
+      <div class="filter-icon">
+        <mat-icon>manage_search</mat-icon>
+      </div>
+      <div>
+        <h3>Centre de recherche</h3>
+        <span>Recherche rapide et filtrage des commandes</span>
+      </div>
+    </div>
+
+    <div class="filter-form">
+      <input
+        class="erp-input"
+        type="text"
+        placeholder="Référence, fournisseur, utilisateur..."
+        [value]="search()"
+        (input)="onSearch($any($event.target).value)" />
+
+      <select
+        class="erp-select"
+        [value]="statutFilter()"
+        (change)="onChangeStatut($any($event.target).value)">
+        <option value="TOUS">Tous les statuts</option>
+        <option value="BROUILLON">Brouillon</option>
+        <option value="EN_COURS">En cours</option>
+        <option value="VALIDEE">Validée</option>
+        <option value="PARTIELLEMENT_LIVREE">Partiellement livrée</option>
+        <option value="LIVREE">Livrée</option>
+        <option value="CLOTUREE">Clôturée</option>
+        <option value="ANNULEE">Annulée</option>
+      </select>
+
+      <button class="btn secondary" (click)="clearFilters()">
+        <mat-icon>restart_alt</mat-icon>
+        Réinitialiser
+      </button>
+    </div>
+  </div>
+
+  <!-- LOADING -->
+  <div class="loading-box" *ngIf="loading()">
+    <mat-icon class="spin">progress_activity</mat-icon>
+    <span>Chargement des commandes...</span>
+  </div>
+
+  <!-- KPI -->
+  <div class="kpi-grid">
+    <div class="kpi-card blue">
+      <div class="kpi-top">
+        <span>Total commandes</span>
+        <mat-icon>shopping_cart</mat-icon>
+      </div>
+      <div class="kpi-value">{{ formatNumber(totalCommandes()) }}</div>
+      <div class="kpi-footer">Nombre total après filtres</div>
+    </div>
+
+    <div class="kpi-card indigo">
+      <div class="kpi-top">
+        <span>Montant total</span>
+        <mat-icon>payments</mat-icon>
+      </div>
+      <div class="kpi-value">{{ formatMoney(montantTotal(), 'USD') }}</div>
+      <div class="kpi-footer">Montant cumulé des commandes</div>
+    </div>
+
+    <div class="kpi-card amber">
+      <div class="kpi-top">
+        <span>En cours</span>
+        <mat-icon>pending_actions</mat-icon>
+      </div>
+      <div class="kpi-value">{{ formatNumber(totalEnCours()) }}</div>
+      <div class="kpi-footer">Commandes non finalisées</div>
+    </div>
+
+    <div class="kpi-card orange">
+      <div class="kpi-top">
+        <span>Partiellement livrées</span>
+        <mat-icon>local_shipping</mat-icon>
+      </div>
+      <div class="kpi-value">{{ formatNumber(totalPartielLivre()) }}</div>
+      <div class="kpi-footer">Réception incomplète</div>
+    </div>
+
+    <div class="kpi-card green">
+      <div class="kpi-top">
+        <span>Livrées / Clôturées</span>
+        <mat-icon>task_alt</mat-icon>
+      </div>
+      <div class="kpi-value">{{ formatNumber(totalLivre()) }}</div>
+      <div class="kpi-footer">Commandes terminées</div>
+    </div>
+
+    <div class="kpi-card red">
+      <div class="kpi-top">
+        <span>En retard</span>
+        <mat-icon>warning</mat-icon>
+      </div>
+      <div class="kpi-value">{{ formatNumber(totalRetard()) }}</div>
+      <div class="kpi-footer">Date prévue dépassée</div>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content-grid">
+
+    <!-- LEFT -->
+    <div class="main-column">
+
+      <div class="card-panel">
+        <div class="panel-header">
+          <div>
+            <h3>Dernières commandes</h3>
+            <p>Vue opérationnelle des commandes récentes</p>
+          </div>
+        </div>
+
+        <div class="table-wrapper">
+          <table class="erp-table">
+            <thead>
+              <tr>
+                <th>Référence</th>
+                <th>Fournisseur</th>
+                <th>Date</th>
+                <th>Prévue</th>
+                <th>Statut</th>
+                <th>Montant</th>
+                <th>Progression</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr
+                *ngFor="let item of commandesRecentes(); trackBy: trackByCommande"
+                class="selectable-row"
+                (click)="openCommande(item)">
+                <td class="strong">{{ getCommandeRef(item) }}</td>
+                <td>{{ item.fournisseurNom || '-' }}</td>
+                <td>{{ item.dateCommande || '-' }}</td>
+                <td>{{ item.datePrevue || '-' }}</td>
+                <td>
+                  <span [class]="getStatutClass(item.statut)">
+                    {{ getStatutLabel(item.statut) }}
+                  </span>
+                </td>
+                <td>{{ formatMoney(item.montantTotal || 0, item.devise || 'USD') }}</td>
+                <td>
+                  <div class="progress-wrap">
+                    <div class="progress-bar">
+                      <div class="progress-fill" [style.width.%]="getProgress(item)"></div>
+                    </div>
+                    <span>{{ formatNumber(getProgress(item), 0) }}%</span>
+                  </div>
+                </td>
+              </tr>
+
+              <tr *ngIf="commandesRecentes().length === 0">
+                <td colspan="7" class="empty-row">Aucune commande trouvée.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card-panel">
+        <div class="panel-header">
+          <div>
+            <h3>Top fournisseurs</h3>
+            <p>Classement par montant commandé</p>
+          </div>
+        </div>
+
+        <div class="supplier-list">
+          <div class="supplier-item" *ngFor="let f of topFournisseurs(); let i = index">
+            <div class="supplier-rank">{{ i + 1 }}</div>
+
+            <div class="supplier-main">
+              <div class="supplier-name">{{ f.fournisseurNom }}</div>
+              <div class="supplier-meta">{{ f.totalCommandes }} commande(s)</div>
+            </div>
+
+            <div class="supplier-amount">
+              {{ formatMoney(f.montantTotal, 'USD') }}
+            </div>
+          </div>
+
+          <div *ngIf="topFournisseurs().length === 0" class="empty-state small-empty">
+            <mat-icon>inventory_2</mat-icon>
+            <p>Aucune donnée fournisseur.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="side-column">
+
+      <div class="card-panel small">
+        <div class="panel-header">
+          <div>
+            <h3>Performance réception</h3>
+            <p>Taux global d’exécution</p>
+          </div>
+        </div>
+
+        <div class="big-progress-card">
+          <div class="big-progress-value">{{ formatNumber(tauxReceptionGlobal(), 1) }}%</div>
+          <div class="big-progress-bar">
+            <div class="big-progress-fill" [style.width.%]="tauxReceptionGlobal()"></div>
+          </div>
+          <div class="big-progress-label">
+            Reçu {{ formatNumber(quantiteTotaleRecue(), 0) }} / {{ formatNumber(quantiteTotaleCommandee(), 0) }}
+          </div>
+        </div>
+      </div>
+
+      <div class="card-panel small">
+        <div class="panel-header">
+          <div>
+            <h3>Commandes en retard</h3>
+            <p>Priorités à surveiller</p>
+          </div>
+        </div>
+
+        <div class="late-list" *ngIf="commandesEnRetard().length > 0; else noLate">
+          <div
+            class="late-item"
+            *ngFor="let item of commandesEnRetard(); trackBy: trackByCommande"
+            (click)="openCommande(item)">
+            <div class="late-top">
+              <div class="late-ref">{{ getCommandeRef(item) }}</div>
+              <div class="late-days">{{ daysLate(item) }} j</div>
+            </div>
+
+            <div class="late-supplier">{{ item.fournisseurNom || '-' }}</div>
+            <div class="late-meta">
+              Prévue : {{ item.datePrevue || '-' }} · {{ getStatutLabel(item.statut) }}
+            </div>
+          </div>
+        </div>
+
+        <ng-template #noLate>
+          <div class="empty-state">
+            <mat-icon>task_alt</mat-icon>
+            <p>Aucune commande en retard</p>
+          </div>
+        </ng-template>
+      </div>
+
+      <div class="card-panel small">
+        <div class="panel-header">
+          <div>
+            <h3>Alertes opérationnelles</h3>
+            <p>Éléments critiques détectés</p>
+          </div>
+        </div>
+
+        <div class="alert-list">
+          <div class="alert-item" *ngFor="let alerte of alertes(); trackBy: trackByText">
+            <mat-icon>notification_important</mat-icon>
+            <span>{{ alerte }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-panel small">
+        <div class="panel-header">
+          <div>
+            <h3>Synthèse rapide</h3>
+            <p>Indicateurs secondaires</p>
+          </div>
+        </div>
+
+        <div class="mini-stats">
+          <div class="mini-stat">
+            <span>Brouillon</span>
+            <strong>{{ totalBrouillon() }}</strong>
+          </div>
+          <div class="mini-stat">
+            <span>En cours</span>
+            <strong>{{ totalEnCours() }}</strong>
+          </div>
+          <div class="mini-stat">
+            <span>Partiel</span>
+            <strong>{{ totalPartielLivre() }}</strong>
+          </div>
+          <div class="mini-stat">
+            <span>Annulé</span>
+            <strong>{{ totalAnnule() }}</strong>
+          </div>
+          <div class="mini-stat">
+            <span>Montant moyen</span>
+            <strong>{{ formatMoney(montantMoyenCommande(), 'USD') }}</strong>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

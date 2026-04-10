@@ -1,0 +1,65 @@
+<div class="images-shell">
+  <div class="page-header">
+    <div>
+      <h1>Galerie produits</h1>
+      <p>Visualisez les produits sous forme de fiches avec image principale et code-barres.</p>
+    </div>
+
+    <div class="search-box">
+      <span class="p-input-icon-left">
+        <i class="pi pi-search"></i>
+        <input
+          pInputText
+          type="text"
+          [(ngModel)]="searchTerm"
+          (input)="applyFilter()"
+          placeholder="Rechercher un produit..." />
+      </span>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="loading-grid">
+    <p-skeleton height="260px" *ngFor="let i of [1,2,3,4,5,6]"></p-skeleton>
+  </div>
+
+  <div *ngIf="!loading" class="cards-grid">
+    <div
+      class="product-card"
+      *ngFor="let produit of filteredProduits"
+      (click)="openProduit(produit)">
+
+      <div class="image-wrapper">
+        <img
+          *ngIf="getImagePrincipale(produit); else noImage"
+          [src]="getImagePrincipale(produit)!"
+          [alt]="produit.nom"
+
+          />
+
+        <ng-template #noImage>
+          <div class="no-image">
+            <i class="pi pi-image"></i>
+          </div>
+        </ng-template>
+      </div>
+
+      <div class="card-body">
+        <div class="product-name">{{ produit.nom }}</div>
+        <div class="product-category">{{ produit.categorieNom || 'Non catégorisé' }}</div>
+        <div class="product-barcode">{{ produit.codeBarres }}</div>
+        <div class="barcode-block">
+        <img
+          class="barcode-img"
+          [src]="getBarcodeUrl(produit.id)"
+          [alt]="produit.codeBarres"
+          (click)="$event.stopPropagation()"
+          (error)="onBarcodeError(produit.id)" />
+
+        <div class="barcode-text">
+          {{ produit.codeBarres }}
+        </div>
+      </div>
+      </div>
+    </div>
+  </div>
+</div>

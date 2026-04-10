@@ -1,0 +1,408 @@
+<div class="pos-shell">
+
+  <div class="pos-header">
+    <div class="pos-header-left">
+      <div class="header-icon">
+        <mat-icon>point_of_sale</mat-icon>
+      </div>
+
+      <div>
+        <div class="breadcrumb">POS / Ventes / Nouvelle transaction</div>
+        <h1>Poste de vente</h1>
+        <p>Encaissement rapide, sélection produit, recherche assistée et validation du paiement</p>
+      </div>
+    </div>
+
+    <div class="pos-header-actions">
+      <button mat-stroked-button type="button" (click)="viderPanier()">
+        <mat-icon>delete_sweep</mat-icon>
+        Vider panier
+      </button>
+
+      <button mat-flat-button class="btn-pay-top" type="button" (click)="payer()">
+        <mat-icon>payments</mat-icon>
+        Encaisser
+      </button>
+    </div>
+  </div>
+
+  <div class="stock-alert-box" *ngIf="alertesStock().length > 0">
+    <div class="alert-header">
+      <mat-icon>error</mat-icon>
+      <span>Alertes critiques de stock</span>
+    </div>
+
+    <div
+      class="stock-alert-item"
+      *ngFor="let alerte of alertesStock(); let i = index"
+      [ngClass]="{
+        'danger': true,
+        'blink': i === 0
+      }"
+    >
+      <mat-icon class="alert-icon">warning</mat-icon>
+
+      <div class="alert-content">
+        <div class="alert-title">Attention</div>
+        <div class="alert-message">{{ alerte }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="kpi-grid">
+    <mat-card class="kpi-card primary">
+      <div class="kpi-icon">
+        <mat-icon>shopping_bag</mat-icon>
+      </div>
+      <div class="kpi-content">
+        <span>Articles</span>
+        <h2>{{ totalArticles() }}</h2>
+      </div>
+    </mat-card>
+
+    <mat-card class="kpi-card success">
+      <div class="kpi-icon">
+        <mat-icon>receipt_long</mat-icon>
+      </div>
+      <div class="kpi-content">
+        <span>Lignes</span>
+        <h2>{{ nombreLignes() }}</h2>
+      </div>
+    </mat-card>
+
+    <mat-card class="kpi-card warning">
+      <div class="kpi-icon">
+        <mat-icon>local_offer</mat-icon>
+      </div>
+      <div class="kpi-content">
+        <span>Remise</span>
+        <h2>{{ formatMoney(totalRemise()) }} USD</h2>
+      </div>
+    </mat-card>
+
+    <mat-card class="kpi-card danger">
+      <div class="kpi-icon">
+        <mat-icon>payments</mat-icon>
+      </div>
+      <div class="kpi-content">
+        <span>Total à payer</span>
+        <h2>{{ formatMoney(totalGeneral()) }} USD</h2>
+      </div>
+    </mat-card>
+  </div>
+
+  <mat-card class="panel panel-large">
+    <div class="panel-toolbar top-toolbar">
+      <div class="panel-title">
+        <div class="mini-icon blue">
+          <mat-icon>table_rows</mat-icon>
+        </div>
+        <div>
+          <h3>Panier de vente</h3>
+          <span>Ajout des articles via sélection rapide et recherche manuelle</span>
+        </div>
+      </div>
+
+      <div class="toolbar-actions">
+        <mat-form-field appearance="outline" class="toolbar-field">
+          <mat-label>Tarif de vente</mat-label>
+          <mat-select
+            [value]="selectedTarifId()"
+            (selectionChange)="onTarifChange($event.value)"
+          >
+            <mat-option *ngFor="let t of tarifsActifs()" [value]="t.id">
+              {{ t.nom }} ({{ t.code }})
+            </mat-option>
+          </mat-select>
+          <mat-icon matPrefix>sell</mat-icon>
+        </mat-form-field>
+
+        <button
+          mat-flat-button
+          type="button"
+          class="mode-btn primary-btn"
+          (click)="openProduitDialog()"
+        >
+          <mat-icon>add_box</mat-icon>
+          Ajouter produit
+        </button>
+      </div>
+    </div>
+
+    <div class="add-modes-grid">
+      <div class="mode-box">
+        <div class="mode-head">
+          <mat-icon>list_alt</mat-icon>
+          <span>Sélection dans la liste</span>
+        </div>
+
+        <div class="mode-body">
+          <mat-form-field appearance="outline">
+            <mat-label>Produit</mat-label>
+            <mat-select [(ngModel)]="produitSelectionId">
+              <mat-option [value]="null">-- Choisir --</mat-option>
+            <mat-option *ngFor="let p of produitsTarifies()" [value]="p.id">
+              {{ p.nom }} | {{ p.codeBarres }} | Stock: {{ p.stock }} | Prix: {{ formatMoney(p.prixUnitaire) }}
+            </mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <button
+            mat-flat-button
+            type="button"
+            class="mode-btn success-btn"
+            (click)="ajouterDepuisSelection()"
+          >
+            <mat-icon>playlist_add</mat-icon>
+            Ajouter
+          </button>
+        </div>
+      </div>
+
+      <div class="mode-box mode-box-wide">
+        <div class="mode-head">
+          <mat-icon>manage_search</mat-icon>
+          <span>Recherche manuelle</span>
+        </div>
+
+        <div class="mode-body search-mode">
+          <mat-form-field appearance="outline">
+            <mat-label>Nom, référence ou code</mat-label>
+            <input
+              matInput
+              [(ngModel)]="recherche"
+              (keyup.enter)="ajouterPremierResultatRecherche()"
+              placeholder="Ex: Coca, PRD-001, 245785..."
+            />
+          </mat-form-field>
+
+          <button
+            mat-flat-button
+            type="button"
+            class="mode-btn warning-btn"
+            (click)="ajouterPremierResultatRecherche()"
+          >
+            <mat-icon>search</mat-icon>
+            Ajouter 1er résultat
+          </button>
+        </div>
+
+        <div class="search-results" *ngIf="recherche.trim()">
+          <button
+            type="button"
+            class="result-item"
+            *ngFor="let p of produitsFiltres()"
+            (click)="ajouterDepuisRecherche(p)"
+          >
+            <div class="result-main">
+              <strong>{{ p.nom }}</strong>
+              <small>{{ p.reference || '-' }} | {{ p.codeBarres }}</small>
+              <small>Tarif: {{ p.tarifNom || getSelectedTarifNom() }}</small>
+            </div>
+
+            <div class="result-side">
+              <span class="stock-chip">Stock: {{ p.stock || 0 }}</span>
+              <span class="price-chip">{{ formatMoney(p.prixUnitaire) }} USD</span>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-wrapper">
+      <table mat-table [dataSource]="lignes()" class="pos-table pos-table-large">
+
+        <ng-container matColumnDef="selection">
+          <th mat-header-cell *matHeaderCellDef></th>
+          <td mat-cell *matCellDef="let row">
+            <button
+              mat-icon-button
+              type="button"
+              (click)="selectRow(row.id); $event.stopPropagation()"
+              [class.active-radio]="isSelected(row.id)"
+            >
+              <mat-icon>
+                {{ isSelected(row.id) ? 'radio_button_checked' : 'radio_button_unchecked' }}
+              </mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="code">
+          <th mat-header-cell *matHeaderCellDef>Code</th>
+          <td mat-cell *matCellDef="let row">
+            <div class="code-box">
+              <strong>{{ row.codeBarres }}</strong>
+              <small>{{ row.reference || '-' }}</small>
+            </div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="produit">
+          <th mat-header-cell *matHeaderCellDef>Produit</th>
+          <td mat-cell *matCellDef="let row">
+            <div class="product-cell">
+              <strong>{{ row.produit }}</strong>
+              <small>Stock: {{ row.stock }}</small>
+              <small>Tarif: {{ row.tarifNom || '-' }}</small>
+            </div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="prix">
+          <th mat-header-cell *matHeaderCellDef>PU</th>
+          <td mat-cell *matCellDef="let row">{{ formatMoney(row.prix) }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="quantite">
+          <th mat-header-cell *matHeaderCellDef>Qté</th>
+          <td mat-cell *matCellDef="let row">
+            <div class="qty-box">
+              <button mat-icon-button type="button" (click)="decrementer(row.id); $event.stopPropagation()">
+                <mat-icon>remove</mat-icon>
+              </button>
+              <span>{{ row.quantite }}</span>
+              <button mat-icon-button type="button" (click)="incrementer(row.id); $event.stopPropagation()">
+                <mat-icon>add</mat-icon>
+              </button>
+            </div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="remise">
+          <th mat-header-cell *matHeaderCellDef>Remise</th>
+          <td mat-cell *matCellDef="let row">{{ formatMoney(row.remise) }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="total">
+          <th mat-header-cell *matHeaderCellDef>Total</th>
+          <td mat-cell *matCellDef="let row" class="total-cell">
+            {{ formatMoney(ligneTotal(row)) }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="action">
+          <th mat-header-cell *matHeaderCellDef>Action</th>
+          <td mat-cell *matCellDef="let row">
+            <button
+              mat-icon-button
+              color="warn"
+              type="button"
+              (click)="supprimerLigne(row.id); $event.stopPropagation()"
+            >
+              <mat-icon>delete</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+        <tr
+          mat-row
+          *matRowDef="let row; columns: displayedColumns"
+          (click)="selectRow(row.id)"
+          [class.selected-row]="isSelected(row.id)"
+        ></tr>
+      </table>
+
+      <div class="empty-state" *ngIf="!lignes().length">
+        <mat-icon>shopping_cart_checkout</mat-icon>
+        <h3>Panier vide</h3>
+        <p>Ajoute un produit depuis la liste, la recherche ou la fenêtre de sélection.</p>
+      </div>
+    </div>
+  </mat-card>
+
+  <div class="bottom-sections">
+    <mat-card class="panel">
+      <div class="panel-title simple">
+        <div class="mini-icon green">
+          <mat-icon>person</mat-icon>
+        </div>
+        <div>
+          <h3>Informations vente</h3>
+          <span>Client, ticket et mode de paiement</span>
+        </div>
+      </div>
+
+      <div class="form-grid two-columns">
+        <mat-form-field appearance="outline">
+          <mat-label>Client</mat-label>
+          <input matInput [(ngModel)]="clientNom" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>N° Ticket</mat-label>
+          <input matInput [(ngModel)]="ticketNumero" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Mode de paiement</mat-label>
+          <mat-select [(ngModel)]="modePaiement">
+            <mat-option value="CASH">Cash</mat-option>
+            <mat-option value="MOBILE_MONEY">Mobile Money</mat-option>
+            <mat-option value="CARTE">Carte</mat-option>
+            <mat-option value="BANQUE">Banque</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Montant reçu</mat-label>
+          <input matInput type="number" [(ngModel)]="montantRecu" />
+        </mat-form-field>
+      </div>
+    </mat-card>
+
+    <mat-card class="panel">
+      <div class="panel-title simple">
+        <div class="mini-icon orange">
+          <mat-icon>account_balance_wallet</mat-icon>
+        </div>
+        <div>
+          <h3>Résumé paiement</h3>
+          <span>Validation finale de la transaction</span>
+        </div>
+      </div>
+
+      <div class="resume-box">
+        <div class="resume-line">
+          <span>Sous-total</span>
+          <strong>{{ formatMoney(sousTotal()) }} USD</strong>
+        </div>
+
+        <div class="resume-line">
+          <span>Remise</span>
+          <strong>- {{ formatMoney(totalRemise()) }} USD</strong>
+        </div>
+
+        <div class="resume-line grand-total">
+          <span>Total général</span>
+          <strong>{{ formatMoney(totalGeneral()) }} USD</strong>
+        </div>
+
+        <mat-divider></mat-divider>
+
+        <div class="resume-line">
+          <span>Montant reçu</span>
+          <strong>{{ formatMoney(montantRecu || 0) }} USD</strong>
+        </div>
+
+        <div class="resume-line monnaie">
+          <span>Monnaie à rendre</span>
+          <strong>{{ formatMoney(monnaie()) }} USD</strong>
+        </div>
+      </div>
+
+      <div class="payment-actions horizontal-actions">
+        <button mat-flat-button class="btn-pay" type="button" (click)="payer()">
+          <mat-icon>check_circle</mat-icon>
+          Valider paiement
+        </button>
+
+        <button mat-stroked-button class="btn-print" type="button" (click)="imprimerTicketPDF()">
+          <mat-icon>print</mat-icon>
+          Imprimer ticket
+        </button>
+      </div>
+    </mat-card>
+  </div>
+</div>

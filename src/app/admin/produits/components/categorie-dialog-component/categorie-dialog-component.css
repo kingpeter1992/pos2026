@@ -1,0 +1,38 @@
+.dialog-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #1e293b;
+  font-weight: 700;
+  padding-bottom: 6px;
+}
+
+.dialog-title mat-icon {
+  color: #0f4c81;
+}
+
+.dialog-content {
+  padding-top: 8px !important;
+}
+
+.dialog-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.dialog-actions {
+  padding-top: 12px;
+}
+
+.save-btn {
+  background: #0f4c81 !important;
+  border-color: #0f4c81 !important;
+}
+.switch-row {
+  margin-top: 10px;
+}

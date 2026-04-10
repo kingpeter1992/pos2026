@@ -1,0 +1,234 @@
+<div class="stock-page">
+  <mat-card class="stock-shell">
+
+    <!-- HEADER -->
+    <div class="page-header">
+      <div class="header-left">
+        <div class="header-icon">
+          <mat-icon>inventory_2</mat-icon>
+        </div>
+
+        <div>
+          <div class="breadcrumb">Stocks / Inventaire</div>
+          <h1>Affichage du stock</h1>
+          <p>Suivi des quantités disponibles, des seuils mini/maxi et de la valeur du stock</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button mat-stroked-button type="button" (click)="refresh()">
+          <mat-icon>refresh</mat-icon>
+          Actualiser
+        </button>
+      </div>
+    </div>
+
+    <!-- KPI -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-icon blue">
+          <mat-icon>widgets</mat-icon>
+        </div>
+        <div>
+          <div class="kpi-value">{{ totalProduits() }}</div>
+          <div class="kpi-label">Lignes de stock</div>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon green">
+          <mat-icon>scale</mat-icon>
+        </div>
+        <div>
+          <div class="kpi-value">{{ formatNumber(totalQuantite()) }}</div>
+          <div class="kpi-label">Quantité totale</div>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon purple">
+          <mat-icon>payments</mat-icon>
+        </div>
+        <div>
+          <div class="kpi-value">{{ formatNumber(totalValeur()) }}</div>
+          <div class="kpi-label">Valeur stock</div>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon orange">
+          <mat-icon>warning_amber</mat-icon>
+        </div>
+        <div>
+          <div class="kpi-value">{{ totalAlertesRupture() }}</div>
+          <div class="kpi-label">Sous stock</div>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon red">
+          <mat-icon>error_outline</mat-icon>
+        </div>
+        <div>
+          <div class="kpi-value">{{ totalRuptures() }}</div>
+          <div class="kpi-label">Ruptures</div>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon cyan">
+          <mat-icon>inventory</mat-icon>
+        </div>
+        <div>
+          <div class="kpi-value">{{ totalSurplus() }}</div>
+          <div class="kpi-label">Surstock</div>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon emerald">
+          <mat-icon>check_circle</mat-icon>
+        </div>
+        <div>
+          <div class="kpi-value">{{ totalNormaux() }}</div>
+          <div class="kpi-label">Normal</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FILTRES -->
+    <div class="filter-bar">
+      <mat-form-field appearance="outline">
+        <mat-label>Recherche</mat-label>
+        <input
+          matInput
+          [ngModel]="search()"
+          (ngModelChange)="onSearchChange($event)"
+          placeholder="Produit, code barre, catégorie, dépôt">
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Dépôt</mat-label>
+        <mat-select
+          [ngModel]="depotFilter()"
+          (ngModelChange)="onDepotChange($event)">
+          <mat-option value="">Tous</mat-option>
+          @for (depot of depots(); track depot) {
+            <mat-option [value]="depot">{{ depot }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Statut</mat-label>
+        <mat-select
+          [ngModel]="statutFilter()"
+          (ngModelChange)="onStatutChange($event)">
+          <mat-option value="">Tous</mat-option>
+          <mat-option value="NORMAL">Normal</mat-option>
+          <mat-option value="ALERTE_RUPTURE">Sous stock</mat-option>
+          <mat-option value="RUPTURE">Rupture</mat-option>
+          <mat-option value="SURPLUS">Surstock</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <!-- TABLE -->
+    @if (!loading()) {
+      <div class="table-wrapper">
+        <div class="table-scroll">
+          <table mat-table [dataSource]="filteredStocks()" class="stock-table">
+
+            <ng-container matColumnDef="produit">
+              <th mat-header-cell *matHeaderCellDef>Produit</th>
+              <td mat-cell *matCellDef="let row">
+                <div class="product-cell">
+                  <div class="product-name">{{ row.nomProduit }}</div>
+                </div>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="codeBarre">
+              <th mat-header-cell *matHeaderCellDef>Code barre</th>
+              <td mat-cell *matCellDef="let row">{{ row.codeBarre || '-' }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="categorie">
+              <th mat-header-cell *matHeaderCellDef>Catégorie</th>
+              <td mat-cell *matCellDef="let row">{{ row.categorie || '-' }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="depot">
+              <th mat-header-cell *matHeaderCellDef>Dépôt</th>
+              <td mat-cell *matCellDef="let row">{{ row.nomDepot || '-' }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="quantite">
+              <th mat-header-cell *matHeaderCellDef class="text-right">Qté dispo</th>
+              <td mat-cell *matCellDef="let row" class="text-right">
+                {{ formatNumber(row.quantiteDisponible) }}
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="min">
+              <th mat-header-cell *matHeaderCellDef class="text-right">Stock min</th>
+              <td mat-cell *matCellDef="let row" class="text-right">
+                {{ formatNumber(row.stockMinimum) }}
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="max">
+              <th mat-header-cell *matHeaderCellDef class="text-right">Stock max</th>
+              <td mat-cell *matCellDef="let row" class="text-right">
+                {{ formatNumber(row.stockMaximum) }}
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="pmp">
+              <th mat-header-cell *matHeaderCellDef class="text-right">PMP</th>
+              <td mat-cell *matCellDef="let row" class="text-right">
+                {{ formatNumber(row.pmp) }}
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="valeur">
+              <th mat-header-cell *matHeaderCellDef class="text-right">Valeur stock</th>
+              <td mat-cell *matCellDef="let row" class="text-right value-cell">
+                {{ formatNumber(row.valeurStock) }}
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="statut">
+              <th mat-header-cell *matHeaderCellDef>Statut</th>
+              <td mat-cell *matCellDef="let row">
+                <span class="badge" [ngClass]="getBadgeClass(getResolvedStatut(row))">
+                  {{ getStatutLabel(getResolvedStatut(row)) }}
+                </span>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr
+              mat-row
+              *matRowDef="let row; columns: displayedColumns; trackBy: trackByProduitDepot">
+            </tr>
+          </table>
+        </div>
+
+        @if (filteredStocks().length === 0) {
+          <div class="empty-state">
+            <mat-icon>inventory</mat-icon>
+            <p>Aucune donnée de stock trouvée.</p>
+          </div>
+        }
+      </div>
+    } @else {
+      <div class="loading-box">
+        <mat-icon class="spin">autorenew</mat-icon>
+        <span>Chargement du stock...</span>
+      </div>
+    }
+
+  </mat-card>
+</div>

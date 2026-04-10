@@ -1,0 +1,142 @@
+<div class="erp-page-section">
+
+  <mat-card class="erp-header-card">
+    <div class="erp-header">
+      <div class="erp-header-left">
+        <div class="erp-header-icon">
+          <mat-icon>rule_folder</mat-icon>
+        </div>
+
+        <div class="erp-header-text">
+          <div class="erp-breadcrumb">Paramétrage / Tarifs / Règles tarifaires</div>
+          <h2>Toutes les règles tarifaires</h2>
+          <p>
+            Vue globale des règles tarifaires par catégorie et par tarif de vente.
+          </p>
+        </div>
+      </div>
+
+      <div class="erp-header-actions">
+        <button mat-stroked-button type="button" class="toolbar-btn" (click)="loadAll()">
+          <mat-icon>refresh</mat-icon>
+          Actualiser
+        </button>
+
+        <button mat-raised-button color="primary" type="button" class="toolbar-btn primary" (click)="openCreateDialog()">
+          <mat-icon>add_circle</mat-icon>
+          Nouvelle règle
+        </button>
+      </div>
+    </div>
+  </mat-card>
+
+  <div class="kpi-grid">
+    <mat-card class="kpi-card">
+      <div class="kpi-label">Total règles</div>
+      <div class="kpi-value">{{ store.regles().length }}</div>
+    </mat-card>
+
+    <mat-card class="kpi-card">
+      <div class="kpi-label">Règles actives</div>
+      <div class="kpi-value">{{ store.regles().filter(r => r.actif).length }}</div>
+    </mat-card>
+
+    <mat-card class="kpi-card">
+      <div class="kpi-label">Règles inactives</div>
+      <div class="kpi-value">{{ store.regles().filter(r => !r.actif).length }}</div>
+    </mat-card>
+
+    <mat-card class="kpi-card">
+      <div class="kpi-label">Catégories couvertes</div>
+      <div class="kpi-value">{{ store.regles().length }}</div>
+    </mat-card>
+  </div>
+
+  <mat-card class="erp-table-card">
+    <div class="table-card-header">
+      <div class="table-title-box">
+        <div class="table-title-icon">
+          <mat-icon>table_rows</mat-icon>
+        </div>
+        <div>
+          <h3>Référentiel complet des règles</h3>
+          <p>Vue d’ensemble de tous les paramètres commerciaux</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-wrapper">
+      <table mat-table [dataSource]="store.regles()" class="erp-table">
+
+        <ng-container matColumnDef="categorieNom">
+          <th mat-header-cell *matHeaderCellDef>Catégorie</th>
+          <td mat-cell *matCellDef="let row">
+            <div class="main-cell">
+              <div class="main-title">{{ row.categorieNom }}</div>
+              <div class="main-subtitle">{{ row.tarifNom }}</div>
+            </div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="tauxMarge">
+          <th mat-header-cell *matHeaderCellDef>Marge</th>
+          <td mat-cell *matCellDef="let row">
+            <span class="metric-badge blue">{{ row.tauxMarge }} %</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="tauxRemiseMax">
+          <th mat-header-cell *matHeaderCellDef>Remise max</th>
+          <td mat-cell *matCellDef="let row">
+            <span class="metric-badge orange">{{ row.tauxRemiseMax }} %</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="modeArrondi">
+          <th mat-header-cell *matHeaderCellDef>Mode d'arrondi</th>
+          <td mat-cell *matCellDef="let row">
+            <span class="arrondi-chip">{{ row.modeArrondi }}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="actif">
+          <th mat-header-cell *matHeaderCellDef>Statut</th>
+          <td mat-cell *matCellDef="let row">
+            <span class="status-chip" [class.active]="row.actif" [class.inactive]="!row.actif">
+              <mat-icon>{{ row.actif ? 'check_circle' : 'cancel' }}</mat-icon>
+              {{ row.actif ? 'Active' : 'Inactive' }}
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef class="actions-header">Actions</th>
+          <td mat-cell *matCellDef="let row" class="actions-cell">
+            <div class="action-buttons">
+              <button
+                mat-icon-button
+                type="button"
+                class="action-btn edit"
+                matTooltip="Modifier"
+                (click)="openEditDialog(row)">
+                <mat-icon>edit</mat-icon>
+              </button>
+            </div>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns" class="data-row"></tr>
+
+        <tr class="empty-row" *matNoDataRow>
+          <td [attr.colspan]="displayedColumns.length">
+            <div class="empty-state">
+              <mat-icon>rule</mat-icon>
+              <span>Aucune règle tarifaire trouvée.</span>
+            </div>
+          </td>
+        </tr>
+      </table>
+    </div>
+  </mat-card>
+</div>

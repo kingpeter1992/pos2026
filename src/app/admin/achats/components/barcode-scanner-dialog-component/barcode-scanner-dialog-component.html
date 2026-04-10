@@ -1,0 +1,30 @@
+<h2 mat-dialog-title>Scanner le code-barres</h2>
+
+<mat-dialog-content class="scanner-content">
+
+  <div class="state-box" *ngIf="isLoading">
+    <mat-spinner diameter="40"></mat-spinner>
+    <p>Initialisation de la caméra...</p>
+  </div>
+
+  <div class="video-wrapper" [hidden]="!hasCamera">
+    <video #video autoplay muted playsinline></video>
+    <p class="hint">Placez le code-barres devant la caméra</p>
+  </div>
+
+  <div *ngIf="!isLoading && scanError" class="error-box">
+    <mat-icon color="warn">warning</mat-icon>
+    <p>{{ scanError }}</p>
+  </div>
+
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-stroked-button type="button" (click)="retry()" *ngIf="scanError">
+    Réessayer
+  </button>
+
+  <button mat-raised-button color="warn" type="button" (click)="cancel()">
+    Fermer
+  </button>
+</mat-dialog-actions>

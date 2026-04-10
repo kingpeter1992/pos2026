@@ -1,0 +1,48 @@
+<aside class="menu-sidebar">
+
+    <!-- Logo -->
+  <div class="logo text-center py-3 border-bottom">
+    <a href="#">
+      <img src="assets/img/logop.jpg" alt="Cool Admin" class="img-fluid rounded-circle" width="80" height="80" />
+    </a>
+  </div>
+  <div class="menu-sidebar__content overflow-auto">
+
+  @if (canViewPos) {
+    <div>
+      <p-panelMenu [model]="items" class="w-full md:w-80"></p-panelMenu>
+    </div>
+  }
+
+  @if (canViewProduits) {
+    <div>
+      <p-panelMenu [model]="items2" class="w-full md:w-80"></p-panelMenu>
+    </div>
+  }
+
+  @if (canViewFournisseurs) {
+    <div>
+      <p-panelMenu [model]="items3" class="w-full md:w-80"></p-panelMenu>
+    </div>
+  }
+
+  @if (canViewAchats) {
+    <div>
+      <p-panelMenu [model]="items4" class="w-full md:w-80"></p-panelMenu>
+    </div>
+  }
+
+  @if (canViewStock) {
+    <div>
+      <p-panelMenu [model]="items6" class="w-full md:w-80"></p-panelMenu>
+    </div>
+  }
+
+  @if (canViewAdmin) {
+    <div>
+      <p-panelMenu [model]="items5" class="w-full md:w-80"></p-panelMenu>
+    </div>
+  }
+
+</div>
+</aside>
