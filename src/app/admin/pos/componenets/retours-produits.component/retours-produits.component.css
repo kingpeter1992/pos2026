@@ -1,0 +1,21 @@
+.full-width-table {
+  width: 100%;
+}
+
+.badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badge.valide {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.badge.annulee {
+  background: #ffebee;
+  color: #c62828;
+}

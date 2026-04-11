@@ -372,6 +372,8 @@ loadProduits(force = false): Observable<any[]> {
   private readonly _loading = signal<boolean>(false);
   private readonly _loaded = signal<boolean>(false);
 
+    ventes = signal<any[]>([]);
+
   readonly items = this._items.asReadonly();
   readonly loading = this._loading.asReadonly();
   readonly loaded = this._loaded.asReadonly();
@@ -442,5 +444,28 @@ save(payload: VentePayload): Observable<VenteResponse> {
     this._items.set([]);
     this._loaded.set(false);
   }
+annulerVente(id: number): Observable<any> {
+  this._loading.set(true);
 
+  // ⚡ update optimiste (UI immédiate)
+  const optimistic = this._items().map(v =>
+    v.id === id ? { ...v, statut: 'ANNULEE' } : v
+  );
+  this._items.set(optimistic);
+
+  return this.venteService.annulerVente(id).pipe(
+    tap((venteMaj) => {
+      const updated = this._items().map((v: any) =>
+        v.id === id ? venteMaj : v
+      );
+      this._items.set(updated);
+    }),
+    finalize(() => this._loading.set(false)),
+    catchError((err) => {
+      // rollback si erreur
+      this.refresh().subscribe();
+      return of(null);
+    })
+  );
+}
 }

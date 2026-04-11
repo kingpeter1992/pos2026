@@ -68,4 +68,8 @@ export class VenteApiService {
   getAll(): Observable<any[]> {
     return this.http.get<any[]>(this.apiUrl);
   }
+
+  annulerVente(id: number): Observable<any> {
+  return this.http.patch<any>(`${this.apiUrl}/${id}/annuler`, {});
+}
 }

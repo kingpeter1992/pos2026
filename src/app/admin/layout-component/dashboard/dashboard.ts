@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { Toast } from '../../../shares/services/toast/toast';
 import {  ViewChild, ElementRef } from '@angular/core';
 import { Chart } from 'chart.js/auto';
+import { VenteStore } from '../../pos/service/VenteStore';
 @Component({
   selector: 'app-dashboard',
   templateUrl: './dashboard.html',
@@ -10,6 +11,7 @@ import { Chart } from 'chart.js/auto';
   standalone: false,
 })
 export class Dashboard implements   OnInit {
+
   customersChartData: any;
   customersChartOptions: any;
 
@@ -28,35 +30,29 @@ export class Dashboard implements   OnInit {
   stockChartData: any;
   stockChartOptions: any;
 
-  kpis = [
-    {
-      label: 'Vente par heure de travail',
-      value: '$273.80',
-      icon: 'pi pi-dollar',
-      trend: '+8.2%'
-    },
-    {
-      label: 'Ventes totales tous départements',
-      value: '$1.22M',
-      icon: 'pi pi-chart-line',
-      trend: '+12.4%'
-    },
-    {
-      label: 'Vente moyenne par unité',
-      value: '$5.44',
-      icon: 'pi pi-box',
-      trend: '+2.1%'
-    },
-    {
-      label: 'Revenu moyen par heure',
-      value: '$178.67',
-      icon: 'pi pi-clock',
-      trend: '+5.7%'
-    }
-  ];
+  kpis: any[] = [];
+
+  ventes: any[] = [];
+
+    constructor(private venteStore: VenteStore) {}
+
 
   ngOnInit(): void {
-    this.initCharts();
+        this.loadData();
+  }
+
+
+   private loadData(): void {
+    this.venteStore.loadIfNeeded().subscribe({
+      next: (data) => {
+        this.ventes = data || [];
+        this.initCharts(); // 🔥 recalcul dynamique
+      },
+      error: () => {
+        this.ventes = [];
+        this.initCharts();
+      }
+    });
   }
 
   initCharts(): void {
@@ -75,68 +71,193 @@ export class Dashboard implements   OnInit {
       success: '#10b981'
     };
 
+    const tickets = [...this.ventes].sort(
+      (a, b) =>
+        new Date(a.dateVente).getTime() - new Date(b.dateVente).getTime()
+    );
+
+    const safeTotal = (vente: any): number => {
+      const totalGeneral = Number(vente?.totalGeneral || 0);
+      if (totalGeneral > 0) return totalGeneral;
+
+      const lignesTotal = (vente?.lignes || []).reduce(
+        (sum: number, l: any) => sum + Number(l?.totalLigne || 0),
+        0
+      );
+
+      if (lignesTotal > 0) return lignesTotal;
+
+      return Number(vente?.sousTotal || 0);
+    };
+
+    const safeUnits = (vente: any): number =>
+      (vente?.lignes || []).reduce(
+        (sum: number, l: any) => sum + Number(l?.quantite || 0),
+        0
+      );
+
+    const labelsTickets = tickets.map((v) => `#${v.id}`);
+
+    const totalsParTicket = tickets.map((v) => safeTotal(v));
+    const unitesParTicket = tickets.map((v) => safeUnits(v));
+    const lignesParTicket = tickets.map((v) => (v?.lignes || []).length);
+
+    const totalVentes = totalsParTicket.reduce((a, b) => a + b, 0);
+    const totalUnites = unitesParTicket.reduce((a, b) => a + b, 0);
+    const nbTickets = tickets.length;
+    const panierMoyen = nbTickets ? totalVentes / nbTickets : 0;
+    const unitesMoyennes = nbTickets ? totalUnites / nbTickets : 0;
+
+    const totalRemises = tickets.reduce(
+      (sum, v) => sum + Number(v?.totalRemise || 0),
+      0
+    );
+
+    const anomalies = tickets.filter((v) => {
+      const totalGeneral = Number(v?.totalGeneral || 0);
+      const lignesTotal = (v?.lignes || []).reduce(
+        (sum: number, l: any) => sum + Number(l?.totalLigne || 0),
+        0
+      );
+      return totalGeneral === 0 && lignesTotal > 0;
+    });
+
+    const byModePaiement = tickets.reduce((acc: any, v: any) => {
+      const key = v.modePaiement || 'NON DEFINI';
+      acc[key] = (acc[key] || 0) + safeTotal(v);
+      return acc;
+    }, {});
+
+    const articleMap = new Map<
+      string,
+      { quantite: number; montant: number }
+    >();
+
+    tickets.forEach((vente) => {
+      (vente.lignes || []).forEach((ligne: any) => {
+        const key = ligne.produitNom || `Produit ${ligne.produitId}`;
+        const existing = articleMap.get(key) || { quantite: 0, montant: 0 };
+        existing.quantite += Number(ligne.quantite || 0);
+        existing.montant += Number(ligne.totalLigne || 0);
+        articleMap.set(key, existing);
+      });
+    });
+
+    const topArticles = Array.from(articleMap.entries())
+      .sort((a, b) => b[1].quantite - a[1].quantite)
+      .slice(0, 7);
+
+    const heuresMap = tickets.reduce((acc: any, v: any) => {
+      const hour = new Date(v.dateVente).getHours();
+      const label = `${hour.toString().padStart(2, '0')}h`;
+      acc[label] = (acc[label] || 0) + 1;
+      return acc;
+    }, {});
+
+    const encaissementTotal = tickets.reduce(
+      (sum, v) => sum + Number(v?.montantRecu || 0),
+      0
+    );
+
+    this.kpis = [
+      {
+        label: 'Chiffre d’affaires total',
+        value: `${this.formatMoney(totalVentes)} USD`,
+        icon: 'pi pi-dollar',
+        trend: `${nbTickets} tickets`
+      },
+      {
+        label: 'Panier moyen',
+        value: `${this.formatMoney(panierMoyen)} USD`,
+        icon: 'pi pi-shopping-cart',
+        trend: `${this.formatNumber(unitesMoyennes)} u./ticket`
+      },
+      {
+        label: 'Quantité totale vendue',
+        value: `${this.formatNumber(totalUnites)}`,
+        icon: 'pi pi-box',
+        trend: `${topArticles.length} article(s)`
+      },
+      {
+        label: 'Tickets incohérents',
+        value: `${anomalies.length}`,
+        icon: 'pi pi-exclamation-triangle',
+        trend: anomalies.length > 0 ? 'À corriger' : 'OK'
+      }
+    ];
+
+    // 1) Ancien bloc "Total Clients & Visiteurs"
+    // => adapté en "Transactions & lignes"
     this.customersChartData = {
-      labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+      labels: labelsTickets,
       datasets: [
         {
-          label: 'Visiteurs',
+          label: 'Quantités vendues',
           backgroundColor: palette.accent,
           borderRadius: 4,
-          data: [24, 45, 86, 60, 18, 36, 64, 86, 24, 48, 36, 66]
+          data: unitesParTicket
         },
         {
-          label: 'Transactions',
+          label: 'Lignes par ticket',
           backgroundColor: palette.secondary,
           borderRadius: 4,
-          data: [20, 30, 26, 18, 35, 46, 86, 67, 86, 26, 72, 18]
+          data: lignesParTicket
         }
       ]
     };
 
     this.customersChartOptions = this.buildBarOptions(textColor, gridColor);
 
+    // 2) Ancien bloc "Ventes par division"
+    // => adapté en "Ventes par mode de paiement"
     this.divisionChartData = {
-      labels: ['Femmes', 'Hommes', 'Enfants'],
+      labels: Object.keys(byModePaiement),
       datasets: [
         {
-          label: 'Ventes par division',
-          backgroundColor: [palette.secondary, palette.accent, '#90a4ae'],
+          label: 'Montant',
+          backgroundColor: [palette.secondary, palette.accent, palette.warn],
           borderRadius: 6,
-          data: [45, 65, 50]
+          data: Object.values(byModePaiement)
         }
       ]
     };
 
-    this.divisionChartOptions = this.buildSimpleBarOptions(textColor, gridColor);
+    this.divisionChartOptions = this.buildSimpleBarOptions(
+      textColor,
+      gridColor
+    );
 
+    // 3) Ancien bloc "Prix moyen & unités par transaction"
+    // => adapté en "Montant & unités par ticket"
     this.avgChartData = {
-      labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+      labels: labelsTickets,
       datasets: [
         {
           type: 'line',
-          label: 'Prix / transaction',
+          label: 'Montant ticket (USD)',
           borderColor: palette.accent,
           backgroundColor: palette.accent,
           tension: 0.35,
           fill: false,
-          data: [18, 32, 28, 22, 35, 50, 45, 68, 82, 48, 40, 66]
+          data: totalsParTicket
         },
         {
           type: 'line',
-          label: 'Unités / transaction',
+          label: 'Unités / ticket',
           borderColor: palette.secondary,
           backgroundColor: palette.secondary,
           tension: 0.35,
           fill: false,
-          data: [48, 66, 52, 36, 18, 38, 84, 28, 42, 30, 72, 22]
+          data: unitesParTicket
         }
       ]
     };
 
     this.avgChartOptions = this.buildLineOptions(textColor, gridColor);
 
+    // 4) Top articles vendus
     this.topArticlesChartData = {
-      labels: ['Article A', 'Article B', 'Article C', 'Article D', 'Article E', 'Article F', 'Article G'],
+      labels: topArticles.map(([nom]) => nom),
       datasets: [
         {
           label: 'Quantités vendues',
@@ -150,18 +271,23 @@ export class Dashboard implements   OnInit {
             '#6c757d'
           ],
           borderRadius: 5,
-          data: [45, 65, 50, 28, 15, 35, 72]
+          data: topArticles.map(([, data]) => data.quantite)
         }
       ]
     };
 
-    this.topArticlesChartOptions = this.buildSimpleBarOptions(textColor, gridColor);
+    this.topArticlesChartOptions = this.buildSimpleBarOptions(
+      textColor,
+      gridColor
+    );
 
+    // 5) Ancien bloc "Ventes par ville"
+    // => adapté en "Répartition CA par ticket"
     this.cityChartData = {
-      labels: ['Lubumbashi', 'Kinshasa', 'Likasi', 'Kolwezi', 'Goma', 'Matadi', 'Mbuji-Mayi'],
+      labels: tickets.map((v) => `Ticket #${v.id}`),
       datasets: [
         {
-          data: [18, 24, 12, 15, 10, 8, 13],
+          data: totalsParTicket,
           backgroundColor: [
             '#14b8a6',
             '#99d8d0',
@@ -191,29 +317,63 @@ export class Dashboard implements   OnInit {
       }
     };
 
+    // 6) Ancien bloc "Produits en rupture"
+    // => adapté en "Encaissement vs ventes + anomalies"
     this.stockChartData = {
-      labels: ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4', 'Sem 5', 'Sem 6', 'Sem 7', 'Sem 8'],
+      labels: ['Encaissement', 'Ventes calculées', 'Remises', 'Anomalies'],
       datasets: [
         {
           type: 'bar',
-          label: 'Niveau stock',
+          label: 'Valeur',
           backgroundColor: '#4db6ac',
           borderRadius: 4,
-          data: [15, 32, 27, 18, 36, 50, 45, 68]
+          data: [
+            this.round2(encaissementTotal),
+            this.round2(totalVentes),
+            this.round2(totalRemises),
+            anomalies.length
+          ]
         },
         {
           type: 'line',
-          label: 'Ruptures',
+          label: 'Tickets par heure',
           borderColor: palette.accent,
           backgroundColor: palette.accent,
           tension: 0.35,
           fill: false,
-          data: [45, 65, 50, 28, 18, 35, 86, 24]
+          data: [
+            Object.keys(heuresMap).length,
+            Object.keys(heuresMap).length,
+            Object.keys(heuresMap).length,
+            Object.keys(heuresMap).length
+          ]
         }
       ]
     };
 
-    this.stockChartOptions = this.buildMixedOptions(textColor, gridColor, textMuted);
+    this.stockChartOptions = this.buildMixedOptions(
+      textColor,
+      gridColor,
+      textMuted
+    );
+  }
+
+  private formatMoney(value: number): string {
+    return this.round2(value).toLocaleString('fr-FR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  }
+
+  private formatNumber(value: number): string {
+    return this.round2(value).toLocaleString('fr-FR', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2
+    });
+  }
+
+  private round2(value: number): number {
+    return Math.round((Number(value) + Number.EPSILON) * 100) / 100;
   }
 
   private buildBarOptions(textColor: string, gridColor: string) {

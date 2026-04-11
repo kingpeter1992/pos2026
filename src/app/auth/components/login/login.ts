@@ -99,7 +99,7 @@ export class Login implements  OnInit {
         this.isLoggedIn = true;
         this.roles = this.storageService.getUser()?.roles ?? [];
         this.toastr.success('Connexion réussie');
-
+        this.route.navigateByUrl('/admin/pos/dashboard');
         this.preloadStoresAndNavigate();
       });
   }
@@ -126,7 +126,7 @@ export class Login implements  OnInit {
     mvnts: this.mvntStore.loadIfNeeded().pipe(catchError(() => of([]))),
   }).subscribe({
     next: () => {
-      this.route.navigateByUrl('/admin/pos');
+      this.route.navigateByUrl('/admin/pos/dashboard');
     },
     error: () => {
       this.toastr.warning('Connexion réussie, mais certains chargements ont échoué.');

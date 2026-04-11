@@ -59,6 +59,26 @@
         <strong>{{ panierMoyen() | number:'1.2-2' }} USD</strong>
       </div>
     </mat-card>
+
+    <mat-card class="kpi-card">
+      <div class="kpi-icon green">
+        <mat-icon>check_circle</mat-icon>
+      </div>
+      <div class="kpi-content">
+        <span class="label">Ventes validées</span>
+        <strong>{{ totalValides() }}</strong>
+      </div>
+    </mat-card>
+
+    <mat-card class="kpi-card">
+      <div class="kpi-icon red">
+        <mat-icon>undo</mat-icon>
+      </div>
+      <div class="kpi-content">
+        <span class="label">Ventes annulées</span>
+        <strong>{{ totalAnnulees() }}</strong>
+      </div>
+    </mat-card>
   </div>
 
   <mat-card class="filter-card">
@@ -75,7 +95,7 @@
         <input
           matInput
           formControlName="search"
-          placeholder="Ticket, client, produit, caissier..."
+          placeholder="Ticket, client, produit, caissier, statut..."
         />
         <mat-icon matSuffix>search</mat-icon>
       </mat-form-field>
@@ -122,7 +142,7 @@
     </div>
 
     <div class="table-wrapper" *ngIf="!venteStore.loading() && ventesFiltrees().length > 0">
-      <table mat-table [dataSource]="ventesFiltrees()" multiTemplateDataRows>
+      <table mat-table [dataSource]="ventesFiltrees()" multiTemplateDataRows class="sales-table">
 
         <ng-container matColumnDef="date">
           <th mat-header-cell *matHeaderCellDef>Date</th>
@@ -157,28 +177,28 @@
         <ng-container matColumnDef="paiement">
           <th mat-header-cell *matHeaderCellDef>Paiement</th>
           <td mat-cell *matCellDef="let v">
-            <mat-chip>{{ v.modePaiement }}</mat-chip>
+            <mat-chip class="payment-chip">{{ v.modePaiement }}</mat-chip>
           </td>
         </ng-container>
 
         <ng-container matColumnDef="articles">
           <th mat-header-cell *matHeaderCellDef>Articles</th>
           <td mat-cell *matCellDef="let v">
-            {{ getQuantiteTotale(v) }}
+            <span class="qty-badge">{{ getQuantiteTotale(v) }}</span>
           </td>
         </ng-container>
 
         <ng-container matColumnDef="montantRecu">
           <th mat-header-cell *matHeaderCellDef>Reçu</th>
           <td mat-cell *matCellDef="let v">
-            {{ v.montantRecu | number:'1.2-2' }} USD
+            <span class="money-cell">{{ v.montantRecu | number:'1.2-2' }} USD</span>
           </td>
         </ng-container>
 
         <ng-container matColumnDef="monnaie">
           <th mat-header-cell *matHeaderCellDef>Monnaie</th>
           <td mat-cell *matCellDef="let v">
-            {{ v.monnaie | number:'1.2-2' }} USD
+            <span class="money-cell">{{ v.monnaie | number:'1.2-2' }} USD</span>
           </td>
         </ng-container>
 
@@ -189,27 +209,61 @@
           </td>
         </ng-container>
 
+        <ng-container matColumnDef="statut">
+          <th mat-header-cell *matHeaderCellDef>Statut</th>
+          <td mat-cell *matCellDef="let v">
+            <span [class]="getStatutClass(v.statut)">
+              <mat-icon class="status-icon">
+                {{ v.statut === 'ANNULEE' ? 'cancel' : 'check_circle' }}
+              </mat-icon>
+              {{ getStatutLabel(v.statut) }}
+            </span>
+          </td>
+        </ng-container>
+
         <ng-container matColumnDef="actions">
           <th mat-header-cell *matHeaderCellDef class="actions-col">Actions</th>
           <td mat-cell *matCellDef="let v" class="actions-col">
             <div class="row-actions">
-              <button mat-icon-button type="button" (click)="toggleDetails(v.id)" matTooltip="Voir le détail">
+              <button
+                mat-icon-button
+                type="button"
+                class="action-btn view"
+                (click)="toggleDetails(v.id)"
+                matTooltip="Voir le détail">
                 <mat-icon>{{ isExpanded(v.id) ? 'expand_less' : 'visibility' }}</mat-icon>
               </button>
 
-              <button mat-icon-button type="button" (click)="reprintTicket(v)" matTooltip="Réimprimer le ticket">
+              <button
+                mat-icon-button
+                type="button"
+                class="action-btn print"
+                (click)="reprintTicket(v)"
+                matTooltip="Réimprimer le ticket">
                 <mat-icon>print</mat-icon>
+              </button>
+
+              <button
+                mat-mini-fab
+                color="warn"
+                type="button"
+                class="btn-annuler-mini"
+                [disabled]="!isVenteAnnulable(v)"
+                (click)="openAnnulationDialog(v)"
+                matTooltip="Annuler la vente">
+                <mat-icon *ngIf="!isAnnulationLoading(v.id)">undo</mat-icon>
+                <mat-icon *ngIf="isAnnulationLoading(v.id)" class="spin">autorenew</mat-icon>
               </button>
             </div>
           </td>
         </ng-container>
 
         <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-
         <tr
           mat-row
           *matRowDef="let row; columns: displayedColumns"
-          class="vente-row">
+          class="vente-row"
+          [class.row-annulee]="row.statut === 'ANNULEE'">
         </tr>
 
       </table>
@@ -220,6 +274,7 @@
         <mat-expansion-panel
           *ngFor="let vente of ventesFiltrees()"
           [expanded]="isExpanded(vente.id)">
+
           <mat-expansion-panel-header (click)="$event.stopPropagation(); toggleDetails(vente.id)">
             <mat-panel-title>
               {{ vente.ticketNumero }} — {{ vente.clientNom || 'CLIENT DIVERS' }}
@@ -233,6 +288,12 @@
             <div><strong>Date :</strong> {{ vente.dateVente | date:'dd/MM/yyyy HH:mm:ss' }}</div>
             <div><strong>Caissier :</strong> {{ vente.caissier }}</div>
             <div><strong>Paiement :</strong> {{ vente.modePaiement }}</div>
+            <div>
+              <strong>Statut :</strong>
+              <span [class]="getStatutClass(vente.statut)">
+                {{ getStatutLabel(vente.statut) }}
+              </span>
+            </div>
           </div>
 
           <div class="detail-table-wrapper">
@@ -270,6 +331,17 @@
             <button mat-stroked-button type="button" (click)="reprintTicket(vente)">
               <mat-icon>print</mat-icon>
               Réimprimer le ticket
+            </button>
+
+            <button
+              mat-flat-button
+              color="warn"
+              type="button"
+              [disabled]="!isVenteAnnulable(vente)"
+              (click)="openAnnulationDialog(vente)">
+              <mat-icon *ngIf="!isAnnulationLoading(vente.id)">undo</mat-icon>
+              <mat-icon *ngIf="isAnnulationLoading(vente.id)" class="spin">autorenew</mat-icon>
+              {{ isAnnulationLoading(vente.id) ? 'Annulation...' : 'Annuler la vente' }}
             </button>
           </div>
         </mat-expansion-panel>

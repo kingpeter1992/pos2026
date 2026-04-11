@@ -144,8 +144,8 @@ public menuPropertisGestion: Array<Menu> = [
       { id: '1-1', titre: 'Tableau de bord POS', icon: 'pi pi-chart-line', url: '/admin/pos/dashboard' },
       { id: '1-2', titre: 'Nouvelle vente', icon: 'pi pi-shopping-bag', url: '/admin/pos/vente' },
       { id: '1-3', titre: 'Historique des ventes', icon: 'pi pi-history', url: '/admin/pos/historique-ventes' },
-      { id: '1-4', titre: 'Retours produits', icon: 'pi pi-refresh', url: '/admin/pos/retours' },
-      { id: '1-5', titre: 'Tickets', icon: 'pi pi-print', url: '/admin/pos/tickets' },
+      { id: '1-4', titre: 'Avoir vente', icon: 'pi pi-refresh', url: '/admin/pos/retours' },
+//      { id: '1-5', titre: 'Tickets', icon: 'pi pi-print', url: '/admin/pos/tickets' },
       { id: '1-6', titre: 'Rapports de ventes', icon: 'pi pi-chart-bar', url: '/admin/pos/rapports' },
       //TarifVenteComponent
       { id: '1-7', titre: 'Tarifs de vente', icon: 'pi pi-tags', url: '/admin/pos/tarifs' },
@@ -167,7 +167,7 @@ public menuPropertisGestionNegoce: Array<Menu> = [
       { id: '2-3', titre: 'Catégories', icon: 'pi pi-tags', url: '/admin/categories' },
       { id: '2-4', titre: 'Images produits', icon: 'pi pi-images', url: '/admin/produits/images' },
       { id: '2-5', titre: 'Scan code-barres', icon: 'pi pi-qrcode', url: '/admin/produits/scan-barcode' },
-      { id: '2-6', titre: 'Recherche produit', icon: 'pi pi-search', url: '/admin/produits/recherche' }
+   //   { id: '2-6', titre: 'Recherche produit', icon: 'pi pi-search', url: '/admin/produits/recherche' }
     ]
   }
 ];
@@ -179,9 +179,9 @@ public menuPropertisGestionCaisse: Array<Menu> = [
     titre: 'Fournisseurs',
     url: '/admin/fournisseurs',
     sousMenus: [
-      { id: '3-2', titre: 'Liste des fournisseurs', icon: 'pi pi-list', url: '/admin/fournisseurs/liste' },
+  //   { id: '3-2', titre: 'Liste des fournisseurs', icon: 'pi pi-list', url: '/admin/fournisseurs/liste' },
       { id: '3-3', titre: 'Ajouter fournisseur', icon: 'pi pi-user-plus', url: '/admin/fournisseurs/create' },
-      { id: '3-4', titre: 'Produits fournisseurs', icon: 'pi pi-box', url: '/admin/fournisseurs/produits' }
+  //    { id: '3-4', titre: 'Produits fournisseurs', icon: 'pi pi-box', url: '/admin/fournisseurs/produits' }
     ]
   }
 ];

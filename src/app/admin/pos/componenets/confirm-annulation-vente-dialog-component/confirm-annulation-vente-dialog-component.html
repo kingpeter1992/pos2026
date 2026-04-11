@@ -1,0 +1,46 @@
+<h2 mat-dialog-title class="dialog-title">
+  <mat-icon color="warn">warning_amber</mat-icon>
+  Confirmation d’annulation
+</h2>
+
+<mat-dialog-content class="dialog-content">
+  <div class="warning-box">
+    <mat-icon color="warn">undo</mat-icon>
+    <div>
+      <strong>Cette opération va annuler la vente</strong>
+      <p>Les marchandises seront remises automatiquement en stock.</p>
+    </div>
+  </div>
+
+  <div class="vente-summary">
+    <div class="summary-row">
+      <span>Ticket</span>
+      <strong>{{ data.ticketNumero || '-' }}</strong>
+    </div>
+
+    <div class="summary-row">
+      <span>Client</span>
+      <strong>{{ data.clientNom || 'CLIENT DIVERS' }}</strong>
+    </div>
+
+    <div class="summary-row">
+      <span>Total</span>
+      <strong>{{ (data.totalTTC ?? 0) | number:'1.2-2' }} {{ data.devise || 'USD' }}</strong>
+    </div>
+  </div>
+
+  <p class="danger-text">
+    Cette action est sensible et ne doit être faite qu’en cas d’erreur ou de retour complet de la vente.
+  </p>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="dialog-actions">
+  <button mat-stroked-button type="button" (click)="close()">
+    Fermer
+  </button>
+
+  <button mat-flat-button color="warn" type="button" (click)="confirm()">
+    <mat-icon>undo</mat-icon>
+    Confirmer l’annulation
+  </button>
+</mat-dialog-actions>

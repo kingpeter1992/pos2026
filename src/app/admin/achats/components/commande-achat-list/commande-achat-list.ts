@@ -12,7 +12,11 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { VoirDdetilsLignesComponents } from '../voir-ddetils-lignes-components/voir-ddetils-lignes-components';
-
+import {
+  BrowserMultiFormatReader,
+  IScannerControls
+} from '@zxing/browser';
+import { ElementRef, ViewChild } from '@angular/core';
 
 export interface CommandeDialogData {
   commandeId?: number;

@@ -1,1 +1,194 @@
-<p>rapports-ventes.component works!</p>
+<div class="pos-shell">
+  <section class="hero-bar">
+    <div class="hero-left">
+      <div class="title-wrap">
+        <span class="eyebrow">Point de vente</span>
+        <h1>POS Vente Pro</h1>
+        <p>Interface caisse moderne, rapide et pensée pour écran tactile.</p>
+      </div>
+
+      <div class="search-box">
+        <span class="material-symbols-outlined">search</span>
+        <input
+          type="text"
+          [value]="recherche()"
+          (input)="setRecherche($any($event.target).value)"
+          placeholder="Scanner ou rechercher un produit..." />
+      </div>
+    </div>
+
+    <div class="hero-actions">
+      <button class="ghost-btn" type="button" (click)="activerScanner()">
+        <span class="material-symbols-outlined">qr_code_scanner</span>
+        {{ scannerActif() ? 'Scanner actif' : 'Activer scanner' }}
+      </button>
+
+      <button class="primary-btn" type="button" (click)="ouvrirProduitDialog()">
+        <span class="material-symbols-outlined">add_shopping_cart</span>
+        Ajouter produit
+      </button>
+    </div>
+  </section>
+
+  <section class="kpi-grid">
+    <div class="kpi-card">
+      <span class="kpi-label">Articles</span>
+      <strong>{{ totalArticles() }}</strong>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-label">Sous-total</span>
+      <strong>{{ sousTotal() | number:'1.2-2' }} USD</strong>
+    </div>
+    <div class="kpi-card accent">
+      <span class="kpi-label">Remise</span>
+      <strong>{{ totalRemise() | number:'1.2-2' }} USD</strong>
+    </div>
+    <div class="kpi-card success">
+      <span class="kpi-label">À payer</span>
+      <strong>{{ totalGeneral() | number:'1.2-2' }} USD</strong>
+    </div>
+  </section>
+
+  <section class="pos-grid">
+    <div class="cart-panel">
+      <div class="panel-head">
+        <div>
+          <h2>Panier de vente</h2>
+          <span>{{ produits().length }} ligne(s)</span>
+        </div>
+
+        <button class="danger-btn" type="button" (click)="viderPanier()">
+          <span class="material-symbols-outlined">delete</span>
+          Vider
+        </button>
+      </div>
+
+      <div class="cart-table-wrap">
+        <table class="cart-table">
+          <thead>
+            <tr>
+              <th>Produit</th>
+              <th>PU</th>
+              <th>Qté</th>
+              <th>Remise</th>
+              <th>Total</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let line of produits()">
+              <td>
+                <div class="product-cell">
+                  <img [src]="line.imageUrl || 'https://placehold.co/80x80'" [alt]="line.designation" />
+                  <div>
+                    <strong>{{ line.designation }}</strong>
+                    <span>Code: {{ line.codeBarres || '-' }}</span>
+                    <small>Stock: {{ line.stock }}</small>
+                  </div>
+                </div>
+              </td>
+              <td>{{ line.prixUnitaire | number:'1.2-2' }}</td>
+              <td>
+                <div class="qty-box">
+                  <button type="button" (click)="decrementerQuantite(line)">-</button>
+                  <input
+                    type="number"
+                    min="1"
+                    [value]="line.quantite"
+                    (input)="updateQuantite(line, $any($event.target).value)" />
+                  <button type="button" (click)="incrementerQuantite(line)">+</button>
+                </div>
+              </td>
+              <td>
+                <input
+                  class="inline-input"
+                  type="number"
+                  min="0"
+                  [value]="line.remise"
+                  (input)="updateRemise(line, $any($event.target).value)" />
+              </td>
+              <td>
+                <strong>{{ (line.prixUnitaire * line.quantite - line.remise) | number:'1.2-2' }}</strong>
+              </td>
+              <td>
+                <button class="icon-btn remove" type="button" (click)="supprimerLigne(line)">
+                  <span class="material-symbols-outlined">delete</span>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <aside class="summary-panel">
+      <div class="summary-card">
+        <h3>Informations vente</h3>
+
+        <label class="field">
+          <span>Client</span>
+          <input
+            type="text"
+            [value]="clientNom()"
+            (input)="setClientNom($any($event.target).value)"
+            placeholder="CLIENT DIVERS" />
+        </label>
+
+        <label class="field">
+          <span>Mode de paiement</span>
+          <select [value]="modePaiement()" (change)="setModePaiement($any($event.target).value)">
+            <option value="CASH">Cash</option>
+            <option value="CARTE">Carte</option>
+            <option value="MOBILE_MONEY">Mobile Money</option>
+            <option value="VIREMENT">Virement</option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span>Remise globale</span>
+          <input
+            type="number"
+            min="0"
+            [value]="remiseGlobale()"
+            (input)="setRemiseGlobale($any($event.target).value)" />
+        </label>
+      </div>
+
+      <div class="summary-card total-card">
+        <h3>Résumé paiement</h3>
+
+        <div class="total-row">
+          <span>Sous-total</span>
+          <strong>{{ sousTotal() | number:'1.2-2' }} USD</strong>
+        </div>
+        <div class="total-row">
+          <span>Remise</span>
+          <strong>{{ totalRemise() | number:'1.2-2' }} USD</strong>
+        </div>
+        <div class="total-row grand">
+          <span>Total à payer</span>
+          <strong>{{ totalGeneral() | number:'1.2-2' }} USD</strong>
+        </div>
+
+        <label class="field">
+          <span>Montant reçu</span>
+          <input
+            type="number"
+            min="0"
+            [value]="montantRecu()"
+            (input)="setMontantRecu($any($event.target).value)" />
+        </label>
+
+        <div class="money-box" [class.ok]="montantRecu() >= totalGeneral() && totalGeneral() > 0">
+          <span>Monnaie à rendre</span>
+          <strong>{{ monnaie() | number:'1.2-2' }} USD</strong>
+        </div>
+
+        <button class="checkout-btn" type="button" (click)="enregistrerVente()">
+          <span class="material-symbols-outlined">point_of_sale</span>
+          Encaisser et imprimer
+        </button>
+      </div>
+    </aside>
+  </section>
+</div>

@@ -1,1 +1,88 @@
-<p>retours-produits.component works!</p>
+<ng-container matColumnDef="statut">
+  <th mat-header-cell *matHeaderCellDef> Statut </th>
+  <td mat-cell *matCellDef="let vente">
+    <span [class]="getStatutClass(vente.statut)">
+      {{ vente.statut || 'VALIDE' }}
+    </span>
+  </td>
+</ng-container>
+
+<ng-container matColumnDef="actions">
+  <th mat-header-cell *matHeaderCellDef> Actions </th>
+  <td mat-cell *matCellDef="let vente">
+    <button
+      mat-stroked-button
+      color="warn"
+      type="button"
+      (click)="annulerVente(vente)"
+      [disabled]="!isVenteAnnulable(vente)">
+      <mat-icon>undo</mat-icon>
+      Annuler
+    </button>
+  </td>
+</ng-container>
+
+<table mat-table [dataSource]="storeVente.ventes()" class="mat-elevation-z2 full-width-table">
+
+  <ng-container matColumnDef="ticketNumero">
+    <th mat-header-cell *matHeaderCellDef> Ticket </th>
+    <td mat-cell *matCellDef="let vente"> {{ vente.ticketNumero }} </td>
+  </ng-container>
+
+  <ng-container matColumnDef="dateVente">
+    <th mat-header-cell *matHeaderCellDef> Date </th>
+    <td mat-cell *matCellDef="let vente">
+      {{ vente.dateVente | date:'dd/MM/yyyy HH:mm' }}
+    </td>
+  </ng-container>
+
+  <ng-container matColumnDef="clientNom">
+    <th mat-header-cell *matHeaderCellDef> Client </th>
+    <td mat-cell *matCellDef="let vente"> {{ vente.clientNom }} </td>
+  </ng-container>
+
+  <ng-container matColumnDef="caissier">
+    <th mat-header-cell *matHeaderCellDef> Caissier </th>
+    <td mat-cell *matCellDef="let vente"> {{ vente.caissier }} </td>
+  </ng-container>
+
+  <ng-container matColumnDef="modePaiement">
+    <th mat-header-cell *matHeaderCellDef> Paiement </th>
+    <td mat-cell *matCellDef="let vente"> {{ vente.modePaiement }} </td>
+  </ng-container>
+
+  <ng-container matColumnDef="totalGeneral">
+    <th mat-header-cell *matHeaderCellDef> Total </th>
+    <td mat-cell *matCellDef="let vente">
+      {{ vente.totalGeneral || vente.totalTTC | number:'1.2-2' }}
+      {{ vente.devise || 'USD' }}
+    </td>
+  </ng-container>
+
+  <ng-container matColumnDef="statut">
+    <th mat-header-cell *matHeaderCellDef> Statut </th>
+    <td mat-cell *matCellDef="let vente">
+      <span [class]="getStatutClass(vente.statut)">
+        {{ vente.statut || 'VALIDE' }}
+      </span>
+    </td>
+  </ng-container>
+
+  <ng-container matColumnDef="actions">
+    <th mat-header-cell *matHeaderCellDef> Actions </th>
+    <td mat-cell *matCellDef="let vente">
+      <button
+        mat-stroked-button
+        color="warn"
+        type="button"
+        (click)="annulerVente(vente)"
+        [disabled]="!isVenteAnnulable(vente)">
+        <mat-icon>undo</mat-icon>
+        Annuler
+      </button>
+    </td>
+  </ng-container>
+
+  <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+  <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+</table>

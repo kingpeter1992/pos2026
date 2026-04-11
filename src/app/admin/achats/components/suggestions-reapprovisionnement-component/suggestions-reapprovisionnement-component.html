@@ -1,1 +1,192 @@
-<p>suggestions-reapprovisionnement-component works!</p>
+<div class="appro-page">
+
+  <div class="page-header">
+    <div class="title-box">
+      <div class="title-badge">POS • STOCK</div>
+      <h2>Réapprovisionnement automatique</h2>
+      <p>
+        Analyse des besoins d’achat selon la rotation des ventes, le stock actuel
+        et la couverture sélectionnée.
+      </p>
+    </div>
+
+    <div class="header-actions">
+      <button class="btn btn-primary" type="button" (click)="store.refresh()">
+        Actualiser
+      </button>
+    </div>
+  </div>
+
+  <div class="toolbar-card">
+    <div class="toolbar-left">
+      <div class="field-group">
+        <label>Période de couverture</label>
+        <select
+          [ngModel]="store.joursSelectionnes()"
+          (ngModelChange)="changerPeriode($event)">
+          <option *ngFor="let option of periodeOptions" [ngValue]="option.value">
+            {{ option.label }}
+          </option>
+        </select>
+      </div>
+
+      <div class="field-group search-box">
+        <label>Recherche produit</label>
+        <input
+          type="text"
+          placeholder="Nom, code-barres, catégorie..."
+          [ngModel]="search()"
+          (ngModelChange)="onSearch($event)" />
+      </div>
+    </div>
+
+    <div class="toolbar-right">
+      <button type="button" class="chip-btn" (click)="setFiltreStatut('TOUS')">
+        Tous
+      </button>
+      <button type="button" class="chip-btn danger" (click)="setFiltreStatut('RUPTURE')">
+        Ruptures
+      </button>
+      <button type="button" class="chip-btn warning" (click)="setFiltreStatut('A_COMMANDER')">
+        À commander
+      </button>
+      <button type="button" class="chip-btn success" (click)="setFiltreStatut('NORMAL')">
+        Normaux
+      </button>
+      <button type="button" class="chip-btn info" (click)="setFiltreStatut('SURSTOCK')">
+        Surstock
+      </button>
+    </div>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi-card danger">
+      <div class="kpi-top">
+        <span class="kpi-title">Ruptures</span>
+      </div>
+      <div class="kpi-value">{{ store.ruptures().length }}</div>
+      <div class="kpi-subtitle">Produits sans stock</div>
+    </div>
+
+    <div class="kpi-card warning">
+      <div class="kpi-top">
+        <span class="kpi-title">À commander</span>
+      </div>
+      <div class="kpi-value">{{ store.aCommander().length }}</div>
+      <div class="kpi-subtitle">Produits sous seuil</div>
+    </div>
+
+    <div class="kpi-card primary">
+      <div class="kpi-top">
+        <span class="kpi-title">Qté à commander</span>
+      </div>
+      <div class="kpi-value">{{ store.totalQuantiteACommander() | number:'1.0-2' }}</div>
+      <div class="kpi-subtitle">Total recommandé</div>
+    </div>
+
+    <div class="kpi-card info">
+      <div class="kpi-top">
+        <span class="kpi-title">Produits analysés</span>
+      </div>
+      <div class="kpi-value">{{ store.totalProduits() }}</div>
+      <div class="kpi-subtitle">Base de calcul actuelle</div>
+    </div>
+  </div>
+
+  <div class="table-card" *ngIf="!store.loading(); else loadingTpl">
+    <div class="table-header">
+      <div>
+        <h3>Liste des suggestions</h3>
+        <p>{{ rows().length }} produit(s) affiché(s)</p>
+      </div>
+    </div>
+
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Produit</th>
+            <th>Catégorie</th>
+            <th>Stock actuel</th>
+            <th>Ventes 30j</th>
+            <th>Rotation / jour</th>
+            <th>Stock sécurité</th>
+            <th>Point commande</th>
+            <th>Stock cible</th>
+            <th>Qté à commander</th>
+            <th>Couverture</th>
+            <th>Jours restants</th>
+            <th>Statut</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let row of rows(); trackBy: trackByProduit">
+            <td>
+              <div class="prod-cell">
+                <div class="prod-avatar">
+                  {{ (row.produitNom || '?').charAt(0) }}
+                </div>
+                <div class="prod-meta">
+                  <div class="prod-name">{{ row.produitNom }}</div>
+                  <div class="prod-code">{{ row.codeBarres || 'Sans code-barres' }}</div>
+                </div>
+              </div>
+            </td>
+
+            <td>{{ row.categorieNom || '-' }}</td>
+            <td>{{ asNumber(row.stockActuel) | number:'1.0-2' }}</td>
+            <td>{{ asNumber(row.quantiteVendue30Jours) | number:'1.0-2' }}</td>
+            <td>{{ asNumber(row.rotationJournaliere) | number:'1.0-3' }}</td>
+            <td>{{ asNumber(row.stockSecurite) | number:'1.0-2' }}</td>
+            <td>{{ asNumber(row.pointCommande) | number:'1.0-2' }}</td>
+            <td>{{ asNumber(row.stockCible) | number:'1.0-2' }}</td>
+            <td class="qty-command">
+              {{ asNumber(row.quantiteACommander) | number:'1.0-2' }}
+            </td>
+
+            <td>
+              <div class="coverage-box">
+                <div class="coverage-track">
+                  <div
+                    class="coverage-fill"
+                    [style.width.%]="getTauxCouverture(row)">
+                  </div>
+                </div>
+                <span class="coverage-text">
+                  {{ getTauxCouverture(row) | number:'1.0-0' }}%
+                </span>
+              </div>
+            </td>
+
+            <td>
+              {{ row.joursCouvertureRestants == null ? 'N/A' : (row.joursCouvertureRestants + ' j') }}
+            </td>
+
+            <td>
+              <span class="status-badge" [ngClass]="badgeClass(row.statutAppro)">
+                {{ row.statutAppro }}
+              </span>
+            </td>
+          </tr>
+
+          <tr *ngIf="rows().length === 0">
+            <td colspan="12" class="empty-state">
+              Aucune suggestion trouvée pour ce filtre.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <ng-template #loadingTpl>
+    <div class="loading-card">
+      <div class="loader-spinner"></div>
+      <div>
+        <strong>Chargement des suggestions...</strong>
+        <p>Analyse des ventes, du stock et de la couverture en cours.</p>
+      </div>
+    </div>
+  </ng-template>
+</div>

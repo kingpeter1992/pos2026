@@ -3,7 +3,11 @@
   flex-direction: column;
   gap: 18px;
   padding: 18px;
-  background: #f6f8fb;
+  background:
+    radial-gradient(circle at top right, rgba(37, 99, 235, 0.06), transparent 22%),
+    radial-gradient(circle at top left, rgba(16, 185, 129, 0.05), transparent 18%),
+    #f6f8fb;
+  min-height: 100%;
 }
 
 .page-header {
@@ -15,14 +19,16 @@
 
   h2 {
     margin: 0;
-    font-size: 26px;
-    font-weight: 700;
-    color: #1f2937;
+    font-size: 28px;
+    font-weight: 800;
+    color: #111827;
+    letter-spacing: -0.4px;
   }
 
   p {
-    margin: 4px 0 0;
+    margin: 6px 0 0;
     color: #6b7280;
+    font-size: 14px;
   }
 }
 
@@ -43,17 +49,21 @@
   align-items: center;
   gap: 14px;
   padding: 18px;
-  border-radius: 18px;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+  border-radius: 20px;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+  backdrop-filter: blur(8px);
 }
 
 .kpi-icon {
   width: 52px;
   height: 52px;
-  border-radius: 14px;
+  border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
 
   mat-icon {
     color: white;
@@ -63,6 +73,7 @@
   &.green { background: linear-gradient(135deg, #16a34a, #15803d); }
   &.orange { background: linear-gradient(135deg, #f59e0b, #d97706); }
   &.purple { background: linear-gradient(135deg, #7c3aed, #6d28d9); }
+  &.red { background: linear-gradient(135deg, #ef4444, #dc2626); }
 }
 
 .kpi-content {
@@ -72,33 +83,49 @@
   .label {
     font-size: 13px;
     color: #6b7280;
+    font-weight: 600;
   }
 
   strong {
     font-size: 24px;
     color: #111827;
     margin-top: 4px;
+    font-weight: 800;
   }
 }
 
 .filter-card,
 .table-card {
-  border-radius: 20px;
-  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+  border-radius: 22px;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.07);
+  overflow: hidden;
+}
+
+.filter-card {
+  padding: 4px;
+}
+
+.table-card {
+  padding: 4px;
 }
 
 .filter-header {
   margin-bottom: 14px;
+  padding: 14px 16px 0;
 
   h3 {
     margin: 0;
     font-size: 18px;
     color: #111827;
+    font-weight: 800;
   }
 
   p {
     margin: 4px 0 0;
     color: #6b7280;
+    font-size: 13px;
   }
 }
 
@@ -106,6 +133,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 14px;
+  padding: 0 16px 16px;
 }
 
 .table-toolbar {
@@ -113,35 +141,50 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 12px;
+  padding: 14px 16px 0;
 
   h3 {
     margin: 0;
     font-size: 18px;
     color: #111827;
+    font-weight: 800;
   }
 
   span {
     color: #6b7280;
     font-size: 13px;
+    font-weight: 500;
   }
 }
 
 .table-wrapper {
   overflow: auto;
-  border-radius: 16px;
+  border-radius: 18px;
+  margin: 0 12px 12px;
+  border: 1px solid #e5e7eb;
+  background: white;
 }
 
 table {
   width: 100%;
 }
 
+.sales-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
 .mat-mdc-header-row {
-  background: #f3f4f6;
+  background: linear-gradient(135deg, #0f172a, #1e293b);
 }
 
 .mat-mdc-header-cell {
-  font-weight: 700;
-  color: #374151;
+  font-weight: 800;
+  color: #ffffff;
+  font-size: 13px;
+  letter-spacing: 0.2px;
+  border-bottom: none;
 }
 
 .mat-mdc-cell,
@@ -149,8 +192,16 @@ table {
   padding: 14px 12px;
 }
 
+.mat-mdc-cell {
+  border-bottom: 1px solid #eef2f7;
+}
+
+.vente-row {
+  transition: all 0.2s ease;
+}
+
 .vente-row:hover {
-  background: #fafafa;
+  background: #f8fafc;
 }
 
 .date-cell,
@@ -162,6 +213,8 @@ table {
 
   strong {
     color: #111827;
+    font-weight: 700;
+    font-size: 13px;
   }
 
   span {
@@ -173,17 +226,64 @@ table {
 .amount {
   font-size: 15px;
   color: #047857;
+  font-weight: 800;
+}
+
+.money-cell {
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.qty-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 800;
+  box-shadow: inset 0 0 0 1px #bfdbfe;
+}
+
+.payment-chip {
+  font-weight: 700;
+  border-radius: 999px;
+  background: #f8fafc !important;
+  color: #0f172a !important;
+  border: 1px solid #e2e8f0;
 }
 
 .actions-col {
-  width: 120px;
+  width: 150px;
   text-align: center;
 }
 
 .row-actions {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+}
+
+.action-btn {
+  border-radius: 12px;
+  background: #f8fafc;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #e2e8f0;
+    transform: scale(1.05);
+  }
+
+  &.view {
+    color: #2563eb;
+  }
+
+  &.print {
+    color: #0f766e;
+  }
 }
 
 .loading-box,
@@ -219,6 +319,7 @@ table {
   overflow: auto;
   border: 1px solid #e5e7eb;
   border-radius: 14px;
+  background: white;
 }
 
 .detail-table {
@@ -246,12 +347,98 @@ table {
   margin-top: 16px;
   padding: 14px;
   border-radius: 14px;
-  background: #f9fafb;
+  background: linear-gradient(180deg, #f9fafb, #f3f4f6);
   color: #374151;
+  border: 1px solid #e5e7eb;
 }
 
 .detail-actions {
   margin-top: 14px;
   display: flex;
   justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  border: 1px solid transparent;
+
+  &.valide {
+    background: #e8f5e9;
+    color: #2e7d32;
+    border-color: #c8e6c9;
+  }
+
+  &.annulee {
+    background: #ffebee;
+    color: #c62828;
+    border-color: #ffcdd2;
+  }
+}
+
+.status-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+}
+
+.btn-annuler-mini {
+  width: 36px;
+  height: 36px;
+  box-shadow: 0 8px 16px rgba(239, 68, 68, 0.25);
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.vente-row.row-annulee,
+.row-annulee {
+  opacity: 0.82;
+  background: #fff7f7 !important;
+}
+
+::ng-deep .pos-dialog-panel .mat-mdc-dialog-container .mdc-dialog__surface {
+  border-radius: 20px !important;
+  overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  .historique-page {
+    padding: 12px;
+  }
+
+  .page-header h2 {
+    font-size: 22px;
+  }
+
+  .kpi-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .actions-col {
+    width: auto;
+  }
+
+  .row-actions {
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .detail-actions {
+    justify-content: stretch;
+  }
 }

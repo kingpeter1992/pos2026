@@ -130,6 +130,10 @@ import { TarifVenteFormDialog } from './admin/pos/componenets/tarif-vente-form-d
 import { TarifRegleFormDialog } from './admin/pos/componenets/tarif-regle-form-dialog/tarif-regle-form-dialog';
 import { TarifReglesComponent } from './admin/pos/componenets/tarif-regles.component/tarif-regles.component';
 import { HistoriqueVentesComponent } from './admin/pos/componenets/historique-ventes.component/historique-ventes.component';
+import { RetoursProduitsComponent } from './admin/pos/componenets/retours-produits.component/retours-produits.component';
+import { ConfirmAnnulationVenteDialogComponent } from './admin/pos/componenets/confirm-annulation-vente-dialog-component/confirm-annulation-vente-dialog-component';
+import { RapportsVentesComponent } from './admin/pos/componenets/rapports-ventes.component/rapports-ventes.component';
+import { SuggestionsReapprovisionnementComponent } from './admin/achats/components/suggestions-reapprovisionnement-component/suggestions-reapprovisionnement-component';
 
 
 @NgModule({
@@ -180,7 +184,11 @@ import { HistoriqueVentesComponent } from './admin/pos/componenets/historique-ve
     TarifVenteFormDialog,
     TarifRegleFormDialog,
     TarifReglesComponent,
-    HistoriqueVentesComponent
+    HistoriqueVentesComponent,
+    RetoursProduitsComponent,
+    ConfirmAnnulationVenteDialogComponent,
+    RapportsVentesComponent,
+    SuggestionsReapprovisionnementComponent
   ],
 
   imports: [
