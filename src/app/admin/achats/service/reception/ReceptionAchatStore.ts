@@ -124,25 +124,14 @@ export class ReceptionAchatStore {
   // =========================
   // CREATE
   // =========================
-// =========================
-// CREATE
-// =========================
+
 create(request: ReceptionAchatRequest): Observable<ReceptionAchatResponse> {
   this.loadingSubject.next(true);
   this.errorSubject.next(null);
-
   return this.api.creer(request).pipe(
     tap((created) => {
       this.receptionsSubject.next([created, ...this.receptionsSubject.value]);
       this.loaded = true;
-
-      const commandeId = created?.commandeAchatId ?? request.commandeAchatId;
-
-      if (commandeId != null) {
-        this.commandeStore.loadById(commandeId).subscribe({
-          error: () => {}
-        });
-      }
     }),
     catchError((err) => {
       this.errorSubject.next(

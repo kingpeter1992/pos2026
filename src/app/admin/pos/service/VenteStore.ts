@@ -2,6 +2,7 @@ import { Injectable, computed, inject, signal } from "@angular/core";
 import { BehaviorSubject, catchError, finalize, map, Observable, of, shareReplay, tap } from "rxjs";
 import { VenteApiService, VentePayload, VenteResponse } from "./vente-api-service";
 import { ProduitService } from "../../produits/service/produit-service/produit-service";
+import { Toast } from "../../../shares/services/toast/toast";
 
 @Injectable({
   providedIn: 'root'
@@ -10,6 +11,7 @@ export class VenteStore {
   private readonly produitApi = inject(ProduitService);
   private readonly venteApi = inject(VenteApiService);
   private readonly venteService = inject(VenteApiService);
+  private readonly toastr = inject(Toast);
 
 
   private readonly produitsSubject = new BehaviorSubject<any[]>([]);
@@ -444,26 +446,23 @@ save(payload: VentePayload): Observable<VenteResponse> {
     this._items.set([]);
     this._loaded.set(false);
   }
-annulerVente(id: number): Observable<any> {
+annulerVente(id: number, commentaire: string): Observable<any> {
   this._loading.set(true);
 
-  // ⚡ update optimiste (UI immédiate)
-  const optimistic = this._items().map(v =>
-    v.id === id ? { ...v, statut: 'ANNULEE' } : v
-  );
-  this._items.set(optimistic);
-
-  return this.venteService.annulerVente(id).pipe(
-    tap((venteMaj) => {
-      const updated = this._items().map((v: any) =>
-        v.id === id ? venteMaj : v
-      );
-      this._items.set(updated);
+  return this.venteService.annulerVente(id, commentaire).pipe(
+    tap(() => {
+      this.refresh().subscribe();
     }),
     finalize(() => this._loading.set(false)),
     catchError((err) => {
-      // rollback si erreur
-      this.refresh().subscribe();
+      console.error('Erreur retour vente :', err);
+       console.error('status :', err?.status);
+  console.error('message :', err?.message);
+  console.error('error :', err?.error);
+
+  this.toastr.error(
+    err?.error?.message || err?.message || 'Erreur lors du retour de vente.'
+  );
       return of(null);
     })
   );

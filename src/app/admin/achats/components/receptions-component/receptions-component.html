@@ -1,7 +1,6 @@
 <div class="erp-form-page">
   <mat-card class="erp-shell">
 
-    <!-- HEADER -->
     <div class="erp-header">
       <div class="erp-header-left">
         <div class="erp-header-icon">
@@ -25,8 +24,8 @@
           </div>
 
           <p>
-            Enregistrer la réception des produits, contrôler les quantités reçues
-            et mouvementer automatiquement le stock.
+            Enregistrer la réception des produits, contrôler les quantités reçues,
+            renseigner les lots et dates de péremption, puis mouvementer automatiquement le stock.
           </p>
         </div>
       </div>
@@ -37,12 +36,7 @@
           Retour
         </button>
 
-        <button
-          mat-flat-button
-          color="primary"
-          type="button"
-          class="btn-save"
-          [disabled]="submitting || loading"
+        <button mat-flat-button color="primary" type="button" class="btn-save" [disabled]="submitting || loading"
           (click)="submit()">
           <mat-icon>save</mat-icon>
           {{ submitting ? 'Enregistrement...' : 'Valider la réception' }}
@@ -52,11 +46,9 @@
 
     <mat-divider></mat-divider>
 
-    <!-- CONTENT -->
     <div class="erp-content" *ngIf="!loading; else loadingTpl">
       <form *ngIf="form" [formGroup]="form" class="erp-form">
 
-        <!-- KPI -->
         <section class="kpi-grid">
           <div class="kpi-card primary">
             <div class="kpi-top">
@@ -97,7 +89,6 @@
           </div>
         </section>
 
-        <!-- INFOS GENERALES -->
         <section class="section-card">
           <div class="section-head">
             <div class="section-head-left">
@@ -122,58 +113,50 @@
 
             <mat-form-field appearance="outline">
               <mat-label>Référence bon réception</mat-label>
-              <input
-                matInput
-                formControlName="referenceBonReception"
-                placeholder="BR-2026-0001" />
+              <input matInput formControlName="referenceBonReception" placeholder="BR-2026-0001" />
             </mat-form-field>
 
             <mat-form-field appearance="outline">
               <mat-label>Date réception</mat-label>
-              <input matInput type="date" formControlName="dateReception" />
+
+              <input matInput [matDatepicker]="dateReceptionPicker" formControlName="dateReception" [readonly]="true" />
+
+              <mat-datepicker-toggle matSuffix [for]="dateReceptionPicker">
+              </mat-datepicker-toggle>
+
+              <mat-datepicker #dateReceptionPicker></mat-datepicker>
+
               <mat-error *ngIf="form.get('dateReception')?.hasError('required')">
                 La date de réception est obligatoire
               </mat-error>
             </mat-form-field>
 
-              <!-- DEPOT -->
-              <mat-form-field appearance="outline">
-                <mat-label>Dépôt de réception</mat-label>
-
-                <mat-select formControlName="depotId">
-                 <mat-option *ngFor="let d of depots" [value]="d.id">
+            <mat-form-field appearance="outline">
+              <mat-label>Dépôt de réception</mat-label>
+              <mat-select formControlName="depotId">
+                <mat-option *ngFor="let d of depots" [value]="d.id">
                   🏬 {{ d.nom }} — {{ d.id || 'N/A' }}
                 </mat-option>
-                </mat-select>
+              </mat-select>
+              <mat-icon matPrefix>warehouse</mat-icon>
+              <mat-error *ngIf="form.get('depotId')?.hasError('required')">
+                Le dépôt est obligatoire
+              </mat-error>
+            </mat-form-field>
 
-                <mat-icon matPrefix>warehouse</mat-icon>
-
-                <mat-error *ngIf="form.get('depotId')?.hasError('required')">
-                  Le dépôt est obligatoire
-                </mat-error>
-              </mat-form-field>
-
-              <!-- FOURNISSEUR -->
-              <mat-form-field appearance="outline">
-                <mat-label>Fournisseur</mat-label>
-                <input
-                  matInput
-                  [value]="commande?.fournisseurNom || '-'"
-                  readonly>
-                <mat-icon matPrefix>business</mat-icon>
-              </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Fournisseur</mat-label>
+              <input matInput [value]="commande?.fournisseurNom || '-'" readonly>
+              <mat-icon matPrefix>business</mat-icon>
+            </mat-form-field>
 
             <mat-form-field appearance="outline">
               <mat-label>Observateur</mat-label>
-              <input
-                matInput
-                formControlName="observateur"
-                placeholder="Nom de l'observateur" />
+              <input matInput formControlName="observateur" placeholder="Nom de l'observateur" />
             </mat-form-field>
           </div>
         </section>
 
-        <!-- CHARGES -->
         <section class="section-card">
           <div class="section-head">
             <div class="section-head-left">
@@ -190,48 +173,28 @@
           <div class="form-grid grid-4">
             <mat-form-field appearance="outline">
               <mat-label>Fret / Transport</mat-label>
-              <input
-                matInput
-                type="number"
-                min="0"
-                step="0.01"
-                formControlName="fraisTransport"
+              <input matInput type="number" min="0" step="0.01" formControlName="fraisTransport"
                 (input)="onFraisChange('fraisTransport')" />
               <span matTextSuffix>USD</span>
             </mat-form-field>
 
             <mat-form-field appearance="outline">
               <mat-label>Douane</mat-label>
-              <input
-                matInput
-                type="number"
-                min="0"
-                step="0.01"
-                formControlName="fraisDouane"
+              <input matInput type="number" min="0" step="0.01" formControlName="fraisDouane"
                 (input)="onFraisChange('fraisDouane')" />
               <span matTextSuffix>USD</span>
             </mat-form-field>
 
             <mat-form-field appearance="outline">
               <mat-label>Manutention</mat-label>
-              <input
-                matInput
-                type="number"
-                min="0"
-                step="0.01"
-                formControlName="fraisManutention"
+              <input matInput type="number" min="0" step="0.01" formControlName="fraisManutention"
                 (input)="onFraisChange('fraisManutention')" />
               <span matTextSuffix>USD</span>
             </mat-form-field>
 
             <mat-form-field appearance="outline">
               <mat-label>Autres charges</mat-label>
-              <input
-                matInput
-                type="number"
-                min="0"
-                step="0.01"
-                formControlName="autresFrais"
+              <input matInput type="number" min="0" step="0.01" formControlName="autresFrais"
                 (input)="onFraisChange('autresFrais')" />
               <span matTextSuffix>USD</span>
             </mat-form-field>
@@ -255,7 +218,6 @@
           </div>
         </section>
 
-        <!-- LIGNES -->
         <section class="section-card">
           <div class="section-head">
             <div class="section-head-left">
@@ -264,7 +226,7 @@
               </div>
               <div>
                 <h2>Lignes de réception</h2>
-                <p>Contrôle des quantités, prix et commentaires par produit</p>
+                <p>Contrôle des quantités, prix, lot et péremption par produit</p>
               </div>
             </div>
 
@@ -287,14 +249,15 @@
                     <th class="text-center">Reste</th>
                     <th class="text-center">Qté reçue</th>
                     <th class="text-center">Prix unitaire</th>
+                    <th class="text-center">Date péremption</th>
+                    <th class="text-center">Affichage date</th>
+                    <th class="text-center">N° Lot</th>
                     <th>Commentaire</th>
                   </tr>
                 </thead>
 
                 <tbody formArrayName="lignes">
-                  <tr
-                    *ngFor="let ligne of lignesFormArray.controls; let i = index"
-                    [formGroupName]="i"
+                  <tr *ngFor="let ligne of lignesFormArray.controls; let i = index" [formGroupName]="i"
                     [class.row-blocked]="ligne.get('bloquee')?.value">
 
                     <td class="product-cell">
@@ -327,22 +290,15 @@
                     </td>
 
                     <td class="text-center">
-                      <span
-                        class="pill"
-                        [ngClass]="ligne.get('bloquee')?.value ? 'success' : 'warning'">
+                      <span class="pill" [ngClass]="ligne.get('bloquee')?.value ? 'success' : 'warning'">
                         {{ ligne.get('quantiteRestante')?.value }}
                       </span>
                     </td>
 
                     <td class="text-center qte-cell">
                       <mat-form-field appearance="outline" class="qte-field compact-field">
-                        <input
-                          matInput
-                          type="number"
-                          min="0"
-                          formControlName="quantiteRecue"
-                          [readonly]="ligne.get('bloquee')?.value"
-                          (input)="onQuantiteChange(i)" />
+                        <input matInput type="number" min="0" formControlName="quantiteRecue"
+                          [readonly]="ligne.get('bloquee')?.value" (input)="onQuantiteChange(i)" />
                         <mat-error *ngIf="ligne.get('quantiteRecue')?.hasError('required')">
                           Obligatoire
                         </mat-error>
@@ -354,23 +310,59 @@
 
                     <td class="text-center pu-cell">
                       <mat-form-field appearance="outline" class="pu-field compact-field">
-                        <input
-                          matInput
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          formControlName="prixUnitaire"
-                          [readonly]="ligne.get('bloquee')?.value"
-                          placeholder="0.00" />
+                        <input matInput type="number" min="0" step="0.01" formControlName="prixUnitaire"
+                          [readonly]="ligne.get('bloquee')?.value" placeholder="0.00" />
+                      </mat-form-field>
+                    </td>
+
+                    <td class="text-center date-cell">
+                      <ng-container *ngIf="isProduitPerissable(ligne.get('produitId')?.value)">
+                        <mat-form-field appearance="outline" class="date-field compact-field">
+                          <input matInput [matDatepicker]="picker" formControlName="datePeremption" [readonly]="true"
+                            [disabled]="ligne.get('bloquee')?.value" (dateChange)="onDatePeremptionChange(i)" />
+
+                          <mat-datepicker-toggle matSuffix [for]="picker" [disabled]="ligne.get('bloquee')?.value">
+                          </mat-datepicker-toggle>
+
+                          <mat-datepicker #picker></mat-datepicker>
+
+                          <mat-hint *ngIf="ligne.get('datePeremption')?.value">
+                            DLC / DDM
+                          </mat-hint>
+                        </mat-form-field>
+                      </ng-container>
+                    </td>
+
+                    <td class="text-center days-cell">
+                      <ng-container *ngIf="isProduitPerissable(ligne.get('produitId')?.value)">
+                        <div class="days-box" [ngClass]="{
+                            'days-empty': !ligne.get('datePeremption')?.value,
+                            'days-danger': ligne.get('datePeremption')?.value && form.get('dateReception')?.value && (ligne.get('datePeremption')?.value < form.get('dateReception')?.value),
+                            'days-info': ligne.get('datePeremption')?.value
+                          }">
+                          <ng-container *ngIf="ligne.get('datePeremption')?.value; else noDateTpl">
+                            {{ ligne.get('datePeremption')?.value | date:'dd/MM/yyyy' }}
+                          </ng-container>
+                          <ng-template #noDateTpl>
+                            <span>-</span>
+                          </ng-template>
+                        </div>
+                      </ng-container>
+                    </td>
+
+                    <td class="text-center lot-cell">
+                      <mat-form-field appearance="outline" class="lot-field compact-field">
+                        <input matInput formControlName="numeroLot" [readonly]="ligne.get('bloquee')?.value"
+                          placeholder="Lot fournisseur" />
+                        <mat-hint *ngIf="ligne.get('numeroLot')?.value">
+                          Traçabilité lot
+                        </mat-hint>
                       </mat-form-field>
                     </td>
 
                     <td class="comment-cell">
                       <mat-form-field appearance="outline" class="comment-field compact-field">
-                        <input
-                          matInput
-                          formControlName="commentaire"
-                          [readonly]="ligne.get('bloquee')?.value"
+                        <input matInput formControlName="commentaire" [readonly]="ligne.get('bloquee')?.value"
                           placeholder="Commentaire ligne" />
                       </mat-form-field>
                     </td>
@@ -379,13 +371,32 @@
               </table>
             </div>
           </div>
+
+          <div class="reception-help-strip">
+            <div class="help-item">
+              <mat-icon>info</mat-icon>
+              <span>La date de péremption doit être renseignée uniquement pour les produits périssables.</span>
+            </div>
+
+            <div class="help-item">
+              <mat-icon>qr_code_2</mat-icon>
+              <span>Le numéro de lot améliore la traçabilité et la gestion FEFO.</span>
+            </div>
+
+            <div class="help-item warning">
+              <mat-icon>warning</mat-icon>
+              <span>Une date de péremption antérieure à la date de réception est invalide.</span>
+            </div>
+          </div>
         </section>
 
-        <!-- ACTION BAR -->
         <div class="bottom-action-bar">
           <div class="bottom-action-left">
             <mat-icon>info</mat-icon>
-            <span>Vérifie les quantités reçues et les charges avant validation définitive.</span>
+            <span>
+              Vérifie les quantités reçues, les charges, les numéros de lot et les dates de péremption avant validation
+              définitive.
+            </span>
           </div>
 
           <div class="bottom-action-right">
@@ -393,12 +404,7 @@
               Annuler
             </button>
 
-            <button
-              mat-flat-button
-              color="primary"
-              type="button"
-              [disabled]="submitting || loading"
-              (click)="submit()">
+            <button mat-flat-button color="primary" type="button" [disabled]="submitting || loading" (click)="submit()">
               <mat-icon>check_circle</mat-icon>
               {{ submitting ? 'Enregistrement...' : 'Valider la réception' }}
             </button>
@@ -407,13 +413,10 @@
       </form>
     </div>
 
-    <!-- LOADING -->
     <ng-template #loadingTpl>
       <div class="loading-box">
         <div class="loading-card">
-          <mat-progress-spinner
-            mode="indeterminate"
-            diameter="42">
+          <mat-progress-spinner mode="indeterminate" diameter="42">
           </mat-progress-spinner>
           <h3>Chargement en cours</h3>
           <p>Récupération des informations de la commande fournisseur...</p>

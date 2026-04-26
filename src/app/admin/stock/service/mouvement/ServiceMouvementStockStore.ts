@@ -1,45 +1,45 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Observable, of, shareReplay, tap, finalize } from 'rxjs';
-import { MouvementStockView } from '../../models/mouvementStockView';
 import { MouvementStockService } from './mouvement-stock-service';
+import { TransactionStockView } from '../../models/TransactionStockView';
 
 @Injectable({ providedIn: 'root' })
 export class ServiceMouvementStockStore {
-  private mouvementService = inject(MouvementStockService);
+ private readonly mouvementService = inject(MouvementStockService);
 
-  private mouvementsSignal = signal<MouvementStockView[]>([]);
-  private loadingSignal = signal<boolean>(false);
-  private loadedSignal = signal<boolean>(false);
+  private readonly mouvementsSignal = signal<TransactionStockView[]>([]);
+  private readonly loadingSignal = signal<boolean>(false);
+  private readonly loadedSignal = signal<boolean>(false);
 
-  private currentRequest$: Observable<MouvementStockView[]> | null = null;
+  private currentRequest$: Observable<TransactionStockView[]> | null = null;
 
-  mouvements = this.mouvementsSignal.asReadonly();
-  loading = this.loadingSignal.asReadonly();
-  loaded = this.loadedSignal.asReadonly();
+  readonly mouvements = this.mouvementsSignal.asReadonly();
+  readonly loading = this.loadingSignal.asReadonly();
+  readonly loaded = this.loadedSignal.asReadonly();
 
-  totalItems = computed(() => this.mouvements().length);
+  readonly totalItems = computed(() => this.mouvements().length);
 
-  totalEntrees = computed(() =>
-    this.mouvements().filter(m => m.typeMouvement?.includes('ENTREE')).length
+  readonly totalEntrees = computed(() =>
+    this.mouvements().filter(m => this.isEntree(m.typeTransaction)).length
   );
 
-  totalSorties = computed(() =>
-    this.mouvements().filter(m => m.typeMouvement?.includes('SORTIE')).length
+  readonly totalSorties = computed(() =>
+    this.mouvements().filter(m => this.isSortie(m.typeTransaction)).length
   );
 
-  totalQuantiteEntree = computed(() =>
+  readonly totalQuantiteEntree = computed(() =>
     this.mouvements()
-      .filter(m => m.typeMouvement?.includes('ENTREE'))
-      .reduce((sum, m) => sum + Number(m.quantite || 0), 0)
+      .filter(m => this.isEntree(m.typeTransaction))
+      .reduce((sum, m) => sum + Number(m.quantite ?? 0), 0)
   );
 
-  totalQuantiteSortie = computed(() =>
+  readonly totalQuantiteSortie = computed(() =>
     this.mouvements()
-      .filter(m => m.typeMouvement?.includes('SORTIE'))
-      .reduce((sum, m) => sum + Number(m.quantite || 0), 0)
+      .filter(m => this.isSortie(m.typeTransaction))
+      .reduce((sum, m) => sum + Number(m.quantite ?? 0), 0)
   );
 
-  loadIfNeeded(): Observable<MouvementStockView[]> {
+  loadIfNeeded(): Observable<TransactionStockView[]> {
     if (this.loadedSignal()) {
       return of(this.mouvementsSignal());
     }
@@ -53,8 +53,8 @@ export class ServiceMouvementStockStore {
     this.currentRequest$ = this.mouvementService.getAll().pipe(
       tap((data) => {
         this.mouvementsSignal.set(data ?? []);
-        console.log('Mouvements de stock chargés :', this.mouvementsSignal());
         this.loadedSignal.set(true);
+        console.log('Transactions de stock chargées :', this.mouvementsSignal());
       }),
       finalize(() => {
         this.loadingSignal.set(false);
@@ -66,7 +66,7 @@ export class ServiceMouvementStockStore {
     return this.currentRequest$;
   }
 
-  refresh(): Observable<MouvementStockView[]> {
+  refresh(): Observable<TransactionStockView[]> {
     this.loadingSignal.set(true);
 
     const request$ = this.mouvementService.getAll().pipe(
@@ -85,35 +85,48 @@ export class ServiceMouvementStockStore {
     return request$;
   }
 
-
   filterMouvements(
-  search: string,
-  depot: string,
-  type: string,
-  dateDebut?: string,
-  dateFin?: string
-): MouvementStockView[] {
-  const term = (search ?? '').trim().toLowerCase();
-  const start = dateDebut ? new Date(dateDebut) : null;
-  const end = dateFin ? new Date(dateFin + 'T23:59:59') : null;
+    search: string,
+    depot: string,
+    type: string,
+    dateDebut?: string,
+    dateFin?: string
+  ): TransactionStockView[] {
+    const term = (search ?? '').trim().toLowerCase();
+    const start = dateDebut ? new Date(dateDebut) : null;
+    const end = dateFin ? new Date(dateFin + 'T23:59:59') : null;
 
-  return this.mouvements().filter(m => {
-    const dateMouvement = m.dateMouvement ? new Date(m.dateMouvement) : null;
+    return this.mouvements().filter(m => {
+      const dateTransaction = m.dateTransaction ? new Date(m.dateTransaction) : null;
 
-    const matchSearch =
-      !term ||
-      (m.nomProduit ?? '').toLowerCase().includes(term) ||
-      (m.codeBarres ?? '').toLowerCase().includes(term) ||
-      (m.referenceDocument ?? '').toLowerCase().includes(term) ||
-      (m.libelle ?? '').toLowerCase().includes(term);
+      const searchableText = [
+        m.produitNom ?? '',
+        m.depotNom ?? '',
+        m.referenceDocument ?? '',
+        m.sourceDocument ?? '',
+        m.libelle ?? '',
+        m.utilisateur ?? '',
+        m.typeTransaction ?? ''
+      ]
+        .join(' ')
+        .toLowerCase();
 
-    const matchDepot = !depot || m.nomDepot === depot;
-    const matchType = !type || m.typeMouvement === type;
+      const matchSearch = !term || searchableText.includes(term);
+      const matchDepot = !depot || m.depotNom === depot;
+      const matchType = !type || m.typeTransaction === type;
 
-    const matchDateDebut = !start || (dateMouvement && dateMouvement >= start);
-    const matchDateFin = !end || (dateMouvement && dateMouvement <= end);
+      const matchDateDebut = !start || (!!dateTransaction && dateTransaction >= start);
+      const matchDateFin = !end || (!!dateTransaction && dateTransaction <= end);
 
-    return matchSearch && matchDepot && matchType && matchDateDebut && matchDateFin;
-  });
-}
+      return matchSearch && matchDepot && matchType && matchDateDebut && matchDateFin;
+    });
+  }
+
+  private isEntree(type: string | null | undefined): boolean {
+    return (type ?? '').toUpperCase().includes('ENTREE');
+  }
+
+  private isSortie(type: string | null | undefined): boolean {
+    return (type ?? '').toUpperCase().includes('SORTIE');
+  }
 }

@@ -1,8 +1,11 @@
+<div class="dialog-full-container">
+
+
 <div class="erp-form-page">
   <mat-card class="erp-shell">
 
     <!-- HEADER -->
-    <div class="erp-header">
+    <div class="erp-header dialog-header">
       <div class="erp-header-left">
         <div class="erp-header-icon">
           <mat-icon>{{ isEditMode ? 'edit_note' : 'add_shopping_cart' }}</mat-icon>
@@ -38,7 +41,7 @@
       </div>
     </div>
 
-    <mat-card-content class="erp-content">
+    <mat-card-content class="erp-content dialog-body">
       <form [formGroup]="form" class="erp-form-layout">
 
         <!-- ================= MAIN ================= -->
@@ -285,4 +288,5 @@
       </form>
     </mat-card-content>
   </mat-card>
+</div>
 </div>

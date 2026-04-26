@@ -1,0 +1,129 @@
+<div class="inventory-detail" *ngIf="inventaire() as inv">
+  <mat-card class="hero-card">
+    <div class="hero-header">
+      <div>
+        <div class="breadcrumb">Inventaire / {{ inv.reference }}</div>
+        <h1>{{ inv.reference }}</h1>
+        <p>Gestion des bordereaux de comptage de cet inventaire.</p>
+      </div>
+
+      <div class="hero-actions">
+        <button mat-flat-button color="primary" (click)="openGenererBordereauxDialog(inv)"
+          [disabled]="!canGenererBordereaux()">
+          <mat-icon>library_add</mat-icon>
+          Générer les bordereaux
+        </button>
+
+      </div>
+    </div>
+
+    <div class="hero-grid">
+      <div class="meta-box">
+        <span>Type</span>
+        <strong>{{ inv.type }}</strong>
+      </div>
+      <div class="meta-box">
+        <span>Dépôt</span>
+        <strong>{{ inv.depotNom || '-' }}</strong>
+      </div>
+      <div class="meta-box">
+        <span>Locator</span>
+        <strong>{{ inv.locatorCode || '-' }}</strong>
+      </div>
+      <div class="meta-box">
+        <span>Statut</span>
+        <strong>{{ inv.statut }}</strong>
+      </div>
+      <div class="meta-box">
+        <span>Bordereaux</span>
+        <strong>{{ bordereaux().length }}</strong>
+      </div>
+    </div>
+  </mat-card>
+
+  <mat-card class="table-card" *ngIf="hasBordereaux(); else noBordereaux">
+    <div class="section-title">
+      <span>Bordereaux de l’inventaire</span>
+    </div>
+
+    <p-table [value]="bordereaux()" responsiveLayout="scroll">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Référence</th>
+          <th>N°</th>
+          <th>Lignes</th>
+          <th>Locator</th>
+          <th>Qté théorique</th>
+          <th>Stock MAJ</th>
+          <th>Statut</th>
+          <th>Date</th>
+          <th class="text-right">Action</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-row>
+        <tr>
+          <td>{{ row.reference }}</td>
+          <td>{{ row.numeroOrdre }}</td>
+          <td>{{ row.nombreLignes }}</td>
+          <td>{{ row.locatorCode || '-' }}</td>
+          <td>{{ row.afficherQuantiteTheorique ? 'Oui' : 'Non' }}</td>
+          <td>{{ row.stockMisAJour ? 'Oui' : 'Non' }}</td>
+          <td>{{ row.statut }}</td>
+          <td>{{ row.dateSaisie | date:'dd/MM/yyyy HH:mm' }}</td>
+          <td class="text-right">
+            <button mat-stroked-button color="primary" (click)="openBordereauDetail(row)">
+              Détail
+            </button>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </mat-card>
+
+  <ng-template #noBordereaux>
+    <mat-card class="empty-sheet-card">
+      <mat-icon>inventory_2</mat-icon>
+      <h3>Aucun bordereau généré</h3>
+      <p>Commence par générer les bordereaux de cet inventaire.</p>
+
+      <div class="empty-actions">
+        <button mat-flat-button color="primary" (click)="openGenererBordereauxDialog(inv)"
+          [disabled]="!canGenererBordereaux()">
+          <mat-icon>library_add</mat-icon>
+          Générer les bordereaux
+        </button>
+      </div>
+    </mat-card>
+  </ng-template>
+
+  <mat-card class="table-card" *ngIf="variances().length > 0">
+    <div class="section-title">
+      <span>Résumé des variances</span>
+    </div>
+
+    <p-table [value]="variances()" responsiveLayout="scroll">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Théorique</th>
+          <th>Physique</th>
+          <th>Écart</th>
+          <th>Type</th>
+          <th>Valeur</th>
+          <th>Appliquée</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-row>
+        <tr>
+          <td>{{ row.stockTheorique | number:'1.0-3' }}</td>
+          <td>{{ row.stockPhysiqueRetenu | number:'1.0-3' }}</td>
+          <td>{{ row.ecart | number:'1.0-3' }}</td>
+          <td>{{ row.type }}</td>
+          <td>{{ row.valeurEcart | number:'1.2-2' }}</td>
+          <td>{{ row.appliquee ? 'Oui' : 'Non' }}</td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </mat-card>
+</div>

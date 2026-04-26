@@ -1,5 +1,6 @@
 import { Component, computed, Inject, inject, signal } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { Router } from '@angular/router';
 @Component({
   selector: 'app-reception-detail-component',
   templateUrl: './reception-detail-component.html',
@@ -23,7 +24,8 @@ export class ReceptionDetailComponent {
 
   constructor(
     public dialogRef: MatDialogRef<ReceptionDetailComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: any
+    @Inject(MAT_DIALOG_DATA) public data: any,
+    private router: Router
   ) {
     this.lignes = signal(this.data?.lignes ?? []);
   }
@@ -48,4 +50,13 @@ export class ReceptionDetailComponent {
   trackByLine(index: number, item: any): number {
     return Number(item?.id ?? index);
   }
+
+goToLocators(): void {
+  if (!this.data?.id) {
+    return;
+  }
+
+  this.dialogRef.close();
+  this.router.navigate(['admin/achats/receptions/locators', this.data.id]);
+}
 }

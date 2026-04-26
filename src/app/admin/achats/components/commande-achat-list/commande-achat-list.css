@@ -599,3 +599,11 @@
 .erp-lines-container::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
+.dialog-full-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}

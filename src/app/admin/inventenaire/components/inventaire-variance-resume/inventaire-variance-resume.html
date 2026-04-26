@@ -1,0 +1,150 @@
+<div class="variance-page">
+
+  <div class="page-header">
+    <div>
+      <div class="breadcrumb">Inventaires / Variances</div>
+      <h1>Résumé des variances</h1>
+      <p>Consultation du rapport et impression PDF</p>
+    </div>
+
+    <div class="header-actions">
+      <button type="button" class="btn btn-light" routerLink="/admin/inventaires">
+        Retour inventaires
+      </button>
+
+      <button type="button" class="btn btn-outline" (click)="loadResume()" [disabled]="loading()">
+        {{ loading() ? 'Chargement...' : 'Rafraîchir' }}
+      </button>
+
+      <button type="button" class="btn btn-primary"
+              (click)="lancerVariances()"
+              [disabled]="lancementEnCours()">
+        {{ lancementEnCours() ? 'Lancement...' : 'Lancer les variances' }}
+      </button>
+
+      <button type="button" class="btn btn-secondary"
+              (click)="imprimerPdf()"
+              [disabled]="loadingPdf()">
+        {{ loadingPdf() ? 'Génération PDF...' : 'Imprimer PDF' }}
+      </button>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="state-card">Chargement du résumé...</div>
+  } @else if (error()) {
+    <div class="state-card error">{{ error() }}</div>
+  } @else if (resume(); as r) {
+
+    <div class="top-grid">
+      <div class="card">
+        <div class="card-title">Informations inventaire</div>
+        <div class="info-grid">
+          <div><strong>Référence :</strong> {{ r.referenceInventaire || '-' }}</div>
+          <div><strong>Dépôt :</strong> {{ r.depotNom || '-' }}</div>
+          <div><strong>Locator :</strong> {{ r.locatorCode || '-' }}</div>
+          <div><strong>Statut :</strong> {{ r.statut || '-' }}</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Synthèse</div>
+        <div class="kpi-grid">
+          <div class="kpi">
+            <span class="label">Total lignes</span>
+            <strong>{{ r.totalLignes }}</strong>
+          </div>
+          <div class="kpi">
+            <span class="label">Entrées</span>
+            <strong>{{ r.totalEntrees }}</strong>
+          </div>
+          <div class="kpi">
+            <span class="label">Sorties</span>
+            <strong>{{ r.totalSorties }}</strong>
+          </div>
+          <div class="kpi">
+            <span class="label">Néant</span>
+            <strong>{{ r.totalNeant }}</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="totaux-grid">
+      <div class="card total-card">
+        <span>Ecart positif</span>
+        <strong>{{ formatNumber(r.totalEcartPositif, 3) }}</strong>
+      </div>
+
+      <div class="card total-card">
+        <span>Ecart négatif</span>
+        <strong>{{ formatNumber(r.totalEcartNegatif, 3) }}</strong>
+      </div>
+
+      <div class="card total-card">
+        <span>Valeur positive</span>
+        <strong>{{ formatNumber(r.totalValeurPositive, 2) }}</strong>
+      </div>
+
+      <div class="card total-card">
+        <span>Valeur négative</span>
+        <strong>{{ formatNumber(r.totalValeurNegative, 2) }}</strong>
+      </div>
+
+      <div class="card total-card highlight">
+        <span>Valeur nette</span>
+        <strong>{{ formatNumber(r.totalValeurNette, 2) }}</strong>
+      </div>
+    </div>
+
+    <div class="card table-card">
+      <div class="card-title">Lignes de variance</div>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Produit</th>
+              <th>Catégorie</th>
+              <th>Code-barres</th>
+              <th>Locator</th>
+              <th>Théorique</th>
+              <th>Physique</th>
+              <th>Ecart</th>
+              <th>PMP</th>
+              <th>Valeur écart</th>
+              <th>Type</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (ligne of r.lignes; track trackByLigne($index, ligne)) {
+              <tr>
+                <td>{{ ligne.produitNom || '-' }}</td>
+                <td>{{ ligne.categorieNom || '-' }}</td>
+                <td>{{ ligne.codeBarres || '-' }}</td>
+                <td>{{ ligne.locatorCode || '-' }}</td>
+                <td>{{ formatNumber(ligne.stockTheorique, 3) }}</td>
+                <td>{{ formatNumber(ligne.stockPhysiqueRetenu, 3) }}</td>
+                <td>{{ formatNumber(ligne.ecart, 3) }}</td>
+                <td>{{ formatNumber(ligne.pmp, 2) }}</td>
+                <td>{{ formatNumber(ligne.valeurEcart, 2) }}</td>
+                <td>
+                  <span class="badge"
+                        [class.entree]="ligne.type === 'ENTREE'"
+                        [class.sortie]="ligne.type === 'SORTIE'"
+                        [class.neant]="ligne.type === 'NEANT'">
+                    {{ ligne.type }}
+                  </span>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="10" class="empty-cell">Aucune variance trouvée.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+</div>

@@ -1,0 +1,76 @@
+<div class="locator-page">
+  <mat-card class="locator-shell">
+    <div class="page-header">
+      <div>
+        <div class="breadcrumb">Réceptions / Locators</div>
+        <h1>Affectation des emplacements</h1>
+        <p>Associer chaque produit reçu à un casier / locator dans le dépôt</p>
+      </div>
+    </div>
+
+    @if (!loading()) {
+      <form [formGroup]="form" class="locator-form">
+        <div class="header-grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Référence réception</mat-label>
+            <input matInput formControlName="refReception" readonly>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Dépôt</mat-label>
+            <input matInput formControlName="depotNom" readonly>
+          </mat-form-field>
+        </div>
+
+        <div formArrayName="lignes" class="locator-lines">
+          @for (ligne of lignesFormArray.controls; track $index; let i = $index) {
+            <div class="locator-line" [formGroupName]="i">
+              <div class="line-product">
+                <div class="product-name">{{ ligne.get('produitNom')?.value }}</div>
+                <div class="product-qty">
+                  Qté reçue : {{ ligne.get('quantiteRecue')?.value }}
+                </div>
+              </div>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Locator / Casier</mat-label>
+                <input
+                  matInput
+                  formControlName="locatorCode"
+                  placeholder="Ex: A-01-02"
+                  (blur)="normalizeLocator(i)">
+                <mat-icon matSuffix>inventory_2</mat-icon>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Qté rangée</mat-label>
+                <input matInput type="number" formControlName="quantiteRangee">
+              </mat-form-field>
+            </div>
+          }
+        </div>
+
+        <div class="actions">
+          <button mat-stroked-button type="button" (click)="cancel()">
+            Annuler
+          </button>
+
+          <button
+            mat-flat-button
+            color="primary"
+            type="button"
+            (click)="submit()"
+            [disabled]="submitting()">
+            <mat-icon>save</mat-icon>
+            Enregistrer les locators
+          </button>
+        </div>
+      </form>
+    } @else {
+      <div class="loading-box">
+        <mat-icon class="spin">autorenew</mat-icon>
+        <span>Chargement...</span>
+      </div>
+    }
+  </mat-card>
+</div>

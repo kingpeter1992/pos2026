@@ -33,6 +33,7 @@ export class ListeProduitsComponent implements OnInit {
   ngOnInit(): void {
     this.produitStore.produits$.subscribe(data => {
       this.produits = [...data];
+      console.log('list catalogue produit', this.produits)
       this.applyFilter();
       this.computeKpis();
     });

@@ -1,0 +1,115 @@
+.count-sheet {
+  background: #fff;
+  color: #111827;
+  border: 1px solid #dbe3ef;
+  border-radius: 18px;
+  padding: 1.25rem;
+}
+
+.sheet-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.company {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #6b7280;
+  letter-spacing: 0.08em;
+}
+
+.title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  margin-top: 0.2rem;
+}
+
+.sheet-meta {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+  padding: 0.85rem 1rem;
+  background: #f8fafc;
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+}
+
+.sheet-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.sheet-table th,
+.sheet-table td {
+  border: 1px solid #d1d5db;
+  padding: 0.7rem;
+  font-size: 0.9rem;
+  vertical-align: middle;
+}
+
+.sheet-table th {
+  background: #eff6ff;
+  text-align: left;
+}
+
+.blank-cell {
+  min-width: 160px;
+  height: 42px;
+}
+
+.signatures {
+  margin-top: 1.25rem;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.sign-box {
+  height: 90px;
+  border: 1px dashed #94a3b8;
+  border-radius: 12px;
+  padding: 0.75rem;
+}
+
+.sign-box span {
+  color: #475569;
+  font-size: 0.85rem;
+}
+.sheet-input {
+  width: 100%;
+  min-height: 36px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 0.35rem 0.5rem;
+  font-size: 0.85rem;
+  background: #fff;
+  outline: none;
+}
+
+.sheet-input:disabled {
+  background: #f8fafc;
+  color: #334155;
+}
+
+.qty-input {
+  max-width: 120px;
+}
+
+.observation-input {
+  min-width: 180px;
+}
+
+@media print {
+  .sheet-input {
+    border: none;
+    background: transparent;
+    padding: 0;
+  }
+
+  .sheet-input:disabled {
+    background: transparent;
+  }
+}

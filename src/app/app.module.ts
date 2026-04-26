@@ -92,10 +92,8 @@ import { AdminUsersComponent } from './user/admin-users/admin-users.component';
 import { PasswordforgotComponent } from './user/passwordforgot/passwordforgot.component';
 import { InputTextModule } from 'primeng/inputtext';
 import { SkeletonModule } from 'primeng/skeleton';
-
 import { CommonModule } from '@angular/common';
 import { DividerModule } from 'primeng/divider';
-
 import { MatMenuModule } from '@angular/material/menu';
 import { Dashboard } from './admin/layout-component/dashboard/dashboard';
 import { CategoriesComponent } from './admin/produits/components/categories-component/categories-component';
@@ -134,11 +132,27 @@ import { RetoursProduitsComponent } from './admin/pos/componenets/retours-produi
 import { ConfirmAnnulationVenteDialogComponent } from './admin/pos/componenets/confirm-annulation-vente-dialog-component/confirm-annulation-vente-dialog-component';
 import { RapportsVentesComponent } from './admin/pos/componenets/rapports-ventes.component/rapports-ventes.component';
 import { SuggestionsReapprovisionnementComponent } from './admin/achats/components/suggestions-reapprovisionnement-component/suggestions-reapprovisionnement-component';
+import { PrevisionsAchatsComponent } from './admin/achats/components/previsions-achats-component/previsions-achats-component';
+import { AlertesStockComponent } from './admin/stock/components/alertes-stock-component/alertes-stock-component';
+import { LocatorAffectationComponent } from './admin/stock/components/locator-affectation-component/locator-affectation-component';
+import { InventaireList } from './admin/inventenaire/components/inventaire-list/inventaire-list';
+import { InventaireDetail } from './admin/inventenaire/components/inventaire-detail/inventaire-detail';
+import { InventaireCardPrint } from './admin/inventenaire/components/inventaire-card-print/inventaire-card-print';
 
+
+import { RouterModule } from '@angular/router';
+import { InventaireCreateDialogComponent } from './admin/inventenaire/components/inventaire-create-dialog-component/inventaire-create-dialog-component';
+import { InventaireCreateBordereauDialog } from './admin/inventenaire/components/inventaire-create-bordereau-dialog/inventaire-create-bordereau-dialog';
+import { InventaireComponent } from './admin/inventenaire/components/inventaire-component/inventaire-component';
+import { InventaireBordereauComptageComponent } from './admin/inventenaire/components/inventaire-bordereau-comptage-component/inventaire-bordereau-comptage-component';
+import { InventaireBordereauDetailComponent } from './admin/inventenaire/components/inventaire-bordereau-detail-component/inventaire-bordereau-detail-component';
+import { InventaireVarianceResume } from './admin/inventenaire/components/inventaire-variance-resume/inventaire-variance-resume';
+import { InventaireVarianceListe } from './admin/inventenaire/components/inventaire-variance-liste/inventaire-variance-liste';
 
 @NgModule({
   declarations: [
     AppComponent,
+    InventaireBordereauDetailComponent,
     Login,
     Register,
     AdminLayout,
@@ -188,7 +202,21 @@ import { SuggestionsReapprovisionnementComponent } from './admin/achats/componen
     RetoursProduitsComponent,
     ConfirmAnnulationVenteDialogComponent,
     RapportsVentesComponent,
-    SuggestionsReapprovisionnementComponent
+    SuggestionsReapprovisionnementComponent,
+    PrevisionsAchatsComponent,
+    AlertesStockComponent,
+    LocatorAffectationComponent,
+    InventaireComponent,
+    InventaireList,
+    InventaireDetail,
+    InventaireCardPrint,
+    InventaireCreateDialogComponent,
+    InventaireCreateBordereauDialog,
+    InventaireBordereauComptageComponent,
+    InventaireDetail,
+    InventaireVarianceResume,
+    InventaireVarianceListe
+
   ],
 
   imports: [
@@ -204,11 +232,13 @@ import { SuggestionsReapprovisionnementComponent } from './admin/achats/componen
     FormsModule,
     MatSlideToggleModule,
     InputTextModule,
+    MatTabsModule,
     ReactiveFormsModule,
     AppRoutingModule,
     MatCheckboxModule,
     SharedModuleModule,
     ChartModule,
+    RouterModule,
     TreeTableModule,
     PanelMenuModule,
     BadgeModule,

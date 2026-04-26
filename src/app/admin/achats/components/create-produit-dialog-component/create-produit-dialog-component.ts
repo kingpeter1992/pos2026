@@ -105,11 +105,16 @@ export class CreateProduitDialogComponent implements OnInit, OnDestroy {
       nom: ['', [Validators.required, Validators.maxLength(150)]],
       description: [''],
       categorieId: [null],
+      perissable: ['NON'],
       prixAchat: [0, [Validators.min(0)]],
       prixVente: [0, [Validators.required, Validators.min(0)]],
       stockMinimum: [0, [Validators.required, Validators.min(0)]],
       stockMaximum: [0, [Validators.required, Validators.min(0)]]
     });
+  }
+
+  onPerissableToggle(checked: boolean): void {
+    this.form.get('perissable')?.setValue(checked ? 'OUI' : 'NON');
   }
 
   private loadCategories(): void {
@@ -163,7 +168,9 @@ export class CreateProduitDialogComponent implements OnInit, OnDestroy {
         },
         error: (err: { error: { message: any } }) => {
           console.error(err);
-          this.toast.error(err?.error?.message || 'Erreur lors de la création du produit.');
+          this.toast.error(
+            err?.error?.message || 'Erreur lors de la création du produit.'
+          );
         }
       });
   }
@@ -186,6 +193,7 @@ export class CreateProduitDialogComponent implements OnInit, OnDestroy {
       nom: '',
       description: '',
       categorieId: null,
+      perissable: 'NON',
       prixAchat: 0,
       prixVente: 0,
       stockMinimum: 0,
@@ -195,6 +203,8 @@ export class CreateProduitDialogComponent implements OnInit, OnDestroy {
     this.previews = [];
     this.selectedImages = [];
     this.produitCree = undefined;
+    this.cameraError = '';
+    this.barcodeScannerError = '';
   }
 
   getBarcodeUrl(id: number): string {
@@ -211,16 +221,22 @@ export class CreateProduitDialogComponent implements OnInit, OnDestroy {
             return;
           }
 
-          this.toast.info('Ce code-barres existe déjà. Redirection vers le détail du produit...');
+          this.toast.info(
+            'Ce code-barres existe déjà. Redirection vers le détail du produit...'
+          );
           this.openProduit(produit);
           return;
         }
 
-        this.toast.success('Code-barres disponible. Vous pouvez continuer la création.');
+        this.toast.success(
+          'Code-barres disponible. Vous pouvez continuer la création.'
+        );
       },
       error: (err: { status: number }) => {
         if (err?.status === 404) {
-          this.toast.success('Code-barres non existant. Vous pouvez créer le produit.');
+          this.toast.success(
+            'Code-barres non existant. Vous pouvez créer le produit.'
+          );
           return;
         }
 

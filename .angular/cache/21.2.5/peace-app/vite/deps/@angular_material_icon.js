@@ -7,11 +7,11 @@ import {
 import "./chunk-FS5LNX2V.js";
 import "./chunk-IHFC5IEC.js";
 import {
-  BidiModule
-} from "./chunk-WP32P2XD.js";
-import {
   HttpClient
 } from "./chunk-Q7OE62FZ.js";
+import {
+  BidiModule
+} from "./chunk-WP32P2XD.js";
 import "./chunk-PWYZQKDD.js";
 import "./chunk-RB3D7EIV.js";
 import {

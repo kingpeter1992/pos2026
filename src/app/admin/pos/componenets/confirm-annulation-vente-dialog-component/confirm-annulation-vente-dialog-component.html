@@ -7,8 +7,11 @@
   <div class="warning-box">
     <mat-icon color="warn">undo</mat-icon>
     <div>
-      <strong>Cette opération va annuler la vente</strong>
-      <p>Les marchandises seront remises automatiquement en stock.</p>
+      <strong>Cette opération va générer un retour de vente</strong>
+      <p>
+        Les marchandises seront remises automatiquement en stock
+        via une nouvelle vente négative.
+      </p>
     </div>
   </div>
 
@@ -29,8 +32,29 @@
     </div>
   </div>
 
+  <form [formGroup]="form">
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Commentaire d’annulation</mat-label>
+      <textarea
+        matInput
+        rows="4"
+        formControlName="commentaire"
+        placeholder="Ex. Retour complet du client, erreur de saisie, ticket annulé...">
+      </textarea>
+
+      <mat-error *ngIf="commentaireCtrl?.hasError('required')">
+        Le commentaire est obligatoire.
+      </mat-error>
+
+      <mat-error *ngIf="commentaireCtrl?.hasError('minlength')">
+        Le commentaire doit contenir au moins 5 caractères.
+      </mat-error>
+    </mat-form-field>
+  </form>
+
   <p class="danger-text">
-    Cette action est sensible et ne doit être faite qu’en cas d’erreur ou de retour complet de la vente.
+    Cette action est sensible et doit être justifiée.
+    La vente originale sera conservée, et un mouvement inverse sera créé.
   </p>
 </mat-dialog-content>
 
@@ -41,6 +65,6 @@
 
   <button mat-flat-button color="warn" type="button" (click)="confirm()">
     <mat-icon>undo</mat-icon>
-    Confirmer l’annulation
+    Confirmer le retour
   </button>
 </mat-dialog-actions>

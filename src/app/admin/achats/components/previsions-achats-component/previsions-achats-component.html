@@ -1,1 +1,227 @@
-<p>previsions-achats-component works!</p>
+<div class="dashboard-shell">
+
+  <div class="dashboard-toolbar">
+    <div class="toolbar-left">
+      <div class="title-block">
+        <h2>Provision Stock</h2>
+        <p>Analyse comptable et dépréciation des stocks</p>
+      </div>
+    </div>
+
+    <div class="toolbar-right">
+      <button mat-raised-button color="primary" (click)="refresh()">
+        <mat-icon>refresh</mat-icon>
+        Actualiser
+      </button>
+
+      <button mat-stroked-button color="primary" (click)="exportExcel()">
+        <mat-icon>table_view</mat-icon>
+        Export Excel
+      </button>
+
+      <button mat-stroked-button color="accent" (click)="exportPdf()">
+        <mat-icon>picture_as_pdf</mat-icon>
+        Export PDF
+      </button>
+    </div>
+  </div>
+
+  <mat-progress-bar *ngIf="loadingTable || store.provisionLoading()" mode="indeterminate"></mat-progress-bar>
+
+  <div class="kpi-grid">
+    <div class="kpi-card primary">
+      <div class="kpi-icon"><mat-icon>inventory_2</mat-icon></div>
+      <div class="kpi-content">
+        <span>Valeur stock totale</span>
+        <strong>{{ store.totalValeurProvisionStock() | number:'1.2-2' }} USD</strong>
+      </div>
+    </div>
+
+    <div class="kpi-card danger">
+      <div class="kpi-icon"><mat-icon>warning_amber</mat-icon></div>
+      <div class="kpi-content">
+        <span>Provision totale</span>
+        <strong>{{ store.totalProvision() | number:'1.2-2' }} USD</strong>
+      </div>
+    </div>
+
+    <div class="kpi-card info">
+      <div class="kpi-icon"><mat-icon>category</mat-icon></div>
+      <div class="kpi-content">
+        <span>Nombre produits</span>
+        <strong>{{ store.totalProduitsProvision() }}</strong>
+      </div>
+    </div>
+
+    <div class="kpi-card purple">
+      <div class="kpi-icon"><mat-icon>rule</mat-icon></div>
+      <div class="kpi-content">
+        <span>Produits provisionnés</span>
+        <strong>{{ store.totalProduitsProvisionnes() }}</strong>
+      </div>
+    </div>
+
+    <div class="kpi-card amber">
+      <div class="kpi-icon"><mat-icon>report_problem</mat-icon></div>
+      <div class="kpi-content">
+        <span>Risque élevé</span>
+        <strong>{{ store.totalProvisionEleve() + store.totalProvisionTotal() }}</strong>
+      </div>
+    </div>
+
+    <div class="kpi-card success">
+      <div class="kpi-icon"><mat-icon>payments</mat-icon></div>
+      <div class="kpi-content">
+        <span>Provision filtrée</span>
+        <strong>{{ totalProvisionFiltree | number:'1.2-2' }} USD</strong>
+      </div>
+    </div>
+  </div>
+
+  <div class="alert-banner" *ngIf="store.totalProvisionTotal() > 0 || store.totalProvisionEleve() > 0">
+    <mat-icon>notifications_active</mat-icon>
+    <div>
+      <strong>Attention :</strong>
+      {{ store.totalProvisionTotal() }} article(s) en provision totale et
+      {{ store.totalProvisionEleve() }} à risque élevé.
+    </div>
+  </div>
+
+  <div class="filter-card">
+    <mat-form-field appearance="outline">
+      <mat-label>Recherche</mat-label>
+      <input
+        matInput
+        [(ngModel)]="search"
+        (ngModelChange)="applyFilter()"
+        placeholder="Produit, code-barres, catégorie">
+      <mat-icon matSuffix>search</mat-icon>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Catégorie</mat-label>
+      <mat-select [(ngModel)]="selectedCategorie" (selectionChange)="applyFilter()">
+        <mat-option value="">Toutes</mat-option>
+        <mat-option *ngFor="let c of store.provisionCategories()" [value]="c">
+          {{ c }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Niveau de risque</mat-label>
+      <mat-select [(ngModel)]="selectedRisque" (selectionChange)="applyFilter()">
+        <mat-option value="TOUS">Tous</mat-option>
+        <mat-option value="FAIBLE">Faible</mat-option>
+        <mat-option value="MOYEN">Moyen</mat-option>
+        <mat-option value="ELEVE">Élevé</mat-option>
+        <mat-option value="TOTAL">Total</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <div class="filter-actions">
+      <button mat-stroked-button (click)="resetFilters()">
+        <mat-icon>filter_alt_off</mat-icon>
+        Réinitialiser
+      </button>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <div class="table-header">
+      <h3>Détail Provision Stock</h3>
+      <span>{{ filteredRows.length }} ligne(s)</span>
+    </div>
+
+    <div class="table-wrapper">
+      <table mat-table [dataSource]="dataSource" matSort class="pro-table">
+
+        <ng-container matColumnDef="produitNom">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Produit</th>
+          <td mat-cell *matCellDef="let item">
+            <div class="product-cell">
+              <strong>{{ item.produitNom }}</strong>
+              <small>{{ item.codeBarres || '-' }}</small>
+            </div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="categorieNom">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Catégorie</th>
+          <td mat-cell *matCellDef="let item">{{ item.categorieNom || '-' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="codeBarres">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Code-barres</th>
+          <td mat-cell *matCellDef="let item">{{ item.codeBarres || '-' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="quantiteDisponible">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header class="num">Qté</th>
+          <td mat-cell *matCellDef="let item" class="num">
+            {{ item.quantiteDisponible | number:'1.0-3' }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="pmp">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header class="num">PMP</th>
+          <td mat-cell *matCellDef="let item" class="num">
+            {{ item.pmp | number:'1.2-6' }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="valeurStock">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header class="num">Valeur stock</th>
+          <td mat-cell *matCellDef="let item" class="num strong">
+            {{ item.valeurStock | number:'1.2-2' }} USD
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="joursSansVente">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header class="num">Jours sans vente</th>
+          <td mat-cell *matCellDef="let item" class="num">
+            {{ item.joursSansVente }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="tauxProvision">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header class="num">Taux</th>
+          <td mat-cell *matCellDef="let item" class="num">
+            {{ formatPercent(item.tauxProvision) }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="montantProvision">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header class="num">Provision</th>
+          <td mat-cell *matCellDef="let item" class="num danger">
+            {{ item.montantProvision | number:'1.2-2' }} USD
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="niveauRisque">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Risque</th>
+          <td mat-cell *matCellDef="let item">
+            <span class="badge" [ngClass]="riskClass(item.niveauRisque)">
+              {{ item.niveauRisque }}
+            </span>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+
+        <tr class="mat-row" *matNoDataRow>
+          <td class="mat-cell empty-cell" colspan="10">
+            Aucun élément trouvé.
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <mat-paginator
+      [pageSize]="10"
+      [pageSizeOptions]="[10, 20, 50, 100]"
+      showFirstLastButtons>
+    </mat-paginator>
+  </div>
+</div>

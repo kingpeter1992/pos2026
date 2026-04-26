@@ -1,0 +1,46 @@
+.count-sheet-card {
+  border-radius: 18px;
+  padding: 1rem;
+}
+
+.sheet-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.sheet-title-block .sheet-subtitle {
+  color: #6b7280;
+  font-size: 0.85rem;
+}
+
+.sheet-title-block h2 {
+  margin: 0.2rem 0 0;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.sheet-meta {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+  color: #374151;
+}
+
+.qty-field {
+  width: 110px;
+}
+
+.comment-field {
+  width: 100%;
+  min-width: 180px;
+}
+
+.sheet-actions {
+  display: flex;
+  justify-content: end;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}

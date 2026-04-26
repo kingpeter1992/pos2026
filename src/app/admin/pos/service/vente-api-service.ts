@@ -69,7 +69,9 @@ export class VenteApiService {
     return this.http.get<any[]>(this.apiUrl);
   }
 
-  annulerVente(id: number): Observable<any> {
-  return this.http.patch<any>(`${this.apiUrl}/${id}/annuler`, {});
+annulerVente(id: number, commentaire: string): Observable<any> {
+  return this.http.post<any>(`${this.apiUrl}/${id}/annuler`, {
+    commentaire
+  });
 }
 }

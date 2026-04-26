@@ -11,7 +11,10 @@
         <div>
           <div class="breadcrumb">Stocks / Inventaire</div>
           <h1>Affichage du stock</h1>
-          <p>Suivi des quantités disponibles, des seuils mini/maxi et de la valeur du stock</p>
+          <p>
+            Suivi des quantités disponibles, du coût de revient, de la marge et
+            de la valeur potentielle de vente
+          </p>
         </div>
       </div>
 
@@ -50,8 +53,28 @@
           <mat-icon>payments</mat-icon>
         </div>
         <div>
-          <div class="kpi-value">{{ formatNumber(totalValeur()) }}</div>
-          <div class="kpi-label">Valeur stock</div>
+          <div class="kpi-value">{{ formatNumber(totalRevient()) }}</div>
+          <div class="kpi-label">Revient total</div>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon emerald">
+          <mat-icon>trending_up</mat-icon>
+        </div>
+        <div>
+          <div class="kpi-value">{{ formatNumber(totalMarge()) }}</div>
+          <div class="kpi-label">Marge totale</div>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon cyan">
+          <mat-icon>sell</mat-icon>
+        </div>
+        <div>
+          <div class="kpi-value">{{ formatNumber(totalValeurVente()) }}</div>
+          <div class="kpi-label">Valeur vente potentielle</div>
         </div>
       </div>
 
@@ -76,7 +99,7 @@
       </div>
 
       <div class="kpi-card">
-        <div class="kpi-icon cyan">
+        <div class="kpi-icon sky">
           <mat-icon>inventory</mat-icon>
         </div>
         <div>
@@ -86,7 +109,7 @@
       </div>
 
       <div class="kpi-card">
-        <div class="kpi-icon emerald">
+        <div class="kpi-icon success">
           <mat-icon>check_circle</mat-icon>
         </div>
         <div>
@@ -163,6 +186,16 @@
               <th mat-header-cell *matHeaderCellDef>Dépôt</th>
               <td mat-cell *matCellDef="let row">{{ row.nomDepot || '-' }}</td>
             </ng-container>
+            <ng-container matColumnDef="emplacement">
+            <th mat-header-cell *matHeaderCellDef>Emplacement</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="locator-chip" *ngIf="row.locatorCode; else noLocator">
+                <mat-icon>inventory_2</mat-icon>
+                {{ row.locatorCode }}
+              </span>
+              <ng-template #noLocator>-</ng-template>
+            </td>
+          </ng-container>
 
             <ng-container matColumnDef="quantite">
               <th mat-header-cell *matHeaderCellDef class="text-right">Qté dispo</th>
@@ -186,14 +219,42 @@
             </ng-container>
 
             <ng-container matColumnDef="pmp">
-              <th mat-header-cell *matHeaderCellDef class="text-right">PMP</th>
+              <th mat-header-cell *matHeaderCellDef class="text-right">Revient unitaire</th>
               <td mat-cell *matCellDef="let row" class="text-right">
                 {{ formatNumber(row.pmp) }}
               </td>
             </ng-container>
 
+            <ng-container matColumnDef="tauxMarge">
+              <th mat-header-cell *matHeaderCellDef class="text-right">Marge %</th>
+              <td mat-cell *matCellDef="let row" class="text-right">
+                {{ formatPercent(row.tauxMarge) }}
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="margeUnitaire">
+              <th mat-header-cell *matHeaderCellDef class="text-right">Marge unitaire</th>
+              <td mat-cell *matCellDef="let row" class="text-right">
+                {{ formatNumber(row.margeUnitaire) }}
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="prixVenteUnitaire">
+              <th mat-header-cell *matHeaderCellDef class="text-right">PV unitaire</th>
+              <td mat-cell *matCellDef="let row" class="text-right">
+                {{ formatNumber(row.prixVenteUnitaire) }}
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="margeTotaleStock">
+              <th mat-header-cell *matHeaderCellDef class="text-right">Marge stock</th>
+              <td mat-cell *matCellDef="let row" class="text-right value-cell">
+                {{ formatNumber(row.margeTotaleStock) }}
+              </td>
+            </ng-container>
+
             <ng-container matColumnDef="valeur">
-              <th mat-header-cell *matHeaderCellDef class="text-right">Valeur stock</th>
+              <th mat-header-cell *matHeaderCellDef class="text-right">Revient total stock</th>
               <td mat-cell *matCellDef="let row" class="text-right value-cell">
                 {{ formatNumber(row.valeurStock) }}
               </td>

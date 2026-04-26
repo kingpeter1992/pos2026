@@ -1,0 +1,88 @@
+<div class="count-sheet" *ngIf="inventaire && bordereau">
+  <div class="sheet-header">
+    <div>
+      <div class="company">PEACE POS</div>
+      <div class="title">BORDEREAU DE COMPTAGE PHYSIQUE</div>
+    </div>
+
+    <div class="sheet-ref">
+      <div><strong>N° inventaire :</strong> {{ inventaire.reference || '-' }}</div>
+      <div><strong>Réf. bordereau :</strong> {{ bordereau.reference }}</div>
+      <div><strong>N° bordereau :</strong> {{ bordereau.numeroOrdre }}</div>
+      <div><strong>Date :</strong> {{ inventaire.dateInventaire | date:'dd/MM/yyyy' }}</div>
+    </div>
+  </div>
+
+  <div class="sheet-meta">
+    <div><strong>Dépôt :</strong> {{ inventaire.depotNom || '-' }}</div>
+    <div><strong>Locator bordereau :</strong> {{ bordereau.locatorCode || 'Tous' }}</div>
+    <div><strong>Statut :</strong> {{ bordereau.statut }}</div>
+  </div>
+
+  <table class="sheet-table">
+    <thead>
+      <tr>
+        <th>Ligne</th>
+        <th>Code article</th>
+        <th>Désignation</th>
+        <th>Locator</th>
+        <th *ngIf="bordereau.afficherQuantiteTheorique">Qté théorique</th>
+        <th>Qté comptée</th>
+        <th>Observation</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <tr *ngFor="let row of lignes">
+        <td>{{ row.numeroLigne }}</td>
+        <td>{{ row.codeArticle || '-' }}</td>
+        <td>{{ row.designation || '-' }}</td>
+        <td>{{ row.locatorCode || '-' }}</td>
+
+        <td *ngIf="bordereau.afficherQuantiteTheorique">
+          {{ row.quantiteTheorique | number:'1.0-3' }}
+        </td>
+
+        <td>
+          <input
+            class="sheet-input qty-input"
+            type="number"
+            min="0"
+            [(ngModel)]="row.quantiteComptee"
+            [ngModelOptions]="{ standalone: true }"
+            [disabled]="!editable" />
+        </td>
+
+        <td>
+          <input
+            class="sheet-input observation-input"
+            [(ngModel)]="row.commentaire"
+            [ngModelOptions]="{ standalone: true }"
+            [disabled]="!editable" />
+        </td>
+      </tr>
+
+      <tr *ngIf="!lignes || lignes.length === 0">
+        <td
+          [attr.colspan]="bordereau.afficherQuantiteTheorique ? 7 : 6"
+          class="empty-row">
+          Aucune ligne disponible pour ce bordereau.
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="signatures">
+    <div class="sign-box">
+      <span>Agent de comptage</span>
+    </div>
+
+    <div class="sign-box">
+      <span>Contrôle</span>
+    </div>
+
+    <div class="sign-box">
+      <span>Validation</span>
+    </div>
+  </div>
+</div>

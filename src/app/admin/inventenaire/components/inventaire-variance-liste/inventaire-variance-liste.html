@@ -1,0 +1,151 @@
+<div class="variance-page">
+  <div class="page-header">
+    <div>
+      <div class="breadcrumb">Inventaires / Variances</div>
+      <h1>Liste des variances</h1>
+      <p>Suivi des écarts entre stock théorique et comptage physique.</p>
+    </div>
+  </div>
+
+  <div class="kpi-grid">
+    <mat-card class="kpi-card primary">
+      <span>Lignes</span>
+      <strong>{{ totalLignes() }}</strong>
+    </mat-card>
+
+    <mat-card class="kpi-card warn">
+      <span>Écart total</span>
+      <strong>{{ totalEcart() | number:'1.0-3' }}</strong>
+    </mat-card>
+
+    <mat-card class="kpi-card danger">
+      <span>Valeur écart</span>
+      <strong>{{ totalValeurEcart() | number:'1.2-2' }}</strong>
+    </mat-card>
+
+    <mat-card class="kpi-card success">
+      <span>Appliquées</span>
+      <strong>{{ totalAppliquees() }}</strong>
+    </mat-card>
+  </div>
+
+  <mat-card class="filter-card">
+    <mat-form-field appearance="outline">
+      <mat-label>Recherche</mat-label>
+      <input matInput placeholder="Produit, code, inventaire, bordereau..."
+        (input)="onSearch($any($event.target).value)" />
+      <mat-icon matSuffix>search</mat-icon>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Type variance</mat-label>
+      <mat-select [value]="typeFilter()" (selectionChange)="onTypeChange($event.value)">
+        <mat-option value="TOUS">Tous</mat-option>
+        <mat-option value="ENTREE">Entrée</mat-option>
+        <mat-option value="SORTIE">Sortie</mat-option>
+        <mat-option value="NEANT">Néant</mat-option>
+      </mat-select>
+    </mat-form-field>
+  </mat-card>
+
+  @if (loading()) {
+  <div class="page-loader">
+    <mat-spinner diameter="42"></mat-spinner>
+    <p>Chargement des variances...</p>
+  </div>
+  } @else {
+  <mat-card class="table-card">
+<mat-card class="table-card">
+
+  <p-table
+    [value]="groupesParInventaire()"
+    [paginator]="true"
+    [rows]="10"
+    responsiveLayout="scroll"
+    styleClass="p-datatable-sm p-datatable-gridlines">
+
+    <ng-template pTemplate="header">
+      <tr>
+        <th>Inventaire</th>
+        <th>Dépôt</th>
+        <th>Lignes</th>
+        <th>Écart total</th>
+        <th>Valeur écart</th>
+        <th>Entrées</th>
+        <th>Sorties</th>
+        <th>Néant</th>
+        <th>Appliquées</th>
+        <th>Action</th>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="body" let-groupe>
+      <tr>
+        <td>
+          <strong>INV-{{ groupe.inventaireId }}</strong>
+        </td>
+
+        <td>{{ groupe.depotNom }}</td>
+
+        <td>{{ groupe.totalLignes }}</td>
+
+        <td
+          class="ecart"
+          [class.positive]="groupe.totalEcart > 0"
+          [class.negative]="groupe.totalEcart < 0">
+          {{ groupe.totalEcart | number:'1.0-3' }}
+        </td>
+
+        <td>
+          {{ groupe.totalValeurEcart | number:'1.2-2' }}
+        </td>
+
+        <td>
+          <span class="status-pill ENTREE">
+            {{ groupe.totalEntree }}
+          </span>
+        </td>
+
+        <td>
+          <span class="status-pill SORTIE">
+            {{ groupe.totalSortie }}
+          </span>
+        </td>
+
+        <td>
+          <span class="status-pill NEANT">
+            {{ groupe.totalNeant }}
+          </span>
+        </td>
+
+        <td>
+          {{ groupe.appliquees }} / {{ groupe.totalLignes }}
+        </td>
+
+        <td>
+          <button
+            mat-raised-button
+            color="primary"
+            type="button"
+            (click)="imprimerRapportVariancePdf(groupe.inventaireId)">
+            <mat-icon>picture_as_pdf</mat-icon>
+            Imprimer rapport
+          </button>
+        </td>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="10" class="empty-row">
+          Aucune variance trouvée.
+        </td>
+      </tr>
+    </ng-template>
+
+  </p-table>
+
+</mat-card>
+  </mat-card>
+  }
+</div>

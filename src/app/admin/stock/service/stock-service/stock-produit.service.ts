@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { StockProduitView } from '../../models/stock-produit.model';
+import { ProvisionStockDashboardResponse, ProvisionStockResponse, StockProduitView } from '../../models/stock-produit.model';
 import { environment } from '../../../../../environnement/environment.prod';
 
 @Injectable({
@@ -13,5 +13,14 @@ export class StockProduitService {
 
   getAll(): Observable<StockProduitView[]> {
     return this.http.get<StockProduitView[]>(this.api);
+  }
+
+
+    getAllProvision(): Observable<ProvisionStockResponse[]> {
+    return this.http.get<ProvisionStockResponse[]>(this.api +'/provision');
+  }
+
+  getDashboardProvision(): Observable<ProvisionStockDashboardResponse> {
+    return this.http.get<ProvisionStockDashboardResponse>(`${this.api}/dashboard`);
   }
 }

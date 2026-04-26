@@ -1,0 +1,92 @@
+<div class="inventory-dashboard">
+  <div class="page-header premium-header">
+    <div class="header-left">
+      <div class="breadcrumb">Stock / Inventaire</div>
+      <h1>Dashboard Inventaire</h1>
+      <p>Pilotage des inventaires, comptages physiques, variances et clôtures.</p>
+
+      <div class="selected-pill" [class.active]="inventaire()">
+        <mat-icon>{{ inventaire() ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
+        {{ selectedLabel() }}
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <button mat-flat-button color="primary" (click)="createInventaire()">
+        <mat-icon>add</mat-icon>
+        Nouvel inventaire
+      </button>
+
+<button
+  mat-stroked-button
+  color="warn"
+  (click)="annulerInventaire()"
+  [disabled]="!canCancel()">
+  Annuler inventaire
+</button>
+
+<button
+  mat-flat-button
+  color="warn"
+  (click)="cloturerInventaire()"
+  [disabled]="!canClose()">
+  Clôturer
+</button>
+
+    </div>
+  </div>
+
+  <!-- tes KPI restent ici -->
+     <div class="kpi-grid">
+    <mat-card class="kpi-card primary">
+      <div class="kpi-label">Inventaires</div>
+      <div class="kpi-value">{{ store.kpis().totalInventaires }}</div>
+    </mat-card>
+
+    <mat-card class="kpi-card info">
+      <div class="kpi-label">Ouverts</div>
+      <div class="kpi-value">{{ store.kpis().ouverts }}</div>
+    </mat-card>
+
+    <mat-card class="kpi-card warn">
+      <div class="kpi-label">En comptage</div>
+      <div class="kpi-value">{{ store.kpis().enComptage }}</div>
+    </mat-card>
+
+    <mat-card class="kpi-card accent">
+      <div class="kpi-label">Variances lancées</div>
+      <div class="kpi-value">{{ store.kpis().varianceLancee }}</div>
+    </mat-card>
+
+    <mat-card class="kpi-card success">
+      <div class="kpi-label">Validés</div>
+      <div class="kpi-value">{{ store.kpis().valides }}</div>
+    </mat-card>
+
+    <mat-card class="kpi-card dark">
+      <div class="kpi-label">Clôturés</div>
+      <div class="kpi-value">{{ store.kpis().clotures }}</div>
+    </mat-card>
+  </div>
+
+  <div class="dashboard-panels">
+    <mat-card class="panel">
+      <div class="panel-title">Progression du comptage</div>
+      <p-progressBar [value]="store.progressionComptage()"></p-progressBar>
+      <div class="panel-caption">{{ store.progressionComptage() }} % des articles comptés</div>
+    </mat-card>
+
+    <mat-card class="panel">
+      <div class="panel-title">Valeur totale des écarts</div>
+      <div class="money-value">
+        {{ store.kpis().totalValeurEcart | number:'1.2-2' }}
+      </div>
+    </mat-card>
+  </div>
+
+
+
+  <app-inventaire-list
+    (selectedInventaire)="onSelectInventaire($event)">
+  </app-inventaire-list>
+</div>

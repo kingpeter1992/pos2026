@@ -49,7 +49,7 @@ export class RetoursProduitsComponent implements OnInit {
       return;
     }
 
-    this.storeVente.annulerVente(vente.id).subscribe({
+    this.storeVente.annulerVente(vente.id, '').subscribe({
       next: () => {
         this.toastr.success('Vente annulée avec succès. Le stock a été réintégré.');
       },

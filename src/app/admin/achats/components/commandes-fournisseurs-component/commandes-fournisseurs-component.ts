@@ -450,9 +450,11 @@ private loadCommandeForEdit(id: number): void {
 
   ouvrirCreationProduitDepuisScan(index: number, barcode: string): void {
     const dialogRef = this.dialog.open(CreateProduitDialogComponent, {
-      width: '1200px',
-      maxWidth: '95vw',
-      height: '90vh',
+ width: '95vw',
+  maxWidth: '95vw',
+  height: '92vh',
+  maxHeight: '92vh',
+  autoFocus: false,
       panelClass: 'full-dialog',
       data: { codeBarres: barcode }
     });

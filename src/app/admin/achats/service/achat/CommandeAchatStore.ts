@@ -167,7 +167,6 @@ export class CommandeAchatStore {
   loadById(id: number): Observable<CommandeAchatResponse> {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
-
     return new Observable<CommandeAchatResponse>(observer => {
       this.api.findById(id).subscribe({
         next: data => {

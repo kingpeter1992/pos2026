@@ -1,7 +1,6 @@
 import { Component, computed, OnInit, signal } from '@angular/core';
 import { VenteStore } from '../../service/VenteStore';
 import { FormBuilder, FormGroup } from '@angular/forms';
-import { ToastrService } from 'ngx-toastr';
 import { MatDialog } from '@angular/material/dialog';
 import { Toast } from '../../../../shares/services/toast/toast';
 import { finalize } from 'rxjs';
@@ -380,64 +379,72 @@ displayedColumns: string[] = [
       ? 'status-badge annulee'
       : 'status-badge valide';
   }
-
-  openAnnulationDialog(vente: any): void {
-    if (!vente?.id) {
-      this.toastr.error('Vente introuvable.');
-      return;
-    }
-
-    if (vente?.statut === 'ANNULEE') {
-      this.toastr.warning('Cette vente est déjà annulée.');
-      return;
-    }
-
-    const dialogRef = this.dialog.open(ConfirmAnnulationVenteDialogComponent, {
-      width: '520px',
-      disableClose: true,
-      panelClass: 'pos-dialog-panel',
-      data: {
-        ticketNumero: vente.ticketNumero,
-        clientNom: vente.clientNom,
-        totalTTC: vente.totalGeneral ?? vente.totalTTC ?? 0,
-        devise: vente.devise || 'USD'
-      }
-    });
-
-    dialogRef.afterClosed().subscribe((confirmed: boolean) => {
-      if (confirmed === true) {
-        this.annulerVente(vente);
-      }
-    });
+openAnnulationDialog(vente: any): void {
+  if (!vente?.id) {
+    this.toastr.error('Vente introuvable.');
+    return;
   }
 
-  annulerVente(vente: any): void {
-    if (!vente?.id) {
-      this.toastr.error('Vente introuvable.');
+  const dialogRef = this.dialog.open(ConfirmAnnulationVenteDialogComponent, {
+    width: '520px',
+    disableClose: true,
+    panelClass: 'pos-dialog-panel',
+    data: {
+      ticketNumero: vente.ticketNumero,
+      clientNom: vente.clientNom,
+      totalTTC: vente.totalGeneral ?? vente.totalTTC ?? 0,
+      devise: vente.devise || 'USD'
+    }
+  });
+
+  dialogRef.afterClosed().subscribe((result) => {
+    if (!result?.confirmed) {
       return;
     }
 
-    if (vente?.statut === 'ANNULEE') {
-      this.toastr.warning('Cette vente est déjà annulée.');
+    const commentaire = (result.commentaire || '').trim();
+
+    if (!commentaire) {
+      this.toastr.warning('Le commentaire d’annulation est obligatoire.');
       return;
     }
 
-    this.addLoadingId(vente.id);
+    this.setAnnulationLoading(vente.id, true);
 
-    this.venteStore.annulerVente(vente.id)
-      .pipe(finalize(() => this.removeLoadingId(vente.id)))
-      .subscribe({
-        next: () => {
-          this.toastr.success(
-            `La vente ${vente.ticketNumero || ''} a été annulée et le stock a été réintégré.`
-          );
-        },
-        error: (err: any) => {
-          console.error(err);
-          this.toastr.error(
-            err?.error?.message || 'Erreur lors de l’annulation de la vente.'
-          );
+    this.venteStore.annulerVente(vente.id, commentaire).subscribe({
+      next: (res) => {
+        if (res) {
+          this.toastr.success('Retour de vente enregistré avec succès.');
+        } else {
+          this.toastr.error('Le retour de vente a échoué.');
         }
-      });
+      },
+      error: (err) => {
+        console.error(err);
+        this.toastr.error(
+          err?.error?.message || 'Erreur lors du retour de vente.'
+        );
+      },
+      complete: () => {
+        this.setAnnulationLoading(vente.id, false);
+      }
+    });
+  });
+}
+
+
+
+setAnnulationLoading(id: number, loading: boolean): void {
+  if (loading) {
+    this.annulationLoadingIds.update((ids) =>
+      ids.includes(id) ? ids : [...ids, id]
+    );
+  } else {
+    this.annulationLoadingIds.update((ids) =>
+      ids.filter((item) => item !== id)
+    );
   }
+}
+
+
 }

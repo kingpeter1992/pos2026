@@ -1,1 +1,365 @@
-<p>alertes-stock-component works!</p>
+<div class="peremption-page">
+  <div class="page-header">
+    <div>
+      <h2>Gestion des péremptions</h2>
+      <p>
+        Dashboard, alertes intelligentes et suivi complet des lots en stock.
+      </p>
+    </div>
+
+    <div class="header-actions">
+      <button mat-stroked-button color="primary" (click)="refreshAll()">
+        <mat-icon>refresh</mat-icon>
+        Actualiser
+      </button>
+
+      <button
+        mat-raised-button
+        color="warn"
+        (click)="recalculerStatuts()"
+        [disabled]="recalculLoading()"
+      >
+        <mat-icon>sync</mat-icon>
+        Recalculer les statuts
+      </button>
+    </div>
+  </div>
+
+  <div class="kpi-grid" *ngIf="dashboard() as d">
+    <div class="kpi-card">
+      <div class="kpi-icon neutral">
+        <mat-icon>inventory_2</mat-icon>
+      </div>
+      <div>
+        <span>Total lots</span>
+        <strong>{{ d.totalLots }}</strong>
+      </div>
+    </div>
+
+    <div class="kpi-card success">
+      <div class="kpi-icon success">
+        <mat-icon>verified</mat-icon>
+      </div>
+      <div>
+        <span>Lots valides</span>
+        <strong>{{ d.totalLotsValides }}</strong>
+      </div>
+    </div>
+
+    <div class="kpi-card warning">
+      <div class="kpi-icon warning">
+        <mat-icon>warning_amber</mat-icon>
+      </div>
+      <div>
+        <span>Lots en alerte</span>
+        <strong>{{ d.totalLotsEnAlerte }}</strong>
+      </div>
+    </div>
+
+    <div class="kpi-card danger">
+      <div class="kpi-icon danger">
+        <mat-icon>dangerous</mat-icon>
+      </div>
+      <div>
+        <span>Lots périmés</span>
+        <strong>{{ d.totalLotsPerimes }}</strong>
+      </div>
+    </div>
+
+    <div class="kpi-card critical">
+      <div class="kpi-icon critical">
+        <mat-icon>event_busy</mat-icon>
+      </div>
+      <div>
+        <span>Expire aujourd’hui</span>
+        <strong>{{ d.totalExpireAujourdHui }}</strong>
+      </div>
+    </div>
+
+    <div class="kpi-card danger">
+      <div class="kpi-icon danger">
+        <mat-icon>schedule</mat-icon>
+      </div>
+      <div>
+        <span>Alerte 7 jours</span>
+        <strong>{{ d.totalAlerte7Jours }}</strong>
+      </div>
+    </div>
+
+    <div class="kpi-card warning">
+      <div class="kpi-icon warning">
+        <mat-icon>calendar_month</mat-icon>
+      </div>
+      <div>
+        <span>Alerte 30 jours</span>
+        <strong>{{ d.totalAlerte30Jours }}</strong>
+      </div>
+    </div>
+
+    <div class="kpi-card info">
+      <div class="kpi-icon info">
+        <mat-icon>timeline</mat-icon>
+      </div>
+      <div>
+        <span>Alerte 170 jours</span>
+        <strong>{{ d.totalAlerte170Jours }}</strong>
+      </div>
+    </div>
+
+    <div class="kpi-card info">
+      <div class="kpi-icon info">
+        <mat-icon>insights</mat-icon>
+      </div>
+      <div>
+        <span>Alerte 350 jours</span>
+        <strong>{{ d.totalAlerte350Jours }}</strong>
+      </div>
+    </div>
+  </div>
+
+  <div class="alert-box" *ngIf="alertesAffichees().length > 0">
+    <div class="alert-box-header">
+      <mat-icon>notifications_active</mat-icon>
+      <span>Alertes prioritaires</span>
+    </div>
+
+    <div class="alert-list">
+      <div class="alert-item" *ngFor="let alerte of alertesAffichees()">
+        <div class="alert-item-main">
+          <strong>{{ alerte.produitNom }}</strong>
+          <span>{{ alerte.depotNom }}</span>
+        </div>
+
+        <div class="alert-item-meta">
+          <span class="status-chip" [ngClass]="getStatutClass(alerte.statutPeremption)">
+            {{ getStatutLabel(alerte.statutPeremption) }}
+          </span>
+          <small>{{ formatJoursRestants(alerte.joursRestants) }}</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="filters-card">
+    <div class="filters-header">
+      <h3>Filtres de recherche</h3>
+      <p>Affiche rapidement les lots par produit, statut et disponibilité.</p>
+    </div>
+
+    <div class="filter-grid">
+      <div class="field">
+        <label>Recherche globale</label>
+        <input
+          type="text"
+          [ngModel]="recherche()"
+          (ngModelChange)="onRechercheChange($event)"
+          placeholder="Produit, dépôt, référence..."
+        />
+      </div>
+
+      <div class="field">
+        <label>Produit</label>
+        <input
+          type="text"
+          [ngModel]="filtreProduit()"
+          (ngModelChange)="onProduitChange($event)"
+          placeholder="Nom du produit"
+        />
+      </div>
+
+      <div class="field">
+        <label>Statut</label>
+        <select
+          [ngModel]="filtreStatut()"
+          (ngModelChange)="onStatutChange($event)"
+        >
+          <option value="">Tous</option>
+          <option *ngFor="let statut of statuts" [value]="statut">
+            {{ getStatutLabel(statut) }}
+          </option>
+        </select>
+      </div>
+
+      <div class="field checkbox-field">
+        <label class="checkbox-label">
+          <input
+            type="checkbox"
+            [ngModel]="uniquementDisponibles()"
+            (ngModelChange)="onDisponibiliteChange($event)"
+          />
+          Uniquement les lots disponibles
+        </label>
+      </div>
+    </div>
+
+    <div class="filter-actions">
+      <button mat-raised-button color="primary" (click)="appliquerFiltres()">
+        <mat-icon>search</mat-icon>
+        Filtrer
+      </button>
+
+      <button mat-stroked-button (click)="resetFiltres()">
+        <mat-icon>restart_alt</mat-icon>
+        Réinitialiser
+      </button>
+
+      <button mat-stroked-button color="warn" (click)="afficherLotsEnAlerte()">
+        <mat-icon>warning</mat-icon>
+        Voir les alertes
+      </button>
+
+      <button mat-stroked-button color="warn" (click)="afficherLotsPerimes()">
+        <mat-icon>dangerous</mat-icon>
+        Voir les périmés
+      </button>
+
+      <button mat-stroked-button color="primary" (click)="afficherTousLesLots()">
+        <mat-icon>inventory_2</mat-icon>
+        Tous les lots
+      </button>
+    </div>
+  </div>
+
+  <div class="table-card" *ngIf="!loadingLots(); else loadingTpl">
+    <div class="table-header">
+      <div>
+        <h3>Lots de stock</h3>
+        <p>{{ totalLots() }} lot(s) affiché(s) sur {{ totalLotsGlobal() }}</p>
+      </div>
+
+      <div class="table-actions">
+        <button mat-icon-button matTooltip="Trier par produit" (click)="trierParProduitAsc()">
+          <mat-icon>sort_by_alpha</mat-icon>
+        </button>
+
+        <button mat-icon-button matTooltip="Trier par date péremption croissante" (click)="trierParDatePeremptionAsc()">
+          <mat-icon>north</mat-icon>
+        </button>
+
+        <button mat-icon-button matTooltip="Trier par date péremption décroissante" (click)="trierParDatePeremptionDesc()">
+          <mat-icon>south</mat-icon>
+        </button>
+
+        <button mat-icon-button matTooltip="Trier par quantité décroissante" (click)="trierParQuantiteDesc()">
+          <mat-icon>filter_list</mat-icon>
+        </button>
+
+        <button mat-icon-button matTooltip="Trier par jours restants" (click)="trierParJoursRestantsAsc()">
+          <mat-icon>schedule</mat-icon>
+        </button>
+      </div>
+    </div>
+
+    <div class="summary-strip">
+      <div class="summary-item">
+        <span>Lots valides</span>
+        <strong>{{ totalLotsValides() }}</strong>
+      </div>
+
+      <div class="summary-item warning">
+        <span>Lots en alerte</span>
+        <strong>{{ totalLotsAlerte() }}</strong>
+      </div>
+
+      <div class="summary-item danger">
+        <span>Lots périmés</span>
+        <strong>{{ totalLotsPerimes() }}</strong>
+      </div>
+
+      <div class="summary-item">
+        <span>Alertes visibles</span>
+        <strong>{{ totalAlertes() }} / {{ totalAlertesGlobal() }}</strong>
+      </div>
+    </div>
+
+    <div class="table-wrapper">
+      <table mat-table [dataSource]="lots()" class="table">
+        <ng-container matColumnDef="produitNom">
+          <th mat-header-cell *matHeaderCellDef>Produit</th>
+          <td mat-cell *matCellDef="let row">
+            <div class="cell-main">
+              <strong>{{ row.produitNom }}</strong>
+              <small>{{ row.codeBarres || 'Sans code-barres' }}</small>
+            </div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="depotNom">
+          <th mat-header-cell *matHeaderCellDef>Dépôt</th>
+          <td mat-cell *matCellDef="let row">{{ row.depotNom }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="quantiteDisponible">
+          <th mat-header-cell *matHeaderCellDef>Qté dispo</th>
+          <td mat-cell *matCellDef="let row">
+            {{ row.quantiteDisponible | number:'1.0-3' }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="dateEntree">
+          <th mat-header-cell *matHeaderCellDef>Date entrée</th>
+          <td mat-cell *matCellDef="let row">
+            {{ row.dateEntree ? (row.dateEntree | date:'dd/MM/yyyy') : '-' }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="datePeremption">
+          <th mat-header-cell *matHeaderCellDef>Date péremption</th>
+          <td mat-cell *matCellDef="let row">
+            {{ row.datePeremption ? (row.datePeremption | date:'dd/MM/yyyy') : '-' }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="joursRestants">
+          <th mat-header-cell *matHeaderCellDef>Jours restants</th>
+          <td mat-cell *matCellDef="let row">
+            {{ formatJoursRestants(row.joursRestants) }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="statutPeremption">
+          <th mat-header-cell *matHeaderCellDef>Statut</th>
+          <td mat-cell *matCellDef="let row">
+            <span class="status-chip" [ngClass]="getStatutClass(row.statutPeremption)">
+              {{ getStatutLabel(row.statutPeremption) }}
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="coutUnitaireFinal">
+          <th mat-header-cell *matHeaderCellDef>Coût final</th>
+          <td mat-cell *matCellDef="let row">
+            {{ row.coutUnitaireFinal | number:'1.2-2' }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="referenceDocument">
+          <th mat-header-cell *matHeaderCellDef>Référence</th>
+          <td mat-cell *matCellDef="let row">
+            {{ row.referenceDocument || '-' }}
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr
+          mat-row
+          *matRowDef="let row; columns: displayedColumns;"
+          [class.row-perime]="row.statutPeremption === 'PERIME'"
+          [class.row-expire]="row.statutPeremption === 'EXPIRE_AUJOURD_HUI'"
+        ></tr>
+      </table>
+
+      <div class="empty-state" *ngIf="lots().length === 0">
+        <mat-icon>inventory</mat-icon>
+        <p>Aucun lot trouvé avec ces critères.</p>
+      </div>
+    </div>
+  </div>
+
+  <ng-template #loadingTpl>
+    <div class="loading-box">
+      <mat-spinner diameter="46"></mat-spinner>
+      <p>Chargement des données...</p>
+    </div>
+  </ng-template>
+</div>

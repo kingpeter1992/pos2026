@@ -6,7 +6,7 @@ import { CommandeAchatStore } from '../../service/achat/CommandeAchatStore';
 import { ReceptionAchatStore } from '../../service/reception/ReceptionAchatStore';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { DepotStore } from '../../service/deposervice/DepotStore';
-import { C } from '@angular/cdk/keycodes';
+import { ProduitStoreService } from '../../../produits/core/produit-store.service';
 
 @Component({
   selector: 'app-receptions-component',
@@ -15,12 +15,13 @@ import { C } from '@angular/cdk/keycodes';
   standalone: false
 })
 export class ReceptionsComponent implements OnInit {
-form!: FormGroup;
+ form!: FormGroup;
   commandeId: number | null = null;
   commande: any = null;
   loading = false;
   submitting = false;
   depots: any[] = [];
+  listProduct: any[] = [];
 
   constructor(
     private fb: FormBuilder,
@@ -29,24 +30,14 @@ form!: FormGroup;
     private snackBar: MatSnackBar,
     private commandeService: CommandeAchatStore,
     private receptionService: ReceptionAchatStore,
-      private depotStore: DepotStore   // 👈 AJOUT
-
+    private depotStore: DepotStore,
+    private productStore: ProduitStoreService
   ) {}
 
   ngOnInit(): void {
     this.initForm();
-
-      this.depotStore.loadAll().subscribe({
-        next: (data) => {
-          this.depots = data || [];
-          console.log('Départements chargés :', this.depots);
-        },
-        error: () => {
-          this.snackBar.open('Erreur chargement dépôts', 'Fermer', { duration: 3000 });
-        }
-      });
-
-
+    this.loadDepots();
+    this.loadProduits();
 
     const idParam = this.route.snapshot.queryParamMap.get('commandeId');
     this.commandeId = idParam ? Number(idParam) : null;
@@ -59,6 +50,38 @@ form!: FormGroup;
       });
       this.router.navigate(['/admin/commandes-achats']);
     }
+  }
+
+  cancel(): void {
+    this.router.navigate(['/admin/commandes-achats']);
+  }
+
+  private loadDepots(): void {
+    this.depotStore.loadAll().subscribe({
+      next: (data) => {
+        this.depots = data || [];
+        console.log('Dépôts chargés :', this.depots);
+      },
+      error: () => {
+        this.snackBar.open('Erreur chargement dépôts', 'Fermer', {
+          duration: 3000
+        });
+      }
+    });
+  }
+
+  private loadProduits(): void {
+    this.productStore.loadIfNeeded().subscribe({
+      next: (data: any) => {
+        this.listProduct = data || [];
+        console.log('Produits chargés :', this.listProduct);
+      },
+      error: () => {
+        this.snackBar.open('Erreur chargement produits', 'Fermer', {
+          duration: 3000
+        });
+      }
+    });
   }
 
   initForm(): void {
@@ -81,6 +104,21 @@ form!: FormGroup;
     return this.form.get('lignes') as FormArray;
   }
 
+  isProduitPerissable(produitId: number): boolean {
+    const produit = this.listProduct.find(p => Number(p.id) === Number(produitId));
+    const perissable = produit?.perissable;
+
+    if (typeof perissable === 'boolean') {
+      return perissable;
+    }
+
+    if (typeof perissable === 'string') {
+      return ['OUI', 'TRUE', '1', 'YES'].includes(perissable.toUpperCase());
+    }
+
+    return false;
+  }
+
   createLigneForm(ligne: any): FormGroup {
     return this.fb.group({
       produitId: [ligne.produitId, Validators.required],
@@ -95,9 +133,104 @@ form!: FormGroup;
         { value: ligne.quantiteRecue, disabled: ligne.bloquee },
         [Validators.required, Validators.min(0)]
       ],
-      prixUnitaire: [ligne.prixUnitaire ?? null],
-      commentaire: [ligne.commentaire ?? '']
+      prixUnitaire: [
+        { value: ligne.prixUnitaire ?? null, disabled: ligne.bloquee }
+      ],
+      commentaire: [
+        { value: ligne.commentaire ?? '', disabled: ligne.bloquee }
+      ],
+      datePeremption: [
+        { value: ligne.datePeremption ?? null, disabled: ligne.bloquee }
+      ],
+      numeroLot: [
+        { value: ligne.numeroLot ?? '', disabled: ligne.bloquee }
+      ]
     });
+  }
+
+  onDatePeremptionChange(index: number): void {
+  const ligne = this.lignesFormArray.at(index);
+
+  if (ligne.get('bloquee')?.value) {
+    return;
+  }
+
+  const produitId = Number(ligne.get('produitId')?.value);
+  if (!this.isProduitPerissable(produitId)) {
+    ligne.get('datePeremption')?.setValue(null, { emitEvent: false });
+    return;
+  }
+
+  const dateReception = this.form.get('dateReception')?.value;
+  const datePeremption = ligne.get('datePeremption')?.value;
+
+  if (!dateReception || !datePeremption) {
+    return;
+  }
+
+  const dr = new Date(dateReception);
+  const dp = new Date(datePeremption);
+
+  dr.setHours(0, 0, 0, 0);
+  dp.setHours(0, 0, 0, 0);
+
+  if (dp < dr) {
+    ligne.get('datePeremption')?.setValue(null, { emitEvent: false });
+    this.snackBar.open(
+      'La date de péremption ne peut pas être antérieure à la date de réception.',
+      'Fermer',
+      { duration: 3500 }
+    );
+  }
+}
+
+  private validatePeremptionFields(): boolean {
+    const dateReception = this.form.get('dateReception')?.value;
+
+    for (let i = 0; i < this.lignesFormArray.length; i++) {
+      const ligne = this.lignesFormArray.at(i);
+
+      if (ligne.get('bloquee')?.value) continue;
+
+      const produitId = Number(ligne.get('produitId')?.value);
+      const isPerissable = this.isProduitPerissable(produitId);
+      const quantiteRecue = Number(ligne.get('quantiteRecue')?.value || 0);
+      const produitNom = ligne.get('produitNom')?.value || `ligne ${i + 1}`;
+      const datePeremption = ligne.get('datePeremption')?.value;
+
+      if (!isPerissable) {
+        ligne.get('datePeremption')?.setValue(null, { emitEvent: false });
+        continue;
+      }
+
+      if (quantiteRecue > 0 && !datePeremption) {
+        this.snackBar.open(
+          `Veuillez renseigner la date de péremption pour le produit : ${produitNom}`,
+          'Fermer',
+          { duration: 3500 }
+        );
+        return false;
+      }
+
+      if (dateReception && datePeremption) {
+        const dr = new Date(dateReception);
+        const dp = new Date(datePeremption);
+
+        dr.setHours(0, 0, 0, 0);
+        dp.setHours(0, 0, 0, 0);
+
+        if (dp < dr) {
+          this.snackBar.open(
+            `La date de péremption du produit ${produitNom} est invalide.`,
+            'Fermer',
+            { duration: 3500 }
+          );
+          return false;
+        }
+      }
+    }
+
+    return true;
   }
 
   loadCommande(): void {
@@ -106,7 +239,6 @@ form!: FormGroup;
     this.loading = true;
 
     const cmd = this.commandeService.getById(this.commandeId);
-    console.log('cmd chargée :', cmd);
 
     if (!cmd) {
       this.loading = false;
@@ -118,30 +250,23 @@ form!: FormGroup;
 
     this.commande = cmd;
 
-  this.form.patchValue({
-  commandeAchatId: cmd.id ?? null,
-  depotId: [this.form.get('depotId')?.value ?? null],
-  fournisseurId: cmd.fournisseurId ?? cmd.fournisseurId ?? null,
-  dateReception: this.today(),
-  fraisTransport: Number(cmd?.fraisTransport ?? 0),
-  fraisDouane: Number(cmd?.fraisDouane ?? 0),
-  fraisManutention: Number(cmd?.fraisManutention ?? 0),
-  autresFrais: Number(cmd?.autresFrais ?? 0)
-});
+    this.form.patchValue({
+      commandeAchatId: cmd.id ?? null,
+      depotId: this.form.get('depotId')?.value ?? null,
+      fournisseurId: cmd.fournisseurId ?? null,
+      dateReception: this.today(),
+      fraisTransport: Number(cmd?.fraisTransport ?? 0),
+      fraisDouane: Number(cmd?.fraisDouane ?? 0),
+      fraisManutention: Number(cmd?.fraisManutention ?? 0),
+      autresFrais: Number(cmd?.autresFrais ?? 0)
+    });
 
     this.lignesFormArray.clear();
 
     const lignesMapped = (cmd.lignes ?? []).map((l: any) => {
-      const quantiteCommandee = Number(
-        l?.quantiteCommandee ?? l?.quantite ?? 0
-      );
-      const quantiteDejaRecue = Number(
-        l?.quantiteRecue ?? l?.quantiteDejaRecue ?? 0
-      );
-      const quantiteRestante = Math.max(
-        0,
-        quantiteCommandee - quantiteDejaRecue
-      );
+      const quantiteCommandee = Number(l?.quantiteCommandee ?? l?.quantite ?? 0);
+      const quantiteDejaRecue = Number(l?.quantiteRecue ?? l?.quantiteDejaRecue ?? 0);
+      const quantiteRestante = Math.max(0, quantiteCommandee - quantiteDejaRecue);
       const bloquee = quantiteDejaRecue >= quantiteCommandee;
 
       return {
@@ -151,10 +276,10 @@ form!: FormGroup;
         quantiteDejaRecue,
         quantiteRestante,
         quantiteRecue: bloquee ? 0 : quantiteRestante,
-        prixUnitaire: Number(
-          l?.prixUnitaire ?? l?.prixAchatUnitaire ?? l?.prix ?? 0
-        ),
+        prixUnitaire: Number(l?.prixUnitaire ?? l?.prixAchatUnitaire ?? l?.prix ?? 0),
         commentaire: '',
+        datePeremption: null,
+        numeroLot: '',
         bloquee
       };
     });
@@ -222,6 +347,11 @@ form!: FormGroup;
     }
 
     ligne.get('quantiteRecue')?.setValue(qteRecue, { emitEvent: false });
+
+    const produitId = Number(ligne.get('produitId')?.value);
+    if (!this.isProduitPerissable(produitId)) {
+      ligne.get('datePeremption')?.setValue(null, { emitEvent: false });
+    }
   }
 
   onFraisChange(
@@ -269,19 +399,29 @@ form!: FormGroup;
     return this.getMontantTotalEstime() + this.getTotalFrais();
   }
 
- buildPayload(): ReceptionAchatRequest {
+buildPayload(): ReceptionAchatRequest {
   const lignes: LigneReceptionRequest[] = this.lignesFormArray.controls
     .filter(ctrl => !ctrl.get('bloquee')?.value)
-    .map(ctrl => ({
-      produitId: Number(ctrl.get('produitId')?.value),
-      quantiteRecue: Number(ctrl.get('quantiteRecue')?.value || 0),
-      prixAchatUnitaire:
-        ctrl.get('prixUnitaire')?.value !== null &&
-        ctrl.get('prixUnitaire')?.value !== ''
-          ? Number(ctrl.get('prixUnitaire')?.value)
+    .map(ctrl => {
+      const produitId = Number(ctrl.get('produitId')?.value);
+      const isPerissable = this.isProduitPerissable(produitId);
+      const numeroLot = ctrl.get('numeroLot')?.value?.trim();
+
+      return {
+        produitId,
+        quantiteRecue: Number(ctrl.get('quantiteRecue')?.value || 0),
+        prixAchatUnitaire:
+          ctrl.get('prixUnitaire')?.value !== null &&
+          ctrl.get('prixUnitaire')?.value !== ''
+            ? Number(ctrl.get('prixUnitaire')?.value)
+            : undefined,
+        commentaire: ctrl.get('commentaire')?.value?.trim() || undefined,
+        datePeremption: isPerissable
+          ? (ctrl.get('datePeremption')?.value || undefined)
           : undefined,
-      commentaire: ctrl.get('commentaire')?.value || undefined
-    }))
+        numeroLot: numeroLot || undefined
+      };
+    })
     .filter(l => l.quantiteRecue > 0);
 
   return {
@@ -291,13 +431,13 @@ form!: FormGroup;
         : undefined,
 
     referenceBonReception:
-      this.form.get('referenceBonReception')?.value || undefined,
+      this.form.get('referenceBonReception')?.value?.trim() || undefined,
 
     dateReception:
       this.form.get('dateReception')?.value || undefined,
 
     observateur:
-      this.form.get('observateur')?.value || undefined,
+      this.form.get('observateur')?.value?.trim() || undefined,
 
     depotId:
       this.form.get('depotId')?.value != null
@@ -330,8 +470,8 @@ form!: FormGroup;
     }
 
     const payload = this.buildPayload();
+    console.log('receptions-component.ts', payload);
 
-    console.log('Payload reception :', payload);
 
     if (!payload.lignes.length) {
       this.snackBar.open(
@@ -339,6 +479,10 @@ form!: FormGroup;
         'Fermer',
         { duration: 3500 }
       );
+      return;
+    }
+
+    if (!this.validatePeremptionFields()) {
       return;
     }
 
@@ -354,7 +498,8 @@ form!: FormGroup;
         );
 
         if (res?.id) {
-          this.router.navigate(['/admin/receptions/details', res.id]);
+        this.router.navigate(['/admin/receptions/locators', res.id]);
+        this.router.navigate(['/admin/receptions/details', res.id]);
         } else {
           this.router.navigate(['/admin/receptions']);
         }
@@ -369,10 +514,6 @@ form!: FormGroup;
         );
       }
     });
-  }
-
-  cancel(): void {
-    this.router.navigate(['/admin/commandes-achats']);
   }
 
   private today(): string {

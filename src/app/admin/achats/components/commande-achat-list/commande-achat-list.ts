@@ -281,15 +281,16 @@ export class CommandeAchatList implements OnInit {
 
   createCommande(): void {
     const dialogRef = this.dialog.open(CommandesFournisseursComponent, {
-      width: '1400px',
-      maxWidth: '98vw',
-      height: '92vh',
-      panelClass: 'full-dialog',
+    width: '100vw',
+    height: '100vh',
+    maxWidth: '100vw',
+    maxHeight: '100vh',
+    panelClass: 'full-dialog',
+    autoFocus: false,
       disableClose: true,
       data: {
         mode: 'create'
       },
-      autoFocus: false
     });
 
     dialogRef.afterClosed()
@@ -315,12 +316,13 @@ export class CommandeAchatList implements OnInit {
 
 
     const dialogRef = this.dialog.open(CommandesFournisseursComponent, {
-      width: '1400px',
-      maxWidth: '98vw',
-      height: '92vh',
-      panelClass: 'full-dialog',
-      disableClose: true,
-      autoFocus: false,
+    width: '100vw',
+    height: '100vh',
+    maxWidth: '100vw',
+    maxHeight: '100vh',
+    panelClass: 'full-dialog',
+    disableClose: true,
+    autoFocus: false,
       data: {
         commandeId: this.selectedCommande?.id,
         mode: 'edit',

@@ -1,6 +1,5 @@
 <div class="product-shell">
 
-  <!-- Header -->
   <section class="page-header">
     <div class="header-left">
       <div class="header-icon">
@@ -10,21 +9,20 @@
       <div class="header-text">
         <h1>Création produit</h1>
         <p>
-          Enregistrez un nouveau produit, associez sa catégorie, ajoutez ses images
-          et générez automatiquement son code-barres.
+          Enregistrez un nouveau produit, associez sa catégorie, définissez s’il est
+          périssable, ajoutez ses images et générez automatiquement son code-barres.
         </p>
       </div>
     </div>
 
     <div class="header-actions">
-      <button mat-stroked-button color="primary" class="action-btn">
+      <button mat-stroked-button color="primary" class="action-btn" type="button" (click)="resetForm()">
         <mat-icon>refresh</mat-icon>
         Réinitialiser
       </button>
     </div>
   </section>
 
-  <!-- KPI -->
   <section class="mini-kpis">
     <div class="mini-kpi-card">
       <div class="mini-kpi-icon blue">
@@ -57,10 +55,8 @@
     </div>
   </section>
 
-  <!-- Main Layout -->
   <div class="content-grid">
 
-    <!-- Form zone -->
     <div class="form-panel">
       <div class="panel-head">
         <h2>Informations du produit</h2>
@@ -79,50 +75,98 @@
             <div class="barcode-field-block">
               <mat-form-field appearance="outline" class="full-width">
                 <mat-label>Code-barres</mat-label>
-                <input matInput formControlName="codeBarres" placeholder="Laisser vide pour génération automatique" />
+                <input
+                  matInput
+                  formControlName="codeBarres"
+                  placeholder="Laisser vide pour génération automatique" />
                 <mat-hint>
                   Scanner le produit ou laisser vide pour génération automatique
                 </mat-hint>
               </mat-form-field>
 
               <div class="barcode-actions">
-                <button mat-stroked-button color="primary" type="button" *ngIf="!barcodeScannerOpen"
+                <button
+                  mat-stroked-button
+                  color="primary"
+                  type="button"
+                  *ngIf="!barcodeScannerOpen"
                   (click)="startBarcodeScanner()">
                   <mat-icon>qr_code_scanner</mat-icon>
                   Scanner le code-barres
                 </button>
 
-                <button mat-stroked-button color="warn" type="button" *ngIf="barcodeScannerOpen"
-                  (click)="stopBarcodeScanner()">
+                <button
+                  mat-stroked-button
+                  color="warn"
+                  type="button"
+                  *ngIf="barcodeScannerOpen"
+                  (click)="stopBarcodeScanner(true)">
                   <mat-icon>close</mat-icon>
                   Fermer le scan
                 </button>
+              </div>
+
+              <div
+                class="scanner-camera-select"
+                *ngIf="barcodeScannerOpen && availableBarcodeCameras.length > 1">
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Caméra</mat-label>
+                  <mat-select
+                    [(value)]="selectedBarcodeCameraId"
+                    (selectionChange)="onBarcodeCameraChange()">
+                    <mat-option
+                      *ngFor="let cam of availableBarcodeCameras"
+                      [value]="cam.id">
+                      {{ cam.label }}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
               </div>
 
               <div class="camera-error" *ngIf="barcodeScannerError">
                 {{ barcodeScannerError }}
               </div>
 
-              <div class="camera-panel" *ngIf="barcodeScannerOpen">
-                <video #barcodeVideoRef autoplay playsinline muted class="barcode-video">
-                </video>
+              <div class="barcode-scanner-shell" *ngIf="barcodeScannerOpen">
+                <div class="barcode-scanner-card">
+                  <div class="scanner-topbar">
+                    <div class="scanner-title">
+                      <mat-icon>videocam</mat-icon>
+                      <span>Scanner code-barres / QR code</span>
+                    </div>
 
-                <div class="camera-controls">
-                  <small>Présentez uniquement le code-barres devant la caméra</small>
+                    <div class="scanner-status" *ngIf="barcodeScannerLoading">
+                      Initialisation caméra...
+                    </div>
+                  </div>
+
+                  <div class="scanner-stage">
+                    <div id="barcode-scanner-region" class="scanner-region"></div>
+
+                    <div class="scanner-overlay">
+                      <div class="scanner-frame"></div>
+                    </div>
+                  </div>
+
+                  <div class="scanner-hint">
+                    <small>
+                      Placez le code dans le cadre. Le scan se fermera automatiquement dès détection.
+                    </small>
+                  </div>
                 </div>
               </div>
-
             </div>
-                <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Nom du produit</mat-label>
-          <input matInput formControlName="nom" placeholder="Ex: Sucre 1Kg">
-          <mat-error *ngIf="f['nom'].hasError('required')">
-            Le nom du produit est obligatoire
-          </mat-error>
-          <mat-error *ngIf="f['nom'].hasError('maxlength')">
-            Maximum 150 caractères
-          </mat-error>
-        </mat-form-field>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Nom du produit</mat-label>
+              <input matInput formControlName="nom" placeholder="Ex: Sucre 1Kg">
+              <mat-error *ngIf="f['nom'].hasError('required')">
+                Le nom du produit est obligatoire
+              </mat-error>
+              <mat-error *ngIf="f['nom'].hasError('maxlength')">
+                Maximum 150 caractères
+              </mat-error>
+            </mat-form-field>
           </div>
         </div>
 
@@ -161,13 +205,45 @@
 
             <div class="form-grid one-col">
               <mat-form-field appearance="outline" class="full-width">
-                <mat-label>Stock Maximun</mat-label>
+                <mat-label>Stock maximum</mat-label>
                 <input matInput type="number" formControlName="stockMaximum" placeholder="0">
                 <mat-hint>Seuil d’alerte pour le surstock</mat-hint>
               </mat-form-field>
             </div>
           </div>
 
+          <div class="form-grid one-col">
+            <div class="perissable-block">
+              <div class="perissable-head">
+                <div class="perissable-label">
+                  <mat-icon>science</mat-icon>
+                  <span>Produit périssable</span>
+                </div>
+
+                <span
+                  class="perissable-badge"
+                  [ngClass]="form.get('perissable')?.value === 'OUI' ? 'yes' : 'no'">
+                  {{ form.get('perissable')?.value === 'OUI' ? 'Oui' : 'Non' }}
+                </span>
+              </div>
+
+              <mat-slide-toggle
+                color="primary"
+                [checked]="form.get('perissable')?.value === 'OUI'"
+                (change)="onPerissableToggle($event.checked)">
+                {{ form.get('perissable')?.value === 'OUI'
+                  ? 'Oui, ce produit nécessite une gestion par lot et une date de péremption'
+                  : 'Non, ce produit ne nécessite pas de gestion de péremption' }}
+              </mat-slide-toggle>
+
+              <div class="perissable-hint">
+                <mat-icon>info</mat-icon>
+                <span>
+                  Si activé, la date de péremption sera obligatoire lors de la réception en stock.
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="section-card">
@@ -178,7 +254,10 @@
 
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>Description du produit</mat-label>
-            <textarea matInput rows="5" formControlName="description"
+            <textarea
+              matInput
+              rows="5"
+              formControlName="description"
               placeholder="Description détaillée du produit"></textarea>
           </mat-form-field>
         </div>
@@ -200,12 +279,22 @@
             </label>
 
             <div class="camera-box">
-              <button mat-stroked-button color="primary" type="button" *ngIf="!cameraOpen" (click)="startCamera()">
+              <button
+                mat-stroked-button
+                color="primary"
+                type="button"
+                *ngIf="!cameraOpen"
+                (click)="startCamera()">
                 <mat-icon>photo_camera</mat-icon>
                 Ouvrir la webcam
               </button>
 
-              <button mat-stroked-button color="warn" type="button" *ngIf="cameraOpen" (click)="stopCamera()">
+              <button
+                mat-stroked-button
+                color="warn"
+                type="button"
+                *ngIf="cameraOpen"
+                (click)="stopCamera()">
                 <mat-icon>videocam_off</mat-icon>
                 Fermer la webcam
               </button>
@@ -217,26 +306,35 @@
           </div>
 
           <div class="camera-panel" *ngIf="cameraOpen">
-            <video #videoRef autoplay playsinline muted></video>
+            <video #videoRef autoplay playsinline muted data-camera-preview="true"></video>
             <div class="camera-controls">
-              <button pButton type="button" icon="pi pi-camera" label="Prendre la photo" class="save-btn"
+              <button
+                pButton
+                type="button"
+                icon="pi pi-camera"
+                label="Prendre la photo"
+                class="save-btn"
                 (click)="captureFromCamera(videoRef)">
               </button>
             </div>
           </div>
+
           <div class="preview-grid" *ngIf="previews.length > 0">
             <div class="preview-card" *ngFor="let img of previews; let i = index">
               <div class="preview-image-wrapper">
                 <img [src]="img" alt="Aperçu image produit">
                 <span class="main-badge" *ngIf="selectedImages[i]?.principale">Principale</span>
               </div>
+
               <div class="preview-meta">
                 <small>{{ selectedImages[i]?.nomFichier }}</small>
               </div>
+
               <div class="preview-actions">
                 <button type="button" mat-stroked-button color="primary" (click)="setAsMain(i)">
                   {{ selectedImages[i]?.principale ? 'Image principale' : 'Définir principale' }}
                 </button>
+
                 <button type="button" mat-icon-button color="warn" (click)="removeImage(i)">
                   <mat-icon>delete</mat-icon>
                 </button>
@@ -246,18 +344,22 @@
         </div>
 
         <div class="form-actions">
-          <button mat-stroked-button type="button" class="secondary-btn">
+          <button mat-stroked-button type="button" class="secondary-btn" (click)="resetForm()">
             Annuler
           </button>
 
-          <button pButton type="submit" icon="pi pi-save" [label]="loading ? 'Enregistrement...' : 'Créer le produit'"
-            class="save-btn" [disabled]="loading">
+          <button
+            pButton
+            type="submit"
+            icon="pi pi-save"
+            [label]="loading ? 'Enregistrement...' : 'Créer le produit'"
+            class="save-btn"
+            [disabled]="loading">
           </button>
         </div>
       </form>
     </div>
 
-    <!-- Right summary -->
     <aside class="side-panel">
       <div class="side-card sticky">
         <div class="panel-head">
@@ -292,9 +394,23 @@
         </div>
 
         <div class="summary-block">
-          <div class="summary-label">Stock Maximum</div>
+          <div class="summary-label">Stock maximum</div>
           <div class="summary-value">
             {{ form.get('stockMaximum')?.value || 0 }}
+          </div>
+        </div>
+
+        <div class="summary-block">
+          <div class="summary-label">Périssable</div>
+          <div class="summary-value">
+            {{ form.get('perissable')?.value === 'OUI' ? 'Oui' : 'Non' }}
+          </div>
+        </div>
+
+        <div class="summary-block" *ngIf="form.get('perissable')?.value === 'OUI'">
+          <div class="summary-label">Gestion stock</div>
+          <div class="summary-value">
+            Lot + péremption + FEFO
           </div>
         </div>
 
@@ -309,6 +425,44 @@
           <h4>Code-barres généré</h4>
           <img [src]="getBarcodeUrl(produitCree.id)" alt="Barcode produit">
           <div class="barcode-text">{{ produitCree.codeBarres }}</div>
+        </div>
+      </div>
+
+      <div class="side-card" *ngIf="form.get('perissable')?.value === 'OUI'">
+        <div class="panel-head">
+          <h3>Gestion de péremption</h3>
+          <span>Règles métier</span>
+        </div>
+
+        <div class="success-card perissable-card">
+          <i class="pi pi-exclamation-circle"></i>
+          <div>
+            <strong>Produit périssable activé</strong>
+            <p>
+              À la réception, le numéro de lot et la date de péremption devront être renseignés.
+            </p>
+          </div>
+        </div>
+
+        <div class="summary-block">
+          <div class="summary-label">Sortie stock</div>
+          <div class="summary-value">
+            FEFO automatique
+          </div>
+        </div>
+
+        <div class="summary-block">
+          <div class="summary-label">Vente</div>
+          <div class="summary-value">
+            Blocage des lots périmés
+          </div>
+        </div>
+
+        <div class="summary-block">
+          <div class="summary-label">Alertes</div>
+          <div class="summary-value">
+            Dashboard péremption actif
+          </div>
         </div>
       </div>
 
@@ -327,8 +481,10 @@
         </div>
 
         <div class="created-images" *ngIf="produitCree.images?.length">
-          <img *ngFor="let img of produitCree.images" [src]="img.url" [alt]="img.nomFichier || 'image produit'"
-            alt="" />
+          <img
+            *ngFor="let img of produitCree.images"
+            [src]="img.url"
+            [alt]="img.nomFichier || 'image produit'" />
         </div>
       </div>
     </aside>

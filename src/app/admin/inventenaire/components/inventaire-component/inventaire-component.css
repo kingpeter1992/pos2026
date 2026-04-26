@@ -1,0 +1,145 @@
+.inventory-dashboard {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  background: linear-gradient(135deg, #ffffff, #f6f8fb);
+  border: 1px solid #e7ebf3;
+  border-radius: 20px;
+}
+
+.breadcrumb {
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin-bottom: 0.35rem;
+}
+
+.page-header h1 {
+  margin: 0;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.page-header p {
+  margin: 0.35rem 0 0;
+  color: #6b7280;
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.kpi-card {
+  border-radius: 18px;
+  padding: 1rem 1.1rem;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.06);
+}
+
+.kpi-label {
+  font-size: 0.82rem;
+  color: #6b7280;
+  margin-bottom: 0.45rem;
+}
+
+.kpi-value {
+  font-size: 1.7rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.dashboard-panels {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1rem;
+}
+
+.panel {
+  border-radius: 18px;
+  padding: 1rem;
+}
+
+.panel-title {
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: #111827;
+}
+
+.panel-caption {
+  margin-top: 0.75rem;
+  color: #6b7280;
+  font-size: 0.86rem;
+}
+
+.money-value {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+@media (max-width: 1200px) {
+  .kpi-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .dashboard-panels {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+.premium-header {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at top right, rgba(37, 99, 235, 0.12), transparent 35%),
+    linear-gradient(135deg, #ffffff, #f8fafc);
+}
+
+.header-left {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.selected-pill {
+  margin-top: 0.85rem;
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 999px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.selected-pill.active {
+  background: #ecfdf5;
+  border-color: #bbf7d0;
+  color: #047857;
+}
+
+.selected-pill mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}

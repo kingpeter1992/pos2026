@@ -17,10 +17,15 @@ export class StockActuelComponent implements OnInit {
     'codeBarre',
     'categorie',
     'depot',
+      'emplacement',
     'quantite',
     'min',
     'max',
     'pmp',
+    'tauxMarge',
+    'margeUnitaire',
+    'prixVenteUnitaire',
+    'margeTotaleStock',
     'valeur',
     'statut'
   ];
@@ -28,14 +33,6 @@ export class StockActuelComponent implements OnInit {
   readonly loading = this.stockStore.loading;
   readonly stocks = this.stockStore.stocks;
   readonly depots = this.stockStore.depots;
-
-  readonly totalProduits = this.stockStore.totalItems;
-  readonly totalQuantite = this.stockStore.totalQuantite;
-  readonly totalValeur = this.stockStore.totalValeurStock;
-  readonly totalRuptures = this.stockStore.totalRuptures;
-  readonly totalAlertesRupture = this.stockStore.totalAlertesRupture;
-  readonly totalSurplus = this.stockStore.totalSurplus;
-  readonly totalNormaux = this.stockStore.totalNormaux;
 
   readonly search = signal<string>('');
   readonly depotFilter = signal<string>('');
@@ -47,6 +44,55 @@ export class StockActuelComponent implements OnInit {
       this.depotFilter(),
       this.statutFilter()
     )
+  );
+
+  // KPI dynamiques basées sur les lignes affichées
+  readonly totalProduits = computed(() => this.filteredStocks().length);
+
+  readonly totalQuantite = computed(() =>
+    this.filteredStocks().reduce(
+      (sum, row) => sum + Number(row.quantiteDisponible ?? 0),
+      0
+    )
+  );
+
+  // Représente le coût de revient total du stock
+  readonly totalRevient = computed(() =>
+    this.filteredStocks().reduce(
+      (sum, row) => sum + Number(row.valeurStock ?? 0),
+      0
+    )
+  );
+
+  readonly totalMarge = computed(() =>
+    this.filteredStocks().reduce(
+      (sum, row) => sum + Number(row.margeTotaleStock ?? 0),
+      0
+    )
+  );
+
+  readonly totalValeurVente = computed(() =>
+    this.filteredStocks().reduce((sum, row) => {
+      const quantite = Number(row.quantiteDisponible ?? 0);
+      const pv = Number(row.prixVenteUnitaire ?? 0);
+      return sum + (quantite * pv);
+    }, 0)
+  );
+
+  readonly totalRuptures = computed(() =>
+    this.filteredStocks().filter(row => this.getResolvedStatut(row) === 'RUPTURE').length
+  );
+
+  readonly totalAlertesRupture = computed(() =>
+    this.filteredStocks().filter(row => this.getResolvedStatut(row) === 'ALERTE_RUPTURE').length
+  );
+
+  readonly totalSurplus = computed(() =>
+    this.filteredStocks().filter(row => this.getResolvedStatut(row) === 'SURPLUS').length
+  );
+
+  readonly totalNormaux = computed(() =>
+    this.filteredStocks().filter(row => this.getResolvedStatut(row) === 'NORMAL').length
   );
 
   ngOnInit(): void {
@@ -104,6 +150,10 @@ export class StockActuelComponent implements OnInit {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     });
+  }
+
+  formatPercent(value: number | string | null | undefined): string {
+    return `${this.formatNumber(value)} %`;
   }
 
   trackByProduitDepot = (_index: number, row: StockProduitView): string =>

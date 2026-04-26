@@ -193,3 +193,21 @@
     grid-template-columns: 1fr;
   }
 }
+
+.locator-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #eef6ff;
+  color: #1565c0;
+  font-weight: 600;
+  font-size: 12px;
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+  }
+}

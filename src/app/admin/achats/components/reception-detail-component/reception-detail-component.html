@@ -86,10 +86,20 @@
         <td mat-cell *matCellDef="let row" class="td-right strong">{{ row.coutUnitaireFinal | number:'1.2-2' }}</td>
       </ng-container>
 
+
       <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
       <tr mat-row *matRowDef="let row; columns: displayedColumns; trackBy: trackByLine"></tr>
     </table>
   </div>
+        <button
+      mat-flat-button
+      color="primary"
+      type="button"
+      (click)="goToLocators()">
+      <mat-icon>inventory_2</mat-icon>
+      Affecter les locators
+    </button>
+
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">

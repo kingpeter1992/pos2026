@@ -1,30 +1,91 @@
-<h2 mat-dialog-title>Scanner le code-barres</h2>
+<h2 mat-dialog-title class="scanner-title">
+  <div class="title-left">
+    <div class="title-icon">
+      <mat-icon>qr_code_scanner</mat-icon>
+    </div>
+    <div>
+      <div class="title-main">Scanner le code-barres</div>
+      <div class="title-sub">Place le code bien au centre du cadre</div>
+    </div>
+  </div>
+
+  <button mat-icon-button (click)="close()" aria-label="Fermer">
+    <mat-icon>close</mat-icon>
+  </button>
+</h2>
 
 <mat-dialog-content class="scanner-content">
+  <div class="scanner-toolbar" *ngIf="cameras.length">
+    <mat-form-field appearance="outline" class="camera-field">
+      <mat-label>Caméra</mat-label>
+      <mat-select
+        [value]="selectedCameraId"
+        (selectionChange)="changeCamera($event.value)">
+        <mat-option *ngFor="let cam of cameras" [value]="cam.id">
+          {{ cam.label || ('Caméra ' + cam.id) }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
 
-  <div class="state-box" *ngIf="isLoading">
-    <mat-spinner diameter="40"></mat-spinner>
-    <p>Initialisation de la caméra...</p>
+    <button
+      mat-stroked-button
+      type="button"
+      *ngIf="torchSupported"
+      (click)="toggleTorch()">
+      <mat-icon>{{ torchEnabled ? 'flash_off' : 'flash_on' }}</mat-icon>
+      {{ torchEnabled ? 'Lampe OFF' : 'Lampe ON' }}
+    </button>
+
+    <button mat-stroked-button type="button" (click)="retry()">
+      <mat-icon>refresh</mat-icon>
+      Relancer
+    </button>
   </div>
 
-  <div class="video-wrapper" [hidden]="!hasCamera">
-    <video #video autoplay muted playsinline></video>
-    <p class="hint">Placez le code-barres devant la caméra</p>
+  <div class="scanner-wrapper">
+    <div class="scanner-frame">
+      <div id="barcode-reader" class="reader-host"></div>
+
+      <div class="scan-overlay">
+        <div class="scan-box">
+          <span class="corner top-left"></span>
+          <span class="corner top-right"></span>
+          <span class="corner bottom-left"></span>
+          <span class="corner bottom-right"></span>
+          <div class="scan-line"></div>
+        </div>
+      </div>
+
+      <div class="loading-layer" *ngIf="loading">
+        <mat-progress-spinner mode="indeterminate" diameter="58"></mat-progress-spinner>
+        <p>Initialisation de la caméra…</p>
+      </div>
+    </div>
   </div>
 
-  <div *ngIf="!isLoading && scanError" class="error-box">
-    <mat-icon color="warn">warning</mat-icon>
-    <p>{{ scanError }}</p>
+  <div class="scanner-hint" *ngIf="!cameraError">
+    <mat-icon>center_focus_strong</mat-icon>
+    <span>Aligne le code-barres dans le cadre pour une détection rapide.</span>
   </div>
 
+  <div class="scanner-success" *ngIf="scanSuccess">
+    <mat-icon>check_circle</mat-icon>
+    <span>Code détecté : <strong>{{ scannedText }}</strong></span>
+  </div>
+
+  <div class="scanner-error" *ngIf="cameraError">
+    <mat-icon>error</mat-icon>
+    <span>{{ cameraError }}</span>
+  </div>
+
+  <div class="scanner-error" *ngIf="scanError && !cameraError">
+    <mat-icon>warning</mat-icon>
+    <span>{{ scanError }}</span>
+  </div>
 </mat-dialog-content>
 
-<mat-dialog-actions align="end">
-  <button mat-stroked-button type="button" (click)="retry()" *ngIf="scanError">
-    Réessayer
-  </button>
-
-  <button mat-raised-button color="warn" type="button" (click)="cancel()">
-    Fermer
+<mat-dialog-actions align="end" class="scanner-actions">
+  <button mat-stroked-button type="button" (click)="close()">
+    Annuler
   </button>
 </mat-dialog-actions>

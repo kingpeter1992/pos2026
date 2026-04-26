@@ -21,6 +21,7 @@ export interface ProduitRequest {
   prixVente: number;
   stockMinimum: number;
     stockMaximum:number
+    perissable?:string
 
   images?: ImagePhotoRequest[];
 }
@@ -39,6 +40,7 @@ export interface ProduitResponse {
   actif: boolean;
   dateCreation: string;
   barcodeUrl: string;
+  perisable?:string
   images: ImagePhotoResponse[];
 }
 

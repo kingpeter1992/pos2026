@@ -3,6 +3,10 @@ export interface LigneReceptionRequest {
   quantiteRecue: number;
   prixUnitaire?: number;
   commentaire?: string;
+
+    // NOUVEAUX
+  datePeremption?: string;
+  numeroLot?: string;
 }
 
 export interface ReceptionAchatRequest {

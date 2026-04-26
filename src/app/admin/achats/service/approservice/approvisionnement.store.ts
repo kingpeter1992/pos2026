@@ -55,6 +55,7 @@ export class ApprovisionnementStore {
       .subscribe({
         next: (data) => {
           this.suggestions.set(data || []);
+          console.log('suggestion Réapprovisionnement automatique', data)
           this.loaded.set(true);
         },
         error: (err) => {

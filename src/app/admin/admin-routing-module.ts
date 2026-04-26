@@ -12,11 +12,8 @@ import { ListeProduitsComponent } from './produits/components/liste-produits-com
 import { ParamsComponent } from '../user/params-component/params-component';
 import { RolesComponent } from '../user/roles-component/roles-component';
 import { AchatsDashboardComponent } from './achats/components/achats-dashboard-component/achats-dashboard-component';
-import { AnalyseAchatsComponent } from './achats/components/analyse-achats-component/analyse-achats-component';
-import { CommandesFournisseursComponent } from './achats/components/commandes-fournisseurs-component/commandes-fournisseurs-component';
 import { SuggestionsReapprovisionnementComponent } from './achats/components/suggestions-reapprovisionnement-component/suggestions-reapprovisionnement-component';
 import { AddFournisseurComponent } from './fournisseurs/components/add-fournisseur-component/add-fournisseur-component';
-import { FournisseursDashboardComponent } from './fournisseurs/components/fournisseurs-dashboard-component/fournisseurs-dashboard-component';
 import { ListeFournisseursComponent } from './fournisseurs/components/liste-fournisseurs-component/liste-fournisseurs-component';
 import { ProduitsFournisseursComponent } from './fournisseurs/components/produits-fournisseurs-component/produits-fournisseurs-component';
 import { CategoriesComponent } from './produits/components/categories-component/categories-component';
@@ -25,11 +22,9 @@ import { ImagesProduitsComponent } from './produits/components/images-produits-c
 import { RechercheProduitComponent } from './produits/components/recherche-produit-component/recherche-produit-component';
 import { ScanBarcodeComponent } from './produits/components/scan-barcode-component/scan-barcode-component';
 import { AlertesStockComponent } from './stock/components/alertes-stock-component/alertes-stock-component';
-import { InventaireComponent } from './stock/components/inventaire-component/inventaire-component';
 import { MouvementsStockComponent } from './stock/components/mouvements-stock-component/mouvements-stock-component';
 import { ProduitsRuptureComponent } from './stock/components/produits-rupture-component/produits-rupture-component';
 import { StockActuelComponent } from './stock/components/stock-actuel-component/stock-actuel-component';
-import { StockFaibleComponent } from './stock/components/stock-faible-component/stock-faible-component';
 import { ProduitDetailComponent } from './produits/components/produit-detail-component/produit-detail-component';
 import { HistoriqueAchatsComponent } from './achats/components/historique-achats-component/historique-achats-component';
 import { PrevisionsAchatsComponent } from './achats/components/previsions-achats-component/previsions-achats-component';
@@ -37,6 +32,12 @@ import { ReceptionsComponent } from './achats/components/receptions-component/re
 import { CommandeAchatList } from './achats/components/commande-achat-list/commande-achat-list';
 import { TarifVenteComponent } from './pos/componenets/tarif-vente-component/tarif-vente-component';
 import { TarifReglesComponent } from './pos/componenets/tarif-regles.component/tarif-regles.component';
+import { LocatorAffectationComponent } from './stock/components/locator-affectation-component/locator-affectation-component';
+import { InventaireComponent } from './inventenaire/components/inventaire-component/inventaire-component';
+import { InventaireDetail } from './inventenaire/components/inventaire-detail/inventaire-detail';
+import { InventaireBordereauDetailComponent } from './inventenaire/components/inventaire-bordereau-detail-component/inventaire-bordereau-detail-component';
+import { InventaireVarianceResume } from './inventenaire/components/inventaire-variance-resume/inventaire-variance-resume';
+import { InventaireVarianceListe } from './inventenaire/components/inventaire-variance-liste/inventaire-variance-liste';
 
 const routes: Routes = [
   {
@@ -77,18 +78,36 @@ const routes: Routes = [
       { path: 'achats/commandes', component: CommandeAchatList },//
       { path: 'achats/receptions', component: ReceptionsComponent },
       { path: 'achats/receptionslist', component: HistoriqueAchatsComponent },
+      { path: 'achats/receptions/locators/:id', component: LocatorAffectationComponent },
+      //http://localhost:4200/achats/receptions/locators/2
       { path: 'achats/historique', component: HistoriqueAchatsComponent },
       { path: 'achats/suggestions', component: SuggestionsReapprovisionnementComponent },
-      { path: 'achats/analyse', component: AnalyseAchatsComponent },
+      //  { path: 'achats/analyse', component: AnalyseAchatsComponent },
       { path: 'achats/previsions', component: PrevisionsAchatsComponent },
+
 
       // Stock
       { path: 'stock/actuel', component: StockActuelComponent },
       { path: 'stock/mouvements', component: MouvementsStockComponent },
       { path: 'stock/alertes', component: AlertesStockComponent },
       { path: 'stock/ruptures', component: ProduitsRuptureComponent },
-      { path: 'stock/faible', component: StockFaibleComponent },
-      { path: 'stock/inventaire', component: InventaireComponent },
+      //   { path: 'stock/faible', component: StockFaibleComponent },
+      // { path: 'stock/inventaire', component: InventaireComponent },
+
+
+
+      // inventaire
+      { path: 'inventaire/dashboard', component: InventaireComponent },
+      { path: 'inventaire/inventaires', component: InventaireComponent },
+      { path: 'inventaire/details/:id', component: InventaireDetail },
+      { path: 'inventaire/bordereaux/:id', component: InventaireBordereauDetailComponent },
+      { path: 'inventaire/:id/variances', component: InventaireVarianceResume },
+      { path: 'inventaire/variances', component: InventaireVarianceListe },
+
+
+
+
+
 
       // Admin
       { path: 'users', component: AdminUsersComponent },

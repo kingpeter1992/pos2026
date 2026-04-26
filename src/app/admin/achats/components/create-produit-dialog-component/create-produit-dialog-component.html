@@ -9,9 +9,11 @@
       <div class="header-text">
         <h1>{{ isDialogMode ? 'Nouveau produit depuis la commande' : 'Création produit' }}</h1>
         <p>
-          {{ isDialogMode
-            ? 'Créez le produit manquant puis retournez automatiquement vers la ligne de commande.'
-            : 'Enregistrez un nouveau produit, associez sa catégorie, ajoutez ses images et générez automatiquement son code-barres.' }}
+          {{
+            isDialogMode
+              ? 'Créez le produit manquant puis retournez automatiquement vers la ligne de commande.'
+              : 'Enregistrez un nouveau produit, associez sa catégorie, définissez s’il est périssable, ajoutez ses images et générez automatiquement son code-barres.'
+          }}
         </p>
       </div>
     </div>
@@ -78,7 +80,6 @@
           </div>
 
           <div class="form-grid two-cols">
-
             <div class="barcode-field-block">
               <mat-form-field appearance="outline" class="full-width">
                 <mat-label>Code-barres</mat-label>
@@ -179,7 +180,6 @@
                 Maximum 150 caractères
               </mat-error>
             </mat-form-field>
-
           </div>
         </div>
 
@@ -251,6 +251,41 @@
                   placeholder="0" />
                 <mat-hint>Seuil d’alerte pour le surstock</mat-hint>
               </mat-form-field>
+            </div>
+          </div>
+
+          <div class="form-grid one-col">
+            <div class="perissable-block">
+              <div class="perissable-head">
+                <div class="perissable-label">
+                  <mat-icon>science</mat-icon>
+                  <span>Produit périssable</span>
+                </div>
+
+                <span
+                  class="perissable-badge"
+                  [ngClass]="form.get('perissable')?.value === 'OUI' ? 'yes' : 'no'">
+                  {{ form.get('perissable')?.value === 'OUI' ? 'Oui' : 'Non' }}
+                </span>
+              </div>
+
+              <mat-slide-toggle
+                color="primary"
+                [checked]="form.get('perissable')?.value === 'OUI'"
+                (change)="onPerissableToggle($event.checked)">
+                {{
+                  form.get('perissable')?.value === 'OUI'
+                    ? 'Oui, ce produit nécessite une gestion par lot et une date de péremption'
+                    : 'Non, ce produit ne nécessite pas de gestion de péremption'
+                }}
+              </mat-slide-toggle>
+
+              <div class="perissable-hint">
+                <mat-icon>info</mat-icon>
+                <span>
+                  Si activé, la date de péremption sera obligatoire lors de la réception en stock.
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -443,6 +478,20 @@
         </div>
 
         <div class="summary-block">
+          <div class="summary-label">Périssable</div>
+          <div class="summary-value">
+            {{ form.get('perissable')?.value === 'OUI' ? 'Oui' : 'Non' }}
+          </div>
+        </div>
+
+        <div class="summary-block" *ngIf="form.get('perissable')?.value === 'OUI'">
+          <div class="summary-label">Gestion stock</div>
+          <div class="summary-value">
+            Lot + péremption + FEFO
+          </div>
+        </div>
+
+        <div class="summary-block">
           <div class="summary-label">Images</div>
           <div class="summary-value">
             {{ selectedImages.length }} image(s)
@@ -453,6 +502,44 @@
           <h4>Code-barres généré</h4>
           <img [src]="getBarcodeUrl(produitCree.id)" alt="Barcode produit">
           <div class="barcode-text">{{ produitCree.codeBarres }}</div>
+        </div>
+      </div>
+
+      <div class="side-card" *ngIf="form.get('perissable')?.value === 'OUI'">
+        <div class="panel-head">
+          <h3>Gestion de péremption</h3>
+          <span>Règles métier</span>
+        </div>
+
+        <div class="success-card perissable-card">
+          <i class="pi pi-exclamation-circle"></i>
+          <div>
+            <strong>Produit périssable activé</strong>
+            <p>
+              À la réception, le numéro de lot et la date de péremption devront être renseignés.
+            </p>
+          </div>
+        </div>
+
+        <div class="summary-block">
+          <div class="summary-label">Sortie stock</div>
+          <div class="summary-value">
+            FEFO automatique
+          </div>
+        </div>
+
+        <div class="summary-block">
+          <div class="summary-label">Vente</div>
+          <div class="summary-value">
+            Blocage des lots périmés
+          </div>
+        </div>
+
+        <div class="summary-block">
+          <div class="summary-label">Alertes</div>
+          <div class="summary-value">
+            Dashboard péremption actif
+          </div>
         </div>
       </div>
 

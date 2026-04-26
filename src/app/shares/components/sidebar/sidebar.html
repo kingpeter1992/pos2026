@@ -38,6 +38,15 @@
     </div>
   }
 
+
+    @if (showAdminBoard) {
+    <div>
+      <p-panelMenu [model]="items7" class="w-full md:w-80"></p-panelMenu>
+    </div>
+  }
+
+
+
   @if (canViewAdmin) {
     <div>
       <p-panelMenu [model]="items5" class="w-full md:w-80"></p-panelMenu>

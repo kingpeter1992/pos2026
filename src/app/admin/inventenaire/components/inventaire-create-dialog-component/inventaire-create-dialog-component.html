@@ -1,0 +1,88 @@
+<h2 mat-dialog-title>Créer un inventaire</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="form" class="inventaire-form">
+    <div class="form-grid">
+      <mat-form-field appearance="outline">
+        <mat-label>Type d'inventaire</mat-label>
+        <mat-select formControlName="type">
+          <mat-option *ngFor="let type of types" [value]="type">
+            {{ type }}
+          </mat-option>
+        </mat-select>
+        <mat-error *ngIf="form.get('type')?.hasError('required')">
+          Le type est obligatoire
+        </mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Dépôt</mat-label>
+        <mat-select formControlName="depotId">
+          <mat-option *ngFor="let depot of depots" [value]="depot.id">
+            {{ depot.nom }}
+          </mat-option>
+        </mat-select>
+        <mat-error *ngIf="form.get('depotId')?.hasError('required')">
+          Le dépôt est obligatoire
+        </mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Locator</mat-label>
+        <mat-select formControlName="locatorId">
+          <mat-option [value]="null">Tous les locators</mat-option>
+
+          <mat-option *ngIf="loadingLocators" disabled>
+            Chargement des locators...
+          </mat-option>
+
+          <mat-option *ngFor="let locator of locators" [value]="locator.id">
+            {{ locator.code }} - {{ locator.libelle || 'Sans libellé' }}
+          </mat-option>
+        </mat-select>
+
+        <mat-hint *ngIf="form.get('type')?.value !== 'CIBLE'">
+          Pour un inventaire global ou tournant, tous les locators du dépôt seront pris en compte.
+        </mat-hint>
+
+        <mat-hint *ngIf="form.get('type')?.value === 'CIBLE' && !loadingLocators">
+          Choisissez un locator si vous voulez cibler un emplacement précis.
+        </mat-hint>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Date inventaire</mat-label>
+        <input matInput type="date" formControlName="dateInventaire" />
+        <mat-error *ngIf="form.get('dateInventaire')?.hasError('required')">
+          La date est obligatoire
+        </mat-error>
+      </mat-form-field>
+    </div>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Commentaire</mat-label>
+      <textarea matInput rows="3" formControlName="commentaire"></textarea>
+    </mat-form-field>
+
+    <div class="toggle-grid">
+      <mat-slide-toggle formControlName="memorise">
+        Mémorisation inventaire
+      </mat-slide-toggle>
+
+      <mat-slide-toggle formControlName="gelStockTheorique">
+        Geler le stock théorique
+      </mat-slide-toggle>
+    </div>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-stroked-button (click)="close()" [disabled]="submitting">
+    Annuler
+  </button>
+
+  <button mat-flat-button color="primary" (click)="save()" [disabled]="submitting">
+    <mat-icon>save</mat-icon>
+    Créer
+  </button>
+</mat-dialog-actions>

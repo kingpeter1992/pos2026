@@ -1,0 +1,23 @@
+<h2 mat-dialog-title>Générer les bordereaux</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="form" class="bordereau-form">
+    <div class="form-grid">
+      <mat-form-field appearance="outline">
+        <mat-label>Articles par bordereau</mat-label>
+        <input matInput type="number" formControlName="tailleBordereau" />
+      </mat-form-field>
+
+      <mat-slide-toggle formControlName="afficherQuantiteTheorique">
+        Afficher la qté théorique
+      </mat-slide-toggle>
+    </div>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-stroked-button (click)="close()">Annuler</button>
+  <button mat-flat-button color="primary" (click)="save()" [disabled]="store.submitting()">
+    Générer
+  </button>
+</mat-dialog-actions>

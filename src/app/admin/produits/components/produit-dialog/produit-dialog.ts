@@ -18,11 +18,9 @@ export interface ProduitDialogData {
 export class ProduitDialog implements OnInit {
   form!: FormGroup;
   categories: CategorieResponse[] = [];
-
   previews: string[] = [];
   selectedImages: ImagePhotoRequest[] = [];
   existingImages: ImagePhotoResponse[] = [];
-
   submitting = false;
   produit: any;
 
@@ -30,7 +28,8 @@ export class ProduitDialog implements OnInit {
     private fb: FormBuilder,
     private categorieStore: CategorieStoreService,
     private dialogRef: MatDialogRef<ProduitDialog>,
-@Inject(MAT_DIALOG_DATA) public data: ProduitDialogData  ) {}
+    @Inject(MAT_DIALOG_DATA) public data: ProduitDialogData
+  ) {}
 
   ngOnInit(): void {
     this.categorieStore.categories$.subscribe(data => {
@@ -47,6 +46,7 @@ export class ProduitDialog implements OnInit {
       prixVente: [this.data.produit?.prixVente ?? 0, [Validators.required, Validators.min(0)]],
       stockMinimum: [this.data.produit?.stockMinimum ?? 0, [Validators.required, Validators.min(0)]],
       stockMaximum: [this.data.produit?.stockMaximum ?? 0, [Validators.required, Validators.min(0)]],
+      perissable: [this.data.produit?.perisable || 'NON', Validators.required],
       actif: [this.data.produit?.actif ?? true]
     });
 
@@ -156,7 +156,8 @@ export class ProduitDialog implements OnInit {
       categorieId: this.form.value.categorieId,
       prixVente: this.form.value.prixVente,
       stockMinimum: this.form.value.stockMinimum,
-      stockMaximum : this.form.value.stockMaximum,
+      stockMaximum: this.form.value.stockMaximum,
+      perissable: this.form.value.perissable,
       actif: this.form.value.actif,
       images
     } as ProduitRequest & { actif?: boolean };
@@ -183,5 +184,4 @@ export class ProduitDialog implements OnInit {
   get f() {
     return this.form.controls;
   }
-
 }

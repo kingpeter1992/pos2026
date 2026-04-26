@@ -1,0 +1,63 @@
+<mat-card class="inventory-table-card">
+  <div class="toolbar">
+    <div class="title-block">
+      <h2>Inventaires</h2>
+      <span>{{ filteredInventaires().length }} élément(s)</span>
+    </div>
+
+    <mat-form-field appearance="outline" class="search-field">
+      <mat-label>Recherche</mat-label>
+      <input matInput [value]="search()" (input)="search.set(($any($event.target).value ?? '').trim())"
+        placeholder="Référence, dépôt, locator, statut..." />
+      <mat-icon matSuffix>search</mat-icon>
+    </mat-form-field>
+  </div>
+
+  <p-table [value]="filteredInventaires()" [paginator]="true" [rows]="10" responsiveLayout="scroll"
+    styleClass="p-datatable-sm p-datatable-gridlines">
+    <ng-template pTemplate="header">
+      <tr>
+        <th style="width: 60px;">Sel.</th>
+        <th>Référence</th>
+        <th>Type</th>
+        <th>Dépôt</th>
+        <th>Locator</th>
+        <th>Date</th>
+        <th>Statut</th>
+        <th class="text-right">Actions</th>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="body" let-row>
+      <tr>
+        <td>
+          <mat-checkbox [checked]="isSelected(row)" (change)="toggleSelection(row)">
+          </mat-checkbox>
+        </td>
+        <td class="ref">{{ row.reference }}</td>
+        <td>{{ row.type }}</td>
+        <td>{{ row.depotNom || '-' }}</td>
+        <td>{{ row.locatorCode || '-' }}</td>
+        <td>{{ row.dateInventaire | date:'dd/MM/yyyy' }}</td>
+        <td>
+          <p-tag [severity]="statutSeverity(row.statut)" [value]="row.statut"></p-tag>
+        </td>
+        <td class="text-right actions">
+          <button mat-icon-button color="primary" [disabled]="row.statut === 'BROUILLON'"
+            [matTooltip]="row.statut === 'BROUILLON' ? 'Inventaire en brouillon' : 'Voir les détails'"
+            (click)="goToDetails(row.id)">
+            <mat-icon>visibility</mat-icon>
+          </button>
+          <button mat-flat-button color="warn" *ngIf="canCloturer(row)" [disabled]="store.submitting()"
+            (click)="cloturer(row)">
+            <mat-icon>lock</mat-icon>
+            Clôturer
+          </button>
+          <button mat-flat-button color="accent" *ngIf="row.statut === 'BROUILLON'" (click)="ouvrir(row.id)">
+            Ouvrir
+          </button>
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+</mat-card>

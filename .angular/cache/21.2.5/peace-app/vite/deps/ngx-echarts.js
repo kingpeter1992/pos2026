@@ -1,8 +1,4 @@
 import {
-  outputFromObservable,
-  outputToObservable
-} from "./chunk-57BB2S64.js";
-import {
   Directive,
   ElementRef,
   Input,
@@ -15,6 +11,10 @@ import {
   ɵɵdefineDirective,
   ɵɵdefineNgModule
 } from "./chunk-BTZAHDHR.js";
+import {
+  outputFromObservable,
+  outputToObservable
+} from "./chunk-57BB2S64.js";
 import {
   InjectionToken,
   NgZone,

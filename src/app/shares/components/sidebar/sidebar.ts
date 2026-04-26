@@ -25,6 +25,8 @@ export class Sidebar implements OnInit {
   public items4: any[] = [];
   public items5: any[] = [];
   public items6: any[] = [];
+  public items7: any[] = [];
+
 
 
 
@@ -51,7 +53,7 @@ export class Sidebar implements OnInit {
     this.buildMenu4()
     this.buildMenu5();
      this.buildMenu6(); // ✅ important
-
+      this.buildMenu7();
 
   }
 
@@ -134,6 +136,23 @@ buildMenu4(): void {
     }));
   }
 
+
+    buildMenu7(): void {
+    this.items7 = this.menuPropertisGestionInventaire.map(menu => ({
+      label: menu.titre,
+      icon: menu.icon,
+      items: menu.sousMenus?.map(sub => ({
+        label: sub.titre,
+        icon: sub.icon,
+        routerLink: sub.url,      // <-- utilisation de routerLink
+        routerLinkActiveOptions: { exact: true }
+      })) || [],
+    }));
+  }
+
+
+
+
 public menuPropertisGestion: Array<Menu> = [
   {
     id: '1',
@@ -197,15 +216,32 @@ public menuPropertisGestionAchats: Array<Menu> = [
       { id: '4-2', titre: 'Commandes fournisseurs', icon: 'pi pi-file', url: '/admin/achats/commandes' },
       { id: '4-3', titre: 'Réceptions', icon: 'pi pi-download', url: '/admin/achats/receptionslist' },
       { id: '4-5', titre: 'Suggestions de réapprovisionnement', icon: 'pi pi-lightbulb', url: '/admin/achats/suggestions' },
-      { id: '4-6', titre: 'Analyse achats', icon: 'pi pi-chart-bar', url: '/admin/achats/analyse' },
+  //    { id: '4-6', titre: 'Analyse achats', icon: 'pi pi-chart-bar', url: '/admin/achats/analyse' },
       { id: '4-7', titre: 'Prévisions achats', icon: 'pi pi-calendar', url: '/admin/achats/previsions' }
+    ]
+  }
+];
+
+
+public menuPropertisGestionInventaire: Array<Menu> = [
+  {
+    id: '5',
+    icon: 'pi pi-shopping-bag',
+    titre: 'Gestion Inventaire',
+    url: '/admin/inventaire',
+    sousMenus: [
+      { id: '5-1', titre: 'Tableau de bord inventaire', icon: 'pi pi-chart-line', url: '/admin/inventaire/dashboard' },
+      { id: '5-2', titre: 'Inventaires', icon: 'pi pi-file', url: '/admin/inventaire/inventaires' },
+      { id: '5-3', titre: 'Détails inventaire', icon: 'pi pi-info-circle', url: '/admin/inventaire/details' },
+      { id: '5-5', titre: 'Bordereaux de comptage', icon: 'pi pi-list', url: '/admin/inventaire/bordereaux' },
+      { id: '5-6', titre: 'Variances inventaire', icon: 'pi pi-exclamation-triangle', url: '/admin/inventaire/variances' }
     ]
   }
 ];
 
 public menuPropertisGestionStock: Array<Menu> = [
   {
-    id: '5',
+    id: '6',
     icon: 'pi pi-database',
     titre: 'Gestion Stock',
     url: '/admin/stock',
@@ -213,9 +249,9 @@ public menuPropertisGestionStock: Array<Menu> = [
       { id: '5-1', titre: 'Stock actuel', icon: 'pi pi-inbox', url: '/admin/stock/actuel' },
       { id: '5-2', titre: 'Mouvements de stock', icon: 'pi pi-sort-alt', url: '/admin/stock/mouvements' },
       { id: '5-3', titre: 'Alertes stock', icon: 'pi pi-bell', url: '/admin/stock/alertes' },
-      { id: '5-4', titre: 'Produits en rupture', icon: 'pi pi-exclamation-triangle', url: '/admin/stock/ruptures' },
-      { id: '5-5', titre: 'Stock faible', icon: 'pi pi-filter', url: '/admin/stock/faible' },
-      { id: '5-6', titre: 'Inventaire', icon: 'pi pi-check-square', url: '/admin/stock/inventaire' }
+  //    { id: '5-4', titre: 'Produits en rupture', icon: 'pi pi-exclamation-triangle', url: '/admin/stock/ruptures' },
+   //   { id: '5-5', titre: 'Stock faible', icon: 'pi pi-filter', url: '/admin/stock/faible' },
+  //    { id: '5-6', titre: 'Inventaire', icon: 'pi pi-check-square', url: '/admin/stock/inventaire' }
     ]
   }
 ];
@@ -259,6 +295,10 @@ get canViewAchats(): boolean {
 }
 
 get canViewStock(): boolean {
+  return this.showAdminBoard || this.showfinanceBoard;
+}
+
+get canViewInventaire(): boolean {
   return this.showAdminBoard || this.showfinanceBoard;
 }
 

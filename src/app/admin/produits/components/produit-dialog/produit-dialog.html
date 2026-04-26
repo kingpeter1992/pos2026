@@ -63,9 +63,22 @@
           <input matInput type="number" formControlName="stockMinimum">
         </mat-form-field>
 
-         <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Stock Maximum</mat-label>
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Stock maximum</mat-label>
           <input matInput type="number" formControlName="stockMaximum">
+        </mat-form-field>
+      </div>
+
+      <div class="form-grid two-cols">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Produit périssable</mat-label>
+          <mat-select formControlName="perissable">
+            <mat-option value="NON">NON</mat-option>
+            <mat-option value="OUI">OUI</mat-option>
+          </mat-select>
+          <mat-error *ngIf="f['perissable'].hasError('required')">
+            Le champ périssable est obligatoire
+          </mat-error>
         </mat-form-field>
 
         <div class="toggle-box">
