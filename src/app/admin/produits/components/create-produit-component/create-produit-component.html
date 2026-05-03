@@ -75,48 +75,31 @@
             <div class="barcode-field-block">
               <mat-form-field appearance="outline" class="full-width">
                 <mat-label>Code-barres</mat-label>
-                <input
-                  matInput
-                  formControlName="codeBarres"
-                  placeholder="Laisser vide pour génération automatique" />
+                <input matInput formControlName="codeBarres" placeholder="Laisser vide pour génération automatique" />
                 <mat-hint>
                   Scanner le produit ou laisser vide pour génération automatique
                 </mat-hint>
               </mat-form-field>
 
               <div class="barcode-actions">
-                <button
-                  mat-stroked-button
-                  color="primary"
-                  type="button"
-                  *ngIf="!barcodeScannerOpen"
+                <button mat-stroked-button color="primary" type="button" *ngIf="!barcodeScannerOpen"
                   (click)="startBarcodeScanner()">
                   <mat-icon>qr_code_scanner</mat-icon>
                   Scanner le code-barres
                 </button>
 
-                <button
-                  mat-stroked-button
-                  color="warn"
-                  type="button"
-                  *ngIf="barcodeScannerOpen"
+                <button mat-stroked-button color="warn" type="button" *ngIf="barcodeScannerOpen"
                   (click)="stopBarcodeScanner(true)">
                   <mat-icon>close</mat-icon>
                   Fermer le scan
                 </button>
               </div>
 
-              <div
-                class="scanner-camera-select"
-                *ngIf="barcodeScannerOpen && availableBarcodeCameras.length > 1">
+              <div class="scanner-camera-select" *ngIf="barcodeScannerOpen && availableBarcodeCameras.length > 1">
                 <mat-form-field appearance="outline" class="full-width">
                   <mat-label>Caméra</mat-label>
-                  <mat-select
-                    [(value)]="selectedBarcodeCameraId"
-                    (selectionChange)="onBarcodeCameraChange()">
-                    <mat-option
-                      *ngFor="let cam of availableBarcodeCameras"
-                      [value]="cam.id">
+                  <mat-select [(value)]="selectedBarcodeCameraId" (selectionChange)="onBarcodeCameraChange()">
+                    <mat-option *ngFor="let cam of availableBarcodeCameras" [value]="cam.id">
                       {{ cam.label }}
                     </mat-option>
                   </mat-select>
@@ -186,12 +169,22 @@
                 </mat-option>
               </mat-select>
             </mat-form-field>
-
             <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Prix de vente</mat-label>
-              <input matInput type="number" formControlName="prixVente" placeholder="0.00">
-              <span matTextPrefix>$&nbsp;</span>
+              <mat-label>Prix de vente en FC</mat-label>
+              <input matInput type="number" formControlName="prixVente" placeholder="0">
+              <span matTextSuffix>&nbsp;FC</span>
             </mat-form-field>
+
+            <div class="usd-preview" *ngIf="dernierTaux > 0">
+              ≈ {{ formatUsd(prixUsd) }} USD
+              <small>
+                Taux actif : {{ formatFc(dernierTaux) }} FC
+              </small>
+            </div>
+
+            <div class="usd-preview warning" *ngIf="!dernierTaux && !loadingTaux">
+              Aucun taux actif disponible.
+            </div>
           </div>
 
           <div class="form-grid two-cols">
@@ -220,20 +213,16 @@
                   <span>Produit périssable</span>
                 </div>
 
-                <span
-                  class="perissable-badge"
-                  [ngClass]="form.get('perissable')?.value === 'OUI' ? 'yes' : 'no'">
+                <span class="perissable-badge" [ngClass]="form.get('perissable')?.value === 'OUI' ? 'yes' : 'no'">
                   {{ form.get('perissable')?.value === 'OUI' ? 'Oui' : 'Non' }}
                 </span>
               </div>
 
-              <mat-slide-toggle
-                color="primary"
-                [checked]="form.get('perissable')?.value === 'OUI'"
+              <mat-slide-toggle color="primary" [checked]="form.get('perissable')?.value === 'OUI'"
                 (change)="onPerissableToggle($event.checked)">
                 {{ form.get('perissable')?.value === 'OUI'
-                  ? 'Oui, ce produit nécessite une gestion par lot et une date de péremption'
-                  : 'Non, ce produit ne nécessite pas de gestion de péremption' }}
+                ? 'Oui, ce produit nécessite une gestion par lot et une date de péremption'
+                : 'Non, ce produit ne nécessite pas de gestion de péremption' }}
               </mat-slide-toggle>
 
               <div class="perissable-hint">
@@ -254,10 +243,7 @@
 
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>Description du produit</mat-label>
-            <textarea
-              matInput
-              rows="5"
-              formControlName="description"
+            <textarea matInput rows="5" formControlName="description"
               placeholder="Description détaillée du produit"></textarea>
           </mat-form-field>
         </div>
@@ -279,22 +265,12 @@
             </label>
 
             <div class="camera-box">
-              <button
-                mat-stroked-button
-                color="primary"
-                type="button"
-                *ngIf="!cameraOpen"
-                (click)="startCamera()">
+              <button mat-stroked-button color="primary" type="button" *ngIf="!cameraOpen" (click)="startCamera()">
                 <mat-icon>photo_camera</mat-icon>
                 Ouvrir la webcam
               </button>
 
-              <button
-                mat-stroked-button
-                color="warn"
-                type="button"
-                *ngIf="cameraOpen"
-                (click)="stopCamera()">
+              <button mat-stroked-button color="warn" type="button" *ngIf="cameraOpen" (click)="stopCamera()">
                 <mat-icon>videocam_off</mat-icon>
                 Fermer la webcam
               </button>
@@ -308,12 +284,7 @@
           <div class="camera-panel" *ngIf="cameraOpen">
             <video #videoRef autoplay playsinline muted data-camera-preview="true"></video>
             <div class="camera-controls">
-              <button
-                pButton
-                type="button"
-                icon="pi pi-camera"
-                label="Prendre la photo"
-                class="save-btn"
+              <button pButton type="button" icon="pi pi-camera" label="Prendre la photo" class="save-btn"
                 (click)="captureFromCamera(videoRef)">
               </button>
             </div>
@@ -348,13 +319,8 @@
             Annuler
           </button>
 
-          <button
-            pButton
-            type="submit"
-            icon="pi pi-save"
-            [label]="loading ? 'Enregistrement...' : 'Créer le produit'"
-            class="save-btn"
-            [disabled]="loading">
+          <button pButton type="submit" icon="pi pi-save" [label]="loading ? 'Enregistrement...' : 'Créer le produit'"
+            class="save-btn" [disabled]="loading">
           </button>
         </div>
       </form>
@@ -380,9 +346,23 @@
         </div>
 
         <div class="summary-block">
-          <div class="summary-label">Prix de vente</div>
+          <div class="summary-label">Prix de vente FC</div>
           <div class="summary-value">
-            {{ form.get('prixVente')?.value || 0 }}
+            {{ formatFc(form.get('prixVente')?.value || 0) }} FC
+          </div>
+        </div>
+
+        <div class="summary-block">
+          <div class="summary-label">Prix équivalent USD</div>
+          <div class="summary-value">
+            {{ formatUsd(prixUsd) }} $
+          </div>
+        </div>
+
+        <div class="summary-block">
+          <div class="summary-label">Taux utilisé</div>
+          <div class="summary-value">
+            {{ formatFc(dernierTaux) }} FC
           </div>
         </div>
 
@@ -481,10 +461,7 @@
         </div>
 
         <div class="created-images" *ngIf="produitCree.images?.length">
-          <img
-            *ngFor="let img of produitCree.images"
-            [src]="img.url"
-            [alt]="img.nomFichier || 'image produit'" />
+          <img *ngFor="let img of produitCree.images" [src]="img.url" [alt]="img.nomFichier || 'image produit'" />
         </div>
       </div>
     </aside>

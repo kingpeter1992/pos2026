@@ -29,19 +29,22 @@
   <mat-progress-bar *ngIf="loadingTable || store.provisionLoading()" mode="indeterminate"></mat-progress-bar>
 
   <div class="kpi-grid">
+
     <div class="kpi-card primary">
       <div class="kpi-icon"><mat-icon>inventory_2</mat-icon></div>
       <div class="kpi-content">
-        <span>Valeur stock totale</span>
-        <strong>{{ store.totalValeurProvisionStock() | number:'1.2-2' }} USD</strong>
+        <span>Valeur stock filtrée</span>
+        <strong>{{ totalValeurFiltreeFc | number:'1.2-2' }} FC</strong>
+        <small>{{ totalValeurFiltreeUsd | number:'1.2-2' }} USD</small>
       </div>
     </div>
 
     <div class="kpi-card danger">
       <div class="kpi-icon"><mat-icon>warning_amber</mat-icon></div>
       <div class="kpi-content">
-        <span>Provision totale</span>
-        <strong>{{ store.totalProvision() | number:'1.2-2' }} USD</strong>
+        <span>Provision filtrée</span>
+        <strong>{{ totalProvisionFiltreeFc | number:'1.2-2' }} FC</strong>
+        <small>{{ totalProvisionFiltreeUsd | number:'1.2-2' }} USD</small>
       </div>
     </div>
 
@@ -72,10 +75,11 @@
     <div class="kpi-card success">
       <div class="kpi-icon"><mat-icon>payments</mat-icon></div>
       <div class="kpi-content">
-        <span>Provision filtrée</span>
-        <strong>{{ totalProvisionFiltree | number:'1.2-2' }} USD</strong>
+        <span>Lignes affichées</span>
+        <strong>{{ filteredRows.length }}</strong>
       </div>
     </div>
+
   </div>
 
   <div class="alert-banner" *ngIf="store.totalProvisionTotal() > 0 || store.totalProvisionEleve() > 0">
@@ -88,6 +92,7 @@
   </div>
 
   <div class="filter-card">
+
     <mat-form-field appearance="outline">
       <mat-label>Recherche</mat-label>
       <input
@@ -125,9 +130,11 @@
         Réinitialiser
       </button>
     </div>
+
   </div>
 
   <div class="table-card">
+
     <div class="table-header">
       <h3>Détail Provision Stock</h3>
       <span>{{ filteredRows.length }} ligne(s)</span>
@@ -148,12 +155,16 @@
 
         <ng-container matColumnDef="categorieNom">
           <th mat-header-cell *matHeaderCellDef mat-sort-header>Catégorie</th>
-          <td mat-cell *matCellDef="let item">{{ item.categorieNom || '-' }}</td>
+          <td mat-cell *matCellDef="let item">
+            {{ item.categorieNom || '-' }}
+          </td>
         </ng-container>
 
         <ng-container matColumnDef="codeBarres">
           <th mat-header-cell *matHeaderCellDef mat-sort-header>Code-barres</th>
-          <td mat-cell *matCellDef="let item">{{ item.codeBarres || '-' }}</td>
+          <td mat-cell *matCellDef="let item">
+            {{ item.codeBarres || '-' }}
+          </td>
         </ng-container>
 
         <ng-container matColumnDef="quantiteDisponible">
@@ -163,17 +174,38 @@
           </td>
         </ng-container>
 
-        <ng-container matColumnDef="pmp">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header class="num">PMP</th>
+        <ng-container matColumnDef="tauxChangeUtilise">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header class="num">Taux stock</th>
           <td mat-cell *matCellDef="let item" class="num">
-            {{ item.pmp | number:'1.2-6' }}
+            {{ item.tauxChangeUtilise | number:'1.0-2' }}
           </td>
         </ng-container>
 
-        <ng-container matColumnDef="valeurStock">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header class="num">Valeur stock</th>
+        <ng-container matColumnDef="pmpFc">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header class="num">PMP FC</th>
+          <td mat-cell *matCellDef="let item" class="num">
+            {{ item.pmpFc | number:'1.2-2' }} FC
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="pmpUsd">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header class="num">PMP USD</th>
+          <td mat-cell *matCellDef="let item" class="num">
+            {{ item.pmpUsd | number:'1.2-2' }} USD
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="valeurStockFc">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header class="num">Valeur FC</th>
           <td mat-cell *matCellDef="let item" class="num strong">
-            {{ item.valeurStock | number:'1.2-2' }} USD
+            {{ item.valeurStockFc | number:'1.2-2' }} FC
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="valeurStockUsd">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header class="num">Valeur USD</th>
+          <td mat-cell *matCellDef="let item" class="num strong">
+            {{ item.valeurStockUsd | number:'1.2-2' }} USD
           </td>
         </ng-container>
 
@@ -185,16 +217,23 @@
         </ng-container>
 
         <ng-container matColumnDef="tauxProvision">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header class="num">Taux</th>
+          <th mat-header-cell *matHeaderCellDef mat-sort-header class="num">Taux provision</th>
           <td mat-cell *matCellDef="let item" class="num">
             {{ formatPercent(item.tauxProvision) }}
           </td>
         </ng-container>
 
-        <ng-container matColumnDef="montantProvision">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header class="num">Provision</th>
+        <ng-container matColumnDef="montantProvisionFc">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header class="num">Provision FC</th>
           <td mat-cell *matCellDef="let item" class="num danger">
-            {{ item.montantProvision | number:'1.2-2' }} USD
+            {{ item.montantProvisionFc | number:'1.2-2' }} FC
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="montantProvisionUsd">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header class="num">Provision USD</th>
+          <td mat-cell *matCellDef="let item" class="num danger">
+            {{ item.montantProvisionUsd | number:'1.2-2' }} USD
           </td>
         </ng-container>
 
@@ -211,10 +250,11 @@
         <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
 
         <tr class="mat-row" *matNoDataRow>
-          <td class="mat-cell empty-cell" colspan="10">
+          <td class="mat-cell empty-cell" colspan="14">
             Aucun élément trouvé.
           </td>
         </tr>
+
       </table>
     </div>
 
@@ -223,5 +263,7 @@
       [pageSizeOptions]="[10, 20, 50, 100]"
       showFirstLastButtons>
     </mat-paginator>
+
   </div>
+
 </div>

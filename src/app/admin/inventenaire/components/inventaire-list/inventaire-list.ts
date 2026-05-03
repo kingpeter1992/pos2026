@@ -11,19 +11,19 @@ import { InventaireResponse } from '../../model/inventaire.models';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class InventaireList {
-
-  readonly store = inject(InventaireStoreService);
-
+readonly store = inject(InventaireStoreService);
   private readonly router = inject(Router);
+
+  @Output() selectedInventaire = new EventEmitter<InventaireResponse | null>();
+
   readonly search = signal('');
+  readonly selectedId = signal<number | null>(null);
 
   readonly filteredInventaires = computed(() => {
     const term = this.search().trim().toLowerCase();
     const rows = this.store.inventaires();
 
     if (!term) return rows;
-
-      console.log("list inventaires: ", rows);
 
     return rows.filter(item =>
       item.reference?.toLowerCase().includes(term) ||
@@ -35,8 +35,8 @@ export class InventaireList {
   });
 
   canViewDetails(inventaire: InventaireResponse): boolean {
-  return inventaire.statut !== 'BROUILLON';
-}
+    return inventaire.statut !== 'BROUILLON';
+  }
 
   goToDetails(id: number): void {
     this.router.navigate(['/admin/inventaire/details', id]);
@@ -58,38 +58,44 @@ export class InventaireList {
     }
   }
 
-
-canCloturer(row: InventaireResponse): boolean {
-  return row.cloture !== true
-    && row.tousBordereauxStockMisAJour === true;
-}
-
-
-cloturer(inventaire: InventaireResponse): void {
-  if (!inventaire?.id) return;
-  this.store.cloturerInventaire(inventaire.id, 'ADMIN POS');
-}
-
-@Output() selectedInventaire = new EventEmitter<InventaireResponse | null>();
-
-readonly selectedId = signal<number | null>(null);
-
-toggleSelection(row: InventaireResponse): void {
-  if (this.selectedId() === row.id) {
-    this.selectedId.set(null);
-    this.selectedInventaire.emit(null);
-    return;
+  statutLabel(statut: string): string {
+    switch (statut) {
+      case 'BROUILLON': return 'Brouillon';
+      case 'OUVERT': return 'Ouvert';
+      case 'EN_COMPTAGE': return 'En comptage';
+      case 'VARIANCE_LANCEE': return 'Variance lancée';
+      case 'VALIDE': return 'Validé';
+      case 'CLOTURE': return 'Clôturé';
+      default: return statut || '-';
+    }
   }
 
-  this.selectedId.set(row.id);
+  canCloturer(row: InventaireResponse): boolean {
+    return row.cloture !== true
+      && row.tousBordereauxStockMisAJour === true;
+  }
 
-  this.selectedInventaire.emit({
-    ...row
-  });
-}
+  cloturer(inventaire: InventaireResponse): void {
+    if (!inventaire?.id) return;
+    this.store.cloturerInventaire(inventaire.id, 'ADMIN POS');
+  }
 
-isSelected(row: InventaireResponse): boolean {
-  return this.selectedId() === row.id;
-}
+  toggleSelection(row: InventaireResponse): void {
+    if (this.selectedId() === row.id) {
+      this.selectedId.set(null);
+      this.selectedInventaire.emit(null);
+      return;
+    }
 
+    this.selectedId.set(row.id);
+    this.selectedInventaire.emit({ ...row });
+  }
+
+  isSelected(row: InventaireResponse): boolean {
+    return this.selectedId() === row.id;
+  }
+
+  rowClass(row: InventaireResponse): string {
+    return this.isSelected(row) ? 'selected-row' : '';
+  }
 }

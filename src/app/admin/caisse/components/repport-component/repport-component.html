@@ -1,0 +1,262 @@
+<div class="report-page">
+
+  <mat-card class="report-header">
+    <div class="header-left">
+      <div class="header-icon-wrap">
+        <mat-icon>account_balance_wallet</mat-icon>
+      </div>
+
+      <div>
+        <div class="breadcrumb">POS / Finance / Rapport</div>
+        <h2>Rapport de caisse</h2>
+        <p>Analyse des encaissements, décaissements, taux utilisés et conversions.</p>
+      </div>
+    </div>
+
+    <div class="filters">
+      <mat-form-field appearance="outline">
+        <mat-label>Date début</mat-label>
+        <input matInput type="date" [(ngModel)]="dateFrom">
+        <mat-icon matSuffix>event</mat-icon>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Date fin</mat-label>
+        <input matInput type="date" [(ngModel)]="dateTo">
+        <mat-icon matSuffix>event</mat-icon>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Devise</mat-label>
+        <mat-select [(ngModel)]="deviseFilter" (selectionChange)="applyFilters()">
+          <mat-option value="ALL">Toutes</mat-option>
+          <mat-option value="USD">USD</mat-option>
+          <mat-option value="CDF">CDF</mat-option>
+        </mat-select>
+        <mat-icon matSuffix>paid</mat-icon>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="search-field">
+        <mat-label>Recherche</mat-label>
+        <input matInput
+               [(ngModel)]="search"
+               (ngModelChange)="applyFilters()"
+               placeholder="Réf, description, catégorie...">
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+
+      <button mat-raised-button color="primary" type="button" (click)="loadReport()">
+        <mat-icon>analytics</mat-icon>
+        Générer
+      </button>
+
+      <button mat-stroked-button color="primary" type="button"
+              [disabled]="!operationsView?.length"
+              (click)="OpenGrapicComponent()">
+        <mat-icon>show_chart</mat-icon>
+        Graphique
+      </button>
+
+      <button mat-stroked-button color="warn" type="button"
+              [disabled]="!operationsView?.length"
+              (click)="exportPDF()">
+        <mat-icon>picture_as_pdf</mat-icon>
+        PDF
+      </button>
+    </div>
+  </mat-card>
+
+  <div class="kpi-grid" *ngIf="operationsView?.length">
+
+    <mat-card class="kpi-card success">
+      <div class="kpi-icon">
+        <mat-icon>trending_up</mat-icon>
+      </div>
+      <div>
+        <span>Encaissement USD</span>
+        <strong>{{ summaryView.totalEncUSD | number:'1.2-2' }} USD</strong>
+      </div>
+    </mat-card>
+
+    <mat-card class="kpi-card danger">
+      <div class="kpi-icon">
+        <mat-icon>trending_down</mat-icon>
+      </div>
+      <div>
+        <span>Décaissement USD</span>
+        <strong>{{ summaryView.totalDecUSD | number:'1.2-2' }} USD</strong>
+      </div>
+    </mat-card>
+
+    <mat-card class="kpi-card info">
+      <div class="kpi-icon">
+        <mat-icon>account_balance</mat-icon>
+      </div>
+      <div>
+        <span>Net USD</span>
+        <strong>{{ summaryView.netUSD | number:'1.2-2' }} USD</strong>
+      </div>
+    </mat-card>
+
+    <mat-card class="kpi-card success">
+      <div class="kpi-icon">
+        <mat-icon>trending_up</mat-icon>
+      </div>
+      <div>
+        <span>Encaissement CDF</span>
+        <strong>{{ summaryView.totalEncCDF | number:'1.0-2' }} CDF</strong>
+      </div>
+    </mat-card>
+
+    <mat-card class="kpi-card danger">
+      <div class="kpi-icon">
+        <mat-icon>trending_down</mat-icon>
+      </div>
+      <div>
+        <span>Décaissement CDF</span>
+        <strong>{{ summaryView.totalDecCDF | number:'1.0-2' }} CDF</strong>
+      </div>
+    </mat-card>
+
+    <mat-card class="kpi-card info">
+      <div class="kpi-icon">
+        <mat-icon>account_balance</mat-icon>
+      </div>
+      <div>
+        <span>Net CDF</span>
+        <strong>{{ summaryView.netCDF | number:'1.0-2' }} CDF</strong>
+      </div>
+    </mat-card>
+
+  </div>
+
+  <mat-card class="table-card" *ngIf="operationsView?.length">
+
+    <div class="table-head">
+      <div>
+        <h3>
+          <mat-icon>receipt_long</mat-icon>
+          Détail des opérations
+        </h3>
+        <p>{{ operationsView.length }} opération(s) trouvée(s)</p>
+      </div>
+    </div>
+
+    <div class="table-wrapper">
+      <table mat-table [dataSource]="operationsView">
+
+        <ng-container matColumnDef="date">
+          <th mat-header-cell *matHeaderCellDef>Date</th>
+          <td mat-cell *matCellDef="let op">
+            <strong>{{ op.dateTransaction | date:'HH:mm' }}</strong>
+            <span>{{ op.dateTransaction | date:'dd/MM/yyyy' }}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="reference">
+          <th mat-header-cell *matHeaderCellDef>Référence</th>
+          <td mat-cell *matCellDef="let op">
+            <span class="ref-badge">{{ op.reference || '-' }}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="type">
+          <th mat-header-cell *matHeaderCellDef>Type</th>
+          <td mat-cell *matCellDef="let op">
+            <span class="badge"
+                  [class.success]="op.type === 'ENCAISSEMENT'"
+                  [class.danger]="op.type === 'DECAISSEMENT'">
+              {{ op.type === 'ENCAISSEMENT' ? '+' : '-' }} {{ op.type }}
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="devise">
+          <th mat-header-cell *matHeaderCellDef>Devise</th>
+          <td mat-cell *matCellDef="let op">
+            <span class="devise-pill">{{ op.devise }}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="montant">
+          <th mat-header-cell *matHeaderCellDef>Montant</th>
+          <td mat-cell *matCellDef="let op">
+            <strong class="money" [class.out]="op.type === 'DECAISSEMENT'">
+              {{ op.type === 'DECAISSEMENT' ? '-' : '+' }}
+              {{ op.montant | number:'1.0-2' }}
+              {{ op.devise }}
+            </strong>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="taux">
+          <th mat-header-cell *matHeaderCellDef>Taux utilisé</th>
+          <td mat-cell *matCellDef="let op">
+            <span class="rate-badge">
+              {{ getTauxOperation(op) ? (getTauxOperation(op) | number:'1.0-2') : '—' }}
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="conversion">
+          <th mat-header-cell *matHeaderCellDef>Conversion</th>
+          <td mat-cell *matCellDef="let op">
+            <strong class="conversion-value">
+              {{ getConversionLabel(op) }}
+            </strong>
+            <span class="conversion-sub" *ngIf="getConversionDevise(op)">
+              vers {{ getConversionDevise(op) }}
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="avant">
+          <th mat-header-cell *matHeaderCellDef>Solde avant</th>
+          <td mat-cell *matCellDef="let op">
+            <span class="solde-muted">
+              {{ op.soldeAvant | number:'1.0-2' }} {{ op.devise }}
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="apres">
+          <th mat-header-cell *matHeaderCellDef>Solde après</th>
+          <td mat-cell *matCellDef="let op">
+            <strong class="solde-final">
+              {{ op.soldeApres | number:'1.0-2' }} {{ op.devise }}
+            </strong>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="receipt">
+          <th mat-header-cell *matHeaderCellDef>Reçu</th>
+          <td mat-cell *matCellDef="let op">
+            <button mat-icon-button color="primary"
+                    type="button"
+                    (click)="preview(op)"
+                    aria-label="Télécharger reçu">
+              <mat-icon>download</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+
+      </table>
+    </div>
+
+  </mat-card>
+
+  <mat-card class="empty-card" *ngIf="!operationsView?.length">
+    <mat-icon>inbox</mat-icon>
+    <h3>Aucune opération trouvée</h3>
+    <p>Choisis une période, puis clique sur Générer.</p>
+  </mat-card>
+
+  <!-- <div class="overlay" *ngIf="loading">
+    <mat-spinner diameter="46"></mat-spinner>
+    <span>Chargement du rapport...</span>
+  </div> -->
+
+</div>

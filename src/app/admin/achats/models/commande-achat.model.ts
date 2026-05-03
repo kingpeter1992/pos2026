@@ -10,10 +10,15 @@ export interface CommandeAchatRequest {
   fournisseurId?: number;
   reference?: string;
   dateCommande?: string;
-  dateLivraisonPrevue? :string;
+  dateLivraisonPrevue?: string;
   observation?: string;
   taux: number;
   devise: Devise;
+  montantTotalFc?: number;
+  montantTotalUsd?: number;
+  tauxChangeUtilise?: number;
+
+
   lignes?: LigneCommandeAchatRequest[];
 }
 
@@ -30,8 +35,8 @@ export interface LigneCommandeAchatResponse {
 }
 
 export interface CommandeAchatResponse {
+  tauxChangeUtilise?: number;
   id: number;
-
   prefixe?: string;
   reference: string;
   refCommande: string;
@@ -41,7 +46,7 @@ export interface CommandeAchatResponse {
   statut: string;
   montantTotal: number;
   devise: string;
-  montntBrut?:number;
+  montntBrut?: number;
   montantRemise?: number;
   taux: number;
   observation?: string;

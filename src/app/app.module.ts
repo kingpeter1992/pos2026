@@ -7,7 +7,11 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule } from '@angular/material/paginator';
+import { registerLocaleData } from '@angular/common';
+import localeFr from '@angular/common/locales/fr';
+import { LOCALE_ID,  } from '@angular/core';
 
+registerLocaleData(localeFr);
 // Third-party modules
 
 
@@ -148,6 +152,12 @@ import { InventaireBordereauComptageComponent } from './admin/inventenaire/compo
 import { InventaireBordereauDetailComponent } from './admin/inventenaire/components/inventaire-bordereau-detail-component/inventaire-bordereau-detail-component';
 import { InventaireVarianceResume } from './admin/inventenaire/components/inventaire-variance-resume/inventaire-variance-resume';
 import { InventaireVarianceListe } from './admin/inventenaire/components/inventaire-variance-liste/inventaire-variance-liste';
+import { CaisseDashboard } from './admin/caisse/components/caisse-dashboard/caisse-dashboard';
+import { TauxEchange } from './admin/caisse/components/taux-echange/taux-echange';
+import { RepportComponent } from './admin/caisse/components/repport-component/repport-component';
+import { OuvrirCaisseDialogComponent } from './admin/caisse/components/ouvrir-caisse-dialog-component/ouvrir-caisse-dialog-component';
+import { CloturerCaisseDialogComponent } from './admin/caisse/components/cloturer-caisse-dialog-component/cloturer-caisse-dialog-component';
+import { CaisseGraphDialogComponent } from './admin/caisse/components/caisse-graph-dialog-component/caisse-graph-dialog-component';
 
 @NgModule({
   declarations: [
@@ -215,7 +225,13 @@ import { InventaireVarianceListe } from './admin/inventenaire/components/inventa
     InventaireBordereauComptageComponent,
     InventaireDetail,
     InventaireVarianceResume,
-    InventaireVarianceListe
+    InventaireVarianceListe,
+    CaisseDashboard,
+    RepportComponent,
+    TauxEchange,
+    OuvrirCaisseDialogComponent,
+    CloturerCaisseDialogComponent,
+    CaisseGraphDialogComponent
 
   ],
 
@@ -309,6 +325,7 @@ MatSelectModule,
 
   providers: [
     AuthService,
+  { provide: LOCALE_ID, useValue: 'fr-FR' },
     provideNativeDateAdapter(),
     authGuard,
     MessageService,

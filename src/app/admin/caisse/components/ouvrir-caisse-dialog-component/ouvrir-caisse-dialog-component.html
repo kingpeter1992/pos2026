@@ -1,0 +1,80 @@
+<div class="dlg">
+
+  <div class="dlg-head">
+    <div class="left">
+      <div class="dlg-icon">
+        <mat-icon>lock_open</mat-icon>
+      </div>
+
+      <div>
+        <h2>Ouverture de caisse</h2>
+        <p>Définis uniquement les soldes de départ USD et CDF.</p>
+      </div>
+    </div>
+
+    <button mat-icon-button type="button" (click)="close()">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <form [formGroup]="form" (ngSubmit)="submit()" class="dlg-body">
+
+    <div class="grid2">
+      <mat-form-field appearance="outline">
+        <mat-label>Solde initial USD</mat-label>
+        <input matInput type="number" formControlName="soldeInitialUSD" min="0">
+        <mat-icon matSuffix>paid</mat-icon>
+
+        <mat-error *ngIf="form.get('soldeInitialUSD')?.hasError('required')">
+          Solde USD obligatoire
+        </mat-error>
+
+        <mat-error *ngIf="form.get('soldeInitialUSD')?.hasError('min')">
+          Le solde ne peut pas être négatif
+        </mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Solde initial CDF</mat-label>
+        <input matInput type="number" formControlName="soldeInitialCDF" min="0">
+        <mat-icon matSuffix>payments</mat-icon>
+
+        <mat-error *ngIf="form.get('soldeInitialCDF')?.hasError('required')">
+          Solde CDF obligatoire
+        </mat-error>
+
+        <mat-error *ngIf="form.get('soldeInitialCDF')?.hasError('min')">
+          Le solde ne peut pas être négatif
+        </mat-error>
+      </mat-form-field>
+    </div>
+
+    <div class="info-box">
+      <mat-icon>currency_exchange</mat-icon>
+      <div>
+        <strong>Taux de change séparé</strong>
+        <span>
+          Le taux actif sera récupéré automatiquement dans le tableau de bord caisse.
+        </span>
+      </div>
+    </div>
+
+    <mat-form-field appearance="outline" class="full">
+      <mat-label>Note</mat-label>
+      <textarea matInput rows="3" formControlName="note"></textarea>
+    </mat-form-field>
+
+    <div class="dlg-actions">
+      <button mat-button type="button" (click)="close()">
+        Annuler
+      </button>
+
+      <button mat-raised-button color="primary" type="submit" [disabled]="form.invalid">
+        <mat-icon>done</mat-icon>
+        Ouvrir
+      </button>
+    </div>
+
+  </form>
+
+</div>

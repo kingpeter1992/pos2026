@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, Inject, OnDestroy, OnInit, Optional } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject, OnDestroy, OnInit, Optional } from '@angular/core';
 import { FormGroup, FormBuilder, Validators, FormArray, AbstractControl } from '@angular/forms';
 import { Router } from '@angular/router';
 import { CommandeAchatRequest, CommandeAchatResponse } from '../../models/commande-achat.model';
@@ -13,8 +13,10 @@ import { ProduitSelectionDialogComponent } from '../produit-selection-dialog-com
 import { BarcodeScannerDialogComponent } from '../barcode-scanner-dialog-component/barcode-scanner-dialog-component';
 import { CreateProduitDialogComponent } from '../create-produit-dialog-component/create-produit-dialog-component';
 import { Toast } from '../../../../shares/services/toast/toast';
-import * as XLSX from 'xlsx';
+import * as XLSX from 'xlsx-js-style';
 import { saveAs } from 'file-saver';
+import { TauxEchange } from '../../../caisse/components/taux-echange/taux-echange';
+import { CaisseStoreService } from '../../../caisse/services/CaisseServiceStore';
 export interface CommandeDialogData {
   commandeId?: number;
   mode?: 'create' | 'edit' | 'view';
@@ -25,12 +27,17 @@ export interface CommandeDialogData {
   selector: 'app-commandes-fournisseurs-component',
   templateUrl: './commandes-fournisseurs-component.html',
   styleUrl: './commandes-fournisseurs-component.css',
-  standalone: false
+  standalone: false,
+    changeDetection: ChangeDetectionStrategy.OnPush
+
+
 })
 export class CommandesFournisseursComponent implements OnInit, OnDestroy {
   form!: FormGroup;
 
   loading = false;
+  loadingTaux = false;
+
   successMessage = '';
   errorMessage = '';
 
@@ -47,13 +54,15 @@ export class CommandesFournisseursComponent implements OnInit, OnDestroy {
   private fournisseursCache: FournisseurResponse[] = [];
   private produitsCache: ProduitResponse[] = [];
 
+  dernierTaux = 0;
+
   constructor(
     private fb: FormBuilder,
-    private router: Router,
     private dialog: MatDialog,
     private commandeAchatStore: CommandeAchatStore,
     private fournisseurStore: FournisseurStore,
     private produitStore: ProduitStoreService,
+    private caisseStore: CaisseStoreService,
     private toast: Toast,
     private cdr: ChangeDetectorRef,
     private dialogRef: MatDialogRef<CommandesFournisseursComponent>,
@@ -70,6 +79,8 @@ export class CommandesFournisseursComponent implements OnInit, OnDestroy {
     this.bindCaches();
     this.initFournisseurAutocomplete();
     this.listenMontantTotal();
+    this.listenTauxGlobal();
+    this.chargerDernierTauxActif();
 
     if (this.isEditMode) {
       if (this.data?.commande) {
@@ -77,15 +88,17 @@ export class CommandesFournisseursComponent implements OnInit, OnDestroy {
         return;
       }
 
-   if (this.commandeId) {
-  const commandeStore = this.commandeAchatStore.getById(this.commandeId);
-  if (commandeStore) {
-    this.patchCommandeToForm(commandeStore);
-    return;
-  }
+      if (this.commandeId) {
+        const commandeStore = this.commandeAchatStore.getById(this.commandeId);
 
-  this.loadCommandeForEdit(this.commandeId);
-}
+        if (commandeStore) {
+          this.patchCommandeToForm(commandeStore);
+          return;
+        }
+
+        this.loadCommandeForEdit(this.commandeId);
+        return;
+      }
     }
 
     this.ajouterLigne();
@@ -104,8 +117,13 @@ export class CommandesFournisseursComponent implements OnInit, OnDestroy {
       dateCommande: [this.getToday(), Validators.required],
       dateLivraisonPrevue: [null],
       observation: [''],
-      devise: ['USD', Validators.required],
-      taux: [1, [Validators.required, Validators.min(0)]],
+
+      // Devise principale système
+      devise: ['CDF', Validators.required],
+
+      // Taux visible dans l'entête/résumé
+      taux: [0, [Validators.required, Validators.min(0)]],
+
       lignes: this.fb.array([])
     });
   }
@@ -134,6 +152,48 @@ export class CommandesFournisseursComponent implements OnInit, OnDestroy {
       });
   }
 
+  private chargerDernierTauxActif(): void {
+    this.loadingTaux = true;
+
+    this.caisseStore.loadTauxActif()
+      .pipe(take(1))
+      .subscribe({
+        next: (taux) => {
+          this.dernierTaux = Number(taux?.taux ?? 0);
+
+          if (!this.isEditMode) {
+            this.form.patchValue({
+              devise: 'CDF',
+              taux: this.dernierTaux
+            }, { emitEvent: true });
+          }
+
+          this.loadingTaux = false;
+          this.recalculerMontantTotal();
+        },
+        error: (err) => {
+          console.error(err);
+          this.dernierTaux = 0;
+          this.loadingTaux = false;
+          this.toast.warning('Aucun taux de change actif trouvé.');
+        }
+      });
+  }
+
+  private listenTauxGlobal(): void {
+    this.form.get('taux')?.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(taux => {
+        const value = Number(taux || 0);
+
+        this.lignes.controls.forEach(ctrl => {
+          ctrl.get('tauxChangeUtilise')?.setValue(value, { emitEvent: false });
+        });
+
+        this.recalculerMontantTotal();
+      });
+  }
+
   get lignes(): FormArray {
     return this.form.get('lignes') as FormArray;
   }
@@ -147,24 +207,47 @@ export class CommandesFournisseursComponent implements OnInit, OnDestroy {
   }
 
   private createLigneForm(data?: any): FormGroup {
+    const taux = Number(
+      data?.tauxChangeUtilise ??
+      data?.taux ??
+      this.form?.get('taux')?.value ??
+      this.dernierTaux ??
+      0
+    );
+
     return this.fb.group({
       id: [data?.id ?? null],
+
       produitId: [data?.produitId ?? null, Validators.required],
       produitNom: [data?.produitNom ?? ''],
       produitCategorie: [data?.produitCategorie ?? ''],
       codeBarres: [data?.codeBarres ?? ''],
+
       quantite: [
         Number(data?.quantite ?? data?.quantiteCommandee ?? 1),
         [Validators.required, Validators.min(1)]
       ],
+
+      // FC principal
       prixUnitaire: [
-        Number(data?.prixUnitaire ?? 0),
+        Number(data?.prixUnitaire ?? data?.prixUnitaireFc ?? 0),
         [Validators.required, Validators.min(0)]
       ],
+
       remise: [
         Number(data?.remise ?? 0),
         [Validators.min(0)]
       ],
+
+      // Caché côté HTML, envoyé au backend
+      tauxChangeUtilise: [taux],
+
+      prixUnitaireFc: [Number(data?.prixUnitaireFc ?? 0)],
+      prixUnitaireUsd: [Number(data?.prixUnitaireUsd ?? 0)],
+
+      montantLigneFc: [Number(data?.montantLigneFc ?? data?.montantLigne ?? 0)],
+      montantLigneUsd: [Number(data?.montantLigneUsd ?? 0)],
+
       quantiteRecue: [Number(data?.quantiteRecue ?? 0)],
       montantLigne: [Number(data?.montantLigne ?? 0)]
     });
@@ -193,6 +276,7 @@ export class CommandesFournisseursComponent implements OnInit, OnDestroy {
     while (this.lignes.length > 0) {
       this.lignes.removeAt(0);
     }
+
     this.recalculerMontantTotal();
   }
 
@@ -209,51 +293,121 @@ export class CommandesFournisseursComponent implements OnInit, OnDestroy {
     return this.lignes.at(index) as FormGroup;
   }
 
+  private listenMontantTotal(): void {
+    this.lignes.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => this.recalculerMontantTotal());
 
-private loadCommandeForEdit(id: number): void {
-  this.loading = true;
-  this.cdr.detectChanges();
-  this.resetMessages();
-
-  const commande = this.commandeAchatStore.getById(id);
-
-  if (commande) {
-    this.patchCommandeToForm(commande);
-    this.loading = false;
-    this.cdr.detectChanges();
-    return;
+    this.recalculerMontantTotal();
   }
 
-  this.commandeAchatStore.findById(id)
-    .pipe(
-      take(1),
-      finalize(() => {
-        setTimeout(() => {
-          this.loading = false;
-          this.cdr.detectChanges();
-        });
-      })
-    )
-    .subscribe({
-      next: (commande: CommandeAchatResponse) => {
-        if (!commande) {
-          this.errorMessage = 'Commande introuvable.';
-          return;
-        }
+  private listenLigneChanges(ligne: FormGroup): void {
+    ligne.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => this.recalculerMontantTotal());
+  }
 
-        this.patchCommandeToForm(commande);
-      },
-      error: (err) => {
-        console.error(err);
-        this.errorMessage =
-          err?.error?.message || 'Erreur lors du chargement de la commande.';
-      }
-    });
-}
+  private recalculerMontantTotal(): void {
+    const totalFc = this.lignes.controls.reduce((sum, _, index) => {
+      return sum + this.getSousTotal(index);
+    }, 0);
+
+    this.montantTotal$.next(+totalFc.toFixed(2));
+  }
+
+  getSousTotal(index: number): number {
+    const ligne = this.getLigneGroup(index);
+
+    const quantite = Number(ligne.get('quantite')?.value || 0);
+    const prixUnitaireFc = Number(ligne.get('prixUnitaire')?.value || 0);
+    const remiseFc = Number(ligne.get('remise')?.value || 0);
+
+    const taux = Number(
+      ligne.get('tauxChangeUtilise')?.value ||
+      this.form.get('taux')?.value ||
+      0
+    );
+
+    const montantLigneFc = Math.max(0, (quantite * prixUnitaireFc) - remiseFc);
+    const montantLigneUsd = taux > 0 ? montantLigneFc / taux : 0;
+    const prixUnitaireUsd = taux > 0 ? prixUnitaireFc / taux : 0;
+
+    ligne.patchValue({
+      tauxChangeUtilise: taux,
+      prixUnitaireFc: +prixUnitaireFc.toFixed(2),
+      prixUnitaireUsd: +prixUnitaireUsd.toFixed(2),
+      montantLigneFc: +montantLigneFc.toFixed(2),
+      montantLigneUsd: +montantLigneUsd.toFixed(2),
+      montantLigne: +montantLigneFc.toFixed(2)
+    }, { emitEvent: false });
+
+    return montantLigneFc;
+  }
+
+  calculMontantFc(): number {
+    return this.lignes.controls.reduce((sum, _, index) => {
+      return sum + this.getSousTotal(index);
+    }, 0);
+  }
+
+  calculMontantUsd(): number {
+    const taux = Number(this.form.get('taux')?.value || 0);
+    const montantFc = this.calculMontantFc();
+
+    return taux > 0 ? +(montantFc / taux).toFixed(2) : 0;
+  }
+
+  private loadCommandeForEdit(id: number): void {
+    this.loading = true;
+    this.cdr.detectChanges();
+    this.resetMessages();
+
+    const commande = this.commandeAchatStore.getById(id);
+
+    if (commande) {
+      this.patchCommandeToForm(commande);
+      this.loading = false;
+      this.cdr.detectChanges();
+      return;
+    }
+
+    this.commandeAchatStore.findById(id)
+      .pipe(
+        take(1),
+        finalize(() => {
+          setTimeout(() => {
+            this.loading = false;
+            this.cdr.detectChanges();
+          });
+        })
+      )
+      .subscribe({
+        next: (commande: CommandeAchatResponse) => {
+          if (!commande) {
+            this.errorMessage = 'Commande introuvable.';
+            return;
+          }
+
+          this.patchCommandeToForm(commande);
+        },
+        error: (err) => {
+          console.error(err);
+          this.errorMessage =
+            err?.error?.message || 'Erreur lors du chargement de la commande.';
+        }
+      });
+  }
 
   private patchCommandeToForm(commande: CommandeAchatResponse): void {
     const fournisseurTrouve =
       this.fournisseursCache.find(f => Number(f.id) === Number(commande.fournisseurId)) || null;
+
+    const taux = Number(
+      (commande as any).tauxChangeUtilise ??
+      commande.taux ??
+      this.dernierTaux ??
+      0
+    );
 
     this.form.patchValue({
       fournisseur: fournisseurTrouve,
@@ -263,8 +417,8 @@ private loadCommandeForEdit(id: number): void {
       dateLivraisonPrevue: commande.datePrevue
         ? this.toInputDate(commande.datePrevue)
         : null,
-      devise: commande.devise ?? 'USD',
-      taux: commande.taux ?? 1,
+      devise: commande.devise ?? 'CDF',
+      taux,
       observation: commande.observation ?? ''
     });
 
@@ -293,8 +447,16 @@ private loadCommandeForEdit(id: number): void {
           '',
         codeBarres: item.codeBarres ?? produitTrouve?.codeBarres ?? '',
         quantite: Number(item.quantite ?? item.quantiteCommandee ?? 1),
-        prixUnitaire: Number(item.prixUnitaire ?? 0),
+        prixUnitaire: Number(item.prixUnitaireFc ?? item.prixUnitaire ?? 0),
         remise: Number(item.remise ?? 0),
+
+        tauxChangeUtilise: Number(item.tauxChangeUtilise ?? taux),
+
+        prixUnitaireFc: Number(item.prixUnitaireFc ?? 0),
+        prixUnitaireUsd: Number(item.prixUnitaireUsd ?? 0),
+        montantLigneFc: Number(item.montantLigneFc ?? item.montantLigne ?? 0),
+        montantLigneUsd: Number(item.montantLigneUsd ?? 0),
+
         quantiteRecue: Number(item.quantiteRecue ?? 0),
         montantLigne: Number(item.montantLigne ?? 0)
       });
@@ -333,37 +495,6 @@ private loadCommandeForEdit(id: number): void {
         );
       })
     );
-  }
-
-  private listenMontantTotal(): void {
-    this.lignes.valueChanges
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(() => this.recalculerMontantTotal());
-
-    this.recalculerMontantTotal();
-  }
-
-  private listenLigneChanges(ligne: FormGroup): void {
-    ligne.valueChanges
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(() => this.recalculerMontantTotal());
-  }
-
-  private recalculerMontantTotal(): void {
-    const total = this.lignes.controls.reduce((sum, _, index) => {
-      return sum + this.getSousTotal(index);
-    }, 0);
-
-    this.montantTotal$.next(total);
-  }
-
-  getSousTotal(index: number): number {
-    const ligne = this.getLigneGroup(index);
-    const quantite = Number(ligne.get('quantite')?.value || 0);
-    const prixUnitaire = Number(ligne.get('prixUnitaire')?.value || 0);
-    const remise = Number(ligne.get('remise')?.value || 0);
-
-    return Math.max(0, (quantite * prixUnitaire) - remise);
   }
 
   onProduitIdBlur(index: number): void {
@@ -450,11 +581,11 @@ private loadCommandeForEdit(id: number): void {
 
   ouvrirCreationProduitDepuisScan(index: number, barcode: string): void {
     const dialogRef = this.dialog.open(CreateProduitDialogComponent, {
- width: '95vw',
-  maxWidth: '95vw',
-  height: '92vh',
-  maxHeight: '92vh',
-  autoFocus: false,
+      width: '95vw',
+      maxWidth: '95vw',
+      height: '92vh',
+      maxHeight: '92vh',
+      autoFocus: false,
       panelClass: 'full-dialog',
       data: { codeBarres: barcode }
     });
@@ -477,6 +608,7 @@ private loadCommandeForEdit(id: number): void {
     }
 
     const ligne = this.getLigneGroup(index);
+    const taux = Number(this.form.get('taux')?.value || this.dernierTaux || 0);
 
     ligne.patchValue({
       produitId: produit.id,
@@ -486,7 +618,12 @@ private loadCommandeForEdit(id: number): void {
         (produit as any).categorieNom ||
         '',
       codeBarres: produit.codeBarres ?? '',
-      prixUnitaire: (produit as any).prixAchat ?? 0
+
+      // Prix achat en FC
+      prixUnitaire: Number((produit as any).prixAchat ?? 0),
+
+      // Taux caché ligne
+      tauxChangeUtilise: taux
     });
 
     ligne.get('produitId')?.markAsTouched();
@@ -502,7 +639,12 @@ private loadCommandeForEdit(id: number): void {
       produitNom: '',
       produitCategorie: '',
       codeBarres: '',
-      prixUnitaire: 0
+      prixUnitaire: 0,
+      prixUnitaireFc: 0,
+      prixUnitaireUsd: 0,
+      montantLigneFc: 0,
+      montantLigneUsd: 0,
+      montantLigne: 0
     });
 
     this.recalculerMontantTotal();
@@ -513,6 +655,7 @@ private loadCommandeForEdit(id: number): void {
       if (i === indexCourant) {
         return false;
       }
+
       return Number(ctrl.get('produitId')?.value) === produitId;
     });
   }
@@ -574,22 +717,41 @@ private loadCommandeForEdit(id: number): void {
   }
 
   private buildRequest(): CommandeAchatRequest {
+    const taux = Number(this.form.get('taux')?.value || 0);
+    const montantTotalFc = +this.calculMontantFc().toFixed(2);
+    const montantTotalUsd = taux > 0 ? +(montantTotalFc / taux).toFixed(2) : 0;
+
     return {
       fournisseurId: Number(this.form.get('fournisseurId')?.value),
       reference: this.form.get('reference')?.value,
       dateCommande: this.form.get('dateCommande')?.value,
       dateLivraisonPrevue: this.form.get('dateLivraisonPrevue')?.value,
       observation: this.form.get('observation')?.value,
+
+      devise: 'CDF',
+      taux,
+      tauxChangeUtilise: taux,
+
+      montantTotalFc,
+      montantTotalUsd,
+
       lignes: this.lignes.controls.map(ligne => ({
         id: ligne.get('id')?.value ? Number(ligne.get('id')?.value) : null,
         produitId: Number(ligne.get('produitId')?.value),
         quantite: Number(ligne.get('quantite')?.value || 0),
+
         prixUnitaire: Number(ligne.get('prixUnitaire')?.value || 0),
-        remise: Number(ligne.get('remise')?.value || 0)
-      })),
-      taux: Number(this.form.get('taux')?.value || 0),
-      devise: this.form.get('devise')?.value
-    };
+        remise: Number(ligne.get('remise')?.value || 0),
+
+        tauxChangeUtilise: Number(ligne.get('tauxChangeUtilise')?.value || taux),
+
+        prixUnitaireFc: Number(ligne.get('prixUnitaireFc')?.value || 0),
+        prixUnitaireUsd: Number(ligne.get('prixUnitaireUsd')?.value || 0),
+
+        montantLigneFc: Number(ligne.get('montantLigneFc')?.value || 0),
+        montantLigneUsd: Number(ligne.get('montantLigneUsd')?.value || 0)
+      }))
+    } as any;
   }
 
   private toInputDate(value: string | Date | null | undefined): string {
@@ -598,6 +760,7 @@ private loadCommandeForEdit(id: number): void {
     }
 
     const date = new Date(value);
+
     if (isNaN(date.getTime())) {
       return this.getToday();
     }
@@ -607,23 +770,6 @@ private loadCommandeForEdit(id: number): void {
     const day = String(date.getDate()).padStart(2, '0');
 
     return `${year}-${month}-${day}`;
-  }
-
-  private resetForm(): void {
-    this.form.reset({
-      fournisseur: null,
-      fournisseurId: null,
-      reference: '',
-      dateCommande: this.getToday(),
-      dateLivraisonPrevue: null,
-      observation: '',
-      devise: 'USD',
-      taux: 1
-    });
-
-    this.clearLignes();
-    this.addLigne();
-    this.recalculerMontantTotal();
   }
 
   private resetMessages(): void {
@@ -651,6 +797,20 @@ private loadCommandeForEdit(id: number): void {
     return new Date().toISOString().substring(0, 10);
   }
 
+  formatFc(value: number): string {
+    return new Intl.NumberFormat('fr-FR', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(Number(value || 0));
+  }
+
+  formatUsd(value: number): string {
+    return new Intl.NumberFormat('fr-FR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(Number(value || 0));
+  }
+
   trackByIndex(index: number): number {
     return index;
   }
@@ -659,70 +819,219 @@ private loadCommandeForEdit(id: number): void {
     this.dialogRef.close(false);
   }
 
-  exportLignesToExcel(): void {
-    if (!this.lignes || this.lignes.length === 0) {
-      return;
-    }
-
-    const data = this.lignes.controls.map((ligne: any, index: number) => {
-      const value = ligne.value || {};
-
-      const quantite = Number(value.quantite || 0);
-      const prixUnitaire = Number(value.prixUnitaire || 0);
-      const remise = Number(value.remise || 0);
-      const total = (quantite * prixUnitaire) - remise;
-
-      return {
-        'N° Ligne': index + 1,
-        'ID Produit': value.produitId || '',
-        'Produit': value.produitNom || '',
-        'Catégorie': value.produitCategorie || '',
-        'Code-barres': value.codeBarres || '',
-        'Quantité': quantite,
-        'Prix unitaire': prixUnitaire,
-        'Remise': remise,
-        'Sous-total': total
-      };
-    });
-
-    const totalGeneral = data.reduce((sum, item) => {
-      return sum + Number(item['Sous-total'] || 0);
-    }, 0);
-
-    data.push({
-      'N° Ligne': '',
-      'ID Produit': '',
-      'Produit': '',
-      'Catégorie': '',
-      'Code-barres': '',
-      'Quantité': '',
-      'Prix unitaire': '',
-      'Remise': 'TOTAL',
-      'Sous-total': totalGeneral
-    } as any);
-
-    const worksheet: XLSX.WorkSheet = XLSX.utils.json_to_sheet(data);
-
-    const workbook: XLSX.WorkBook = {
-      Sheets: { 'Lignes commande': worksheet },
-      SheetNames: ['Lignes commande']
-    };
-
-    const excelBuffer: ArrayBuffer = XLSX.write(workbook, {
-      bookType: 'xlsx',
-      type: 'array'
-    });
-
-    const blob: Blob = new Blob(
-      [excelBuffer],
-      {
-        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8'
-      }
-    );
-
-    const reference = this.form?.get('reference')?.value || 'commande';
-    const fileName = `lignes-${reference}.xlsx`;
-
-    saveAs(blob, fileName);
+exportLignesToExcel(): void {
+  if (!this.lignes || this.lignes.length === 0) {
+    return;
   }
+
+  const toNumber = (v: any): number => {
+    const n = Number(v ?? 0);
+    return Number.isFinite(n) ? n : 0;
+  };
+
+  const clean = (v: any): string =>
+    String(v ?? '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/\u202F|\u00A0/g, ' ')
+      .replace(/[’‘]/g, "'")
+      .replace(/[“”]/g, '"');
+
+  const reference = this.form?.get('reference')?.value || 'commande';
+  const taux = toNumber(this.form.get('taux')?.value || 0);
+
+  const rows = this.lignes.controls.map((ligne: any, index: number) => {
+    const value = ligne.value || {};
+
+    return [
+      index + 1,
+      value.produitId || '',
+      clean(value.produitNom || ''),
+      clean(value.produitCategorie || ''),
+      value.codeBarres || '',
+      toNumber(value.quantite),
+      toNumber(value.prixUnitaireFc),
+      toNumber(value.prixUnitaireUsd),
+      toNumber(value.remise),
+      toNumber(value.tauxChangeUtilise || taux),
+      toNumber(value.montantLigneFc),
+      toNumber(value.montantLigneUsd)
+    ];
+  });
+
+  const header = [
+    'N° Ligne',
+    'ID Produit',
+    'Produit',
+    'Categorie',
+    'Code-barres',
+    'Quantite',
+    'Prix unitaire FC',
+    'Prix unitaire USD',
+    'Remise FC',
+    'Taux utilise',
+    'Sous-total FC',
+    'Sous-total USD'
+  ];
+
+  const title = [`EXPORTATION DES LIGNES DE COMMANDE - ${reference}`];
+  const info = [
+    [`Reference : ${reference}`, '', '', '', '', `Taux : ${taux}`, '', '', '', '', '', ''],
+    [`Date export : ${new Date().toLocaleString('fr-FR').replace(/\u202F|\u00A0/g, ' ')}`, '', '', '', '', '', '', '', '', '', '', '']
+  ];
+
+  const totalRow = [
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+    'TOTAL',
+    taux,
+    this.calculMontantFc(),
+    this.calculMontantUsd()
+  ];
+
+  const data: any[][] = [
+    title,
+    [],
+    ...info,
+    [],
+    header,
+    ...rows,
+    totalRow
+  ];
+
+  const worksheet: XLSX.WorkSheet = XLSX.utils.aoa_to_sheet(data);
+
+  worksheet['!merges'] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 11 } },
+    { s: { r: 2, c: 0 }, e: { r: 2, c: 4 } },
+    { s: { r: 2, c: 5 }, e: { r: 2, c: 8 } },
+    { s: { r: 3, c: 0 }, e: { r: 3, c: 4 } }
+  ];
+
+  worksheet['!cols'] = [
+    { wch: 10 },
+    { wch: 12 },
+    { wch: 32 },
+    { wch: 20 },
+    { wch: 20 },
+    { wch: 12 },
+    { wch: 18 },
+    { wch: 18 },
+    { wch: 15 },
+    { wch: 15 },
+    { wch: 18 },
+    { wch: 18 }
+  ];
+
+  worksheet['!freeze'] = { xSplit: 0, ySplit: 6 };
+
+  const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1:L1');
+  const headerRowIndex = 5;
+  const totalRowIndex = data.length - 1;
+
+  const border = {
+    top: { style: 'thin', color: { rgb: 'CBD5E1' } },
+    bottom: { style: 'thin', color: { rgb: 'CBD5E1' } },
+    left: { style: 'thin', color: { rgb: 'CBD5E1' } },
+    right: { style: 'thin', color: { rgb: 'CBD5E1' } }
+  };
+
+  const titleStyle = {
+    font: { bold: true, sz: 16, color: { rgb: 'FFFFFF' } },
+    fill: { fgColor: { rgb: '0F172A' } },
+    alignment: { horizontal: 'center', vertical: 'center' }
+  };
+
+  const infoStyle = {
+    font: { bold: true, sz: 11, color: { rgb: '334155' } },
+    fill: { fgColor: { rgb: 'F8FAFC' } },
+    alignment: { vertical: 'center' }
+  };
+
+  const headerStyle = {
+    font: { bold: true, sz: 11, color: { rgb: 'FFFFFF' } },
+    fill: { fgColor: { rgb: '2563EB' } },
+    alignment: { horizontal: 'center', vertical: 'center' },
+    border
+  };
+
+  const bodyStyle = {
+    font: { sz: 10, color: { rgb: '0F172A' } },
+    alignment: { vertical: 'center' },
+    border
+  };
+
+  const totalStyle = {
+    font: { bold: true, sz: 11, color: { rgb: 'FFFFFF' } },
+    fill: { fgColor: { rgb: '16A34A' } },
+    alignment: { vertical: 'center' },
+    border
+  };
+
+  for (let R = range.s.r; R <= range.e.r; R++) {
+    for (let C = range.s.c; C <= range.e.c; C++) {
+      const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+      const cell = worksheet[cellRef];
+      if (!cell) continue;
+
+      if (R === 0) {
+        cell.s = titleStyle;
+      } else if (R === 2 || R === 3) {
+        cell.s = infoStyle;
+      } else if (R === headerRowIndex) {
+        cell.s = headerStyle;
+      } else if (R === totalRowIndex) {
+        cell.s = totalStyle;
+      } else if (R > headerRowIndex) {
+        cell.s = {
+          ...bodyStyle,
+          fill: {
+            fgColor: {
+              rgb: R % 2 === 0 ? 'F8FAFC' : 'FFFFFF'
+            }
+          }
+        };
+      }
+    }
+  }
+
+  for (let R = headerRowIndex + 1; R <= totalRowIndex; R++) {
+    for (const C of [5, 6, 7, 8, 9, 10, 11]) {
+      const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+      if (worksheet[cellRef]) {
+        worksheet[cellRef].z = C === 7 || C === 11 ? '#,##0.00' : '#,##0';
+        worksheet[cellRef].s = {
+          ...(worksheet[cellRef].s || {}),
+          alignment: { horizontal: 'right', vertical: 'center' }
+        };
+      }
+    }
+  }
+
+  worksheet['!autofilter'] = {
+    ref: `A6:L${totalRowIndex + 1}`
+  };
+
+  const workbook: XLSX.WorkBook = {
+    Sheets: { 'Lignes commande': worksheet },
+    SheetNames: ['Lignes commande']
+  };
+
+  const excelBuffer: ArrayBuffer = XLSX.write(workbook, {
+    bookType: 'xlsx',
+    type: 'array'
+  });
+
+  const blob = new Blob([excelBuffer], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8'
+  });
+
+  saveAs(blob, `lignes-${clean(reference)}.xlsx`);
+}
 }

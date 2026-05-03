@@ -36,7 +36,12 @@
           Retour
         </button>
 
-        <button mat-flat-button color="primary" type="button" class="btn-save" [disabled]="submitting || loading"
+        <button
+          mat-flat-button
+          color="primary"
+          type="button"
+          class="btn-save"
+          [disabled]="submitting || loading"
           (click)="submit()">
           <mat-icon>save</mat-icon>
           {{ submitting ? 'Enregistrement...' : 'Valider la réception' }}
@@ -118,14 +123,9 @@
 
             <mat-form-field appearance="outline">
               <mat-label>Date réception</mat-label>
-
-              <input matInput [matDatepicker]="dateReceptionPicker" formControlName="dateReception" [readonly]="true" />
-
-              <mat-datepicker-toggle matSuffix [for]="dateReceptionPicker">
-              </mat-datepicker-toggle>
-
+              <input matInput [matDatepicker]="dateReceptionPicker" formControlName="dateReception" readonly />
+              <mat-datepicker-toggle matSuffix [for]="dateReceptionPicker"></mat-datepicker-toggle>
               <mat-datepicker #dateReceptionPicker></mat-datepicker>
-
               <mat-error *ngIf="form.get('dateReception')?.hasError('required')">
                 La date de réception est obligatoire
               </mat-error>
@@ -154,6 +154,25 @@
               <mat-label>Observateur</mat-label>
               <input matInput formControlName="observateur" placeholder="Nom de l'observateur" />
             </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Taux réception</mat-label>
+              <input
+                matInput
+                type="number"
+                min="0"
+                step="0.0001"
+                formControlName="tauxChangeUtilise"
+                (input)="onTauxChange()" />
+              <span matTextSuffix>FC/USD</span>
+              <mat-hint>Taux repris de la commande, modifiable</mat-hint>
+              <mat-error *ngIf="form.get('tauxChangeUtilise')?.hasError('required')">
+                Le taux est obligatoire
+              </mat-error>
+              <mat-error *ngIf="form.get('tauxChangeUtilise')?.hasError('min')">
+                Le taux doit être supérieur à 0
+              </mat-error>
+            </mat-form-field>
           </div>
         </section>
 
@@ -165,7 +184,7 @@
               </div>
               <div>
                 <h2>Charges liées à la réception</h2>
-                <p>Fret, douane, manutention et autres charges</p>
+                <p>Fret, douane, manutention et autres charges en FC</p>
               </div>
             </div>
           </div>
@@ -173,47 +192,70 @@
           <div class="form-grid grid-4">
             <mat-form-field appearance="outline">
               <mat-label>Fret / Transport</mat-label>
-              <input matInput type="number" min="0" step="0.01" formControlName="fraisTransport"
+              <input
+                matInput
+                type="number"
+                min="0"
+                step="0.01"
+                formControlName="fraisTransport"
                 (input)="onFraisChange('fraisTransport')" />
-              <span matTextSuffix>USD</span>
+              <span matTextSuffix>FC</span>
             </mat-form-field>
 
             <mat-form-field appearance="outline">
               <mat-label>Douane</mat-label>
-              <input matInput type="number" min="0" step="0.01" formControlName="fraisDouane"
+              <input
+                matInput
+                type="number"
+                min="0"
+                step="0.01"
+                formControlName="fraisDouane"
                 (input)="onFraisChange('fraisDouane')" />
-              <span matTextSuffix>USD</span>
+              <span matTextSuffix>FC</span>
             </mat-form-field>
 
             <mat-form-field appearance="outline">
               <mat-label>Manutention</mat-label>
-              <input matInput type="number" min="0" step="0.01" formControlName="fraisManutention"
+              <input
+                matInput
+                type="number"
+                min="0"
+                step="0.01"
+                formControlName="fraisManutention"
                 (input)="onFraisChange('fraisManutention')" />
-              <span matTextSuffix>USD</span>
+              <span matTextSuffix>FC</span>
             </mat-form-field>
 
             <mat-form-field appearance="outline">
               <mat-label>Autres charges</mat-label>
-              <input matInput type="number" min="0" step="0.01" formControlName="autresFrais"
+              <input
+                matInput
+                type="number"
+                min="0"
+                step="0.01"
+                formControlName="autresFrais"
                 (input)="onFraisChange('autresFrais')" />
-              <span matTextSuffix>USD</span>
+              <span matTextSuffix>FC</span>
             </mat-form-field>
           </div>
 
           <div class="charges-summary">
             <div class="charges-item">
               <span>Total marchandises</span>
-              <strong>{{ getMontantTotalEstime() | number:'1.2-2' }}</strong>
+              <strong>{{ formatFc(getMontantTotalEstime()) }} FC</strong>
+              <small>≈ {{ formatUsd(convertFcToUsd(getMontantTotalEstime())) }} USD</small>
             </div>
 
             <div class="charges-item">
               <span>Total charges</span>
-              <strong>{{ getTotalFrais() | number:'1.2-2' }}</strong>
+              <strong>{{ formatFc(getTotalFrais()) }} FC</strong>
+              <small>≈ {{ formatUsd(convertFcToUsd(getTotalFrais())) }} USD</small>
             </div>
 
             <div class="charges-item total-general">
               <span>Total général estimé</span>
-              <strong>{{ getTotalGeneralEstime() | number:'1.2-2' }}</strong>
+              <strong>{{ formatFc(getTotalGeneralEstime()) }} FC</strong>
+              <small>≈ {{ formatUsd(convertFcToUsd(getTotalGeneralEstime())) }} USD</small>
             </div>
           </div>
         </section>
@@ -226,7 +268,7 @@
               </div>
               <div>
                 <h2>Lignes de réception</h2>
-                <p>Contrôle des quantités, prix, lot et péremption par produit</p>
+                <p>Contrôle des quantités, prix FC, équivalent USD, lot et péremption</p>
               </div>
             </div>
 
@@ -249,6 +291,7 @@
                     <th class="text-center">Reste</th>
                     <th class="text-center">Qté reçue</th>
                     <th class="text-center">Prix unitaire</th>
+                    <th class="text-center">Total ligne</th>
                     <th class="text-center">Date péremption</th>
                     <th class="text-center">Affichage date</th>
                     <th class="text-center">N° Lot</th>
@@ -257,7 +300,9 @@
                 </thead>
 
                 <tbody formArrayName="lignes">
-                  <tr *ngFor="let ligne of lignesFormArray.controls; let i = index" [formGroupName]="i"
+                  <tr
+                    *ngFor="let ligne of lignesFormArray.controls; let i = index"
+                    [formGroupName]="i"
                     [class.row-blocked]="ligne.get('bloquee')?.value">
 
                     <td class="product-cell">
@@ -265,13 +310,16 @@
                         <div class="product-avatar">
                           <mat-icon>inventory_2</mat-icon>
                         </div>
+
                         <div class="product-meta">
                           <div class="product-name">
                             {{ ligne.get('produitNom')?.value }}
                           </div>
+
                           <div class="product-sub">
                             Ligne #{{ i + 1 }}
                           </div>
+
                           <div class="blocked-text" *ngIf="ligne.get('bloquee')?.value">
                             Déjà totalement réceptionnée
                           </div>
@@ -290,18 +338,27 @@
                     </td>
 
                     <td class="text-center">
-                      <span class="pill" [ngClass]="ligne.get('bloquee')?.value ? 'success' : 'warning'">
+                      <span
+                        class="pill"
+                        [ngClass]="ligne.get('bloquee')?.value ? 'success' : 'warning'">
                         {{ ligne.get('quantiteRestante')?.value }}
                       </span>
                     </td>
 
                     <td class="text-center qte-cell">
                       <mat-form-field appearance="outline" class="qte-field compact-field">
-                        <input matInput type="number" min="0" formControlName="quantiteRecue"
-                          [readonly]="ligne.get('bloquee')?.value" (input)="onQuantiteChange(i)" />
+                        <input
+                          matInput
+                          type="number"
+                          min="0"
+                          formControlName="quantiteRecue"
+                          [readonly]="ligne.get('bloquee')?.value"
+                          (input)="onQuantiteChange(i)" />
+
                         <mat-error *ngIf="ligne.get('quantiteRecue')?.hasError('required')">
                           Obligatoire
                         </mat-error>
+
                         <mat-error *ngIf="ligne.get('quantiteRecue')?.hasError('min')">
                           Valeur invalide
                         </mat-error>
@@ -310,18 +367,44 @@
 
                     <td class="text-center pu-cell">
                       <mat-form-field appearance="outline" class="pu-field compact-field">
-                        <input matInput type="number" min="0" step="0.01" formControlName="prixUnitaire"
-                          [readonly]="ligne.get('bloquee')?.value" placeholder="0.00" />
+                        <input
+                          matInput
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          formControlName="prixUnitaire"
+                          [readonly]="ligne.get('bloquee')?.value"
+                          placeholder="0.00"
+                          (input)="onPrixUnitaireChange(i)" />
+
+                        <span matTextSuffix>FC</span>
                       </mat-form-field>
+
+                      <div class="usd-preview" *ngIf="!ligne.get('bloquee')?.value">
+                        ≈ {{ formatUsd(getPrixUsdLigne(i)) }} USD
+                      </div>
+                    </td>
+
+                    <td class="text-center total-line-cell">
+                      <strong>{{ formatFc(getMontantLigneFc(i)) }} FC</strong>
+                      <small>≈ {{ formatUsd(getMontantLigneUsd(i)) }} USD</small>
                     </td>
 
                     <td class="text-center date-cell">
                       <ng-container *ngIf="isProduitPerissable(ligne.get('produitId')?.value)">
                         <mat-form-field appearance="outline" class="date-field compact-field">
-                          <input matInput [matDatepicker]="picker" formControlName="datePeremption" [readonly]="true"
-                            [disabled]="ligne.get('bloquee')?.value" (dateChange)="onDatePeremptionChange(i)" />
+                          <input
+                            matInput
+                            [matDatepicker]="picker"
+                            formControlName="datePeremption"
+                            readonly
+                            [disabled]="ligne.get('bloquee')?.value"
+                            (dateChange)="onDatePeremptionChange(i)" />
 
-                          <mat-datepicker-toggle matSuffix [for]="picker" [disabled]="ligne.get('bloquee')?.value">
+                          <mat-datepicker-toggle
+                            matSuffix
+                            [for]="picker"
+                            [disabled]="ligne.get('bloquee')?.value">
                           </mat-datepicker-toggle>
 
                           <mat-datepicker #picker></mat-datepicker>
@@ -336,13 +419,14 @@
                     <td class="text-center days-cell">
                       <ng-container *ngIf="isProduitPerissable(ligne.get('produitId')?.value)">
                         <div class="days-box" [ngClass]="{
-                            'days-empty': !ligne.get('datePeremption')?.value,
-                            'days-danger': ligne.get('datePeremption')?.value && form.get('dateReception')?.value && (ligne.get('datePeremption')?.value < form.get('dateReception')?.value),
-                            'days-info': ligne.get('datePeremption')?.value
-                          }">
+                          'days-empty': !ligne.get('datePeremption')?.value,
+                          'days-danger': ligne.get('datePeremption')?.value && form.get('dateReception')?.value && (ligne.get('datePeremption')?.value < form.get('dateReception')?.value),
+                          'days-info': ligne.get('datePeremption')?.value
+                        }">
                           <ng-container *ngIf="ligne.get('datePeremption')?.value; else noDateTpl">
                             {{ ligne.get('datePeremption')?.value | date:'dd/MM/yyyy' }}
                           </ng-container>
+
                           <ng-template #noDateTpl>
                             <span>-</span>
                           </ng-template>
@@ -352,8 +436,12 @@
 
                     <td class="text-center lot-cell">
                       <mat-form-field appearance="outline" class="lot-field compact-field">
-                        <input matInput formControlName="numeroLot" [readonly]="ligne.get('bloquee')?.value"
+                        <input
+                          matInput
+                          formControlName="numeroLot"
+                          [readonly]="ligne.get('bloquee')?.value"
                           placeholder="Lot fournisseur" />
+
                         <mat-hint *ngIf="ligne.get('numeroLot')?.value">
                           Traçabilité lot
                         </mat-hint>
@@ -362,7 +450,10 @@
 
                     <td class="comment-cell">
                       <mat-form-field appearance="outline" class="comment-field compact-field">
-                        <input matInput formControlName="commentaire" [readonly]="ligne.get('bloquee')?.value"
+                        <input
+                          matInput
+                          formControlName="commentaire"
+                          [readonly]="ligne.get('bloquee')?.value"
                           placeholder="Commentaire ligne" />
                       </mat-form-field>
                     </td>
@@ -394,8 +485,7 @@
           <div class="bottom-action-left">
             <mat-icon>info</mat-icon>
             <span>
-              Vérifie les quantités reçues, les charges, les numéros de lot et les dates de péremption avant validation
-              définitive.
+              Vérifie les quantités reçues, les charges, les numéros de lot et les dates de péremption avant validation définitive.
             </span>
           </div>
 
@@ -404,20 +494,25 @@
               Annuler
             </button>
 
-            <button mat-flat-button color="primary" type="button" [disabled]="submitting || loading" (click)="submit()">
+            <button
+              mat-flat-button
+              color="primary"
+              type="button"
+              [disabled]="submitting || loading"
+              (click)="submit()">
               <mat-icon>check_circle</mat-icon>
               {{ submitting ? 'Enregistrement...' : 'Valider la réception' }}
             </button>
           </div>
         </div>
+
       </form>
     </div>
 
     <ng-template #loadingTpl>
       <div class="loading-box">
         <div class="loading-card">
-          <mat-progress-spinner mode="indeterminate" diameter="42">
-          </mat-progress-spinner>
+          <mat-progress-spinner mode="indeterminate" diameter="42"></mat-progress-spinner>
           <h3>Chargement en cours</h3>
           <p>Récupération des informations de la commande fournisseur...</p>
         </div>

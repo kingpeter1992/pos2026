@@ -54,7 +54,22 @@
 
         <div class="info-row">
           <span class="label">Prix de vente</span>
-          <span class="value">{{ p.prixVente | number:'1.2-2' }}</span>
+
+          <span class="value price-detail-box">
+            <strong>{{ formatFc(p.prixVente) }} FC</strong>
+
+            <small *ngIf="dernierTaux > 0">
+              ≈ {{ formatUsd(convertirFcEnUsd(p.prixVente)) }} USD
+            </small>
+
+            <small *ngIf="dernierTaux > 0">
+              Taux : {{ formatFc(dernierTaux) }} FC
+            </small>
+
+            <small class="warning" *ngIf="!dernierTaux && !loadingTaux">
+              Taux indisponible
+            </small>
+          </span>
         </div>
 
         <div class="info-row">

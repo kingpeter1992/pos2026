@@ -91,7 +91,17 @@
     <div class="label-sheet">
       <div class="label-card" *ngFor="let label of labelsToPrint">
         <div class="label-name">{{ label.nom }}</div>
-        <div class="label-price">{{ label.prixVente | number:'1.2-2' }} USD</div>
+        <div class="price-preview">
+  <strong>{{ formatFc(label.prixVente) }} FC</strong>
+
+  <span *ngIf="dernierTaux > 0">
+    ≈ {{ formatUsd(convertirFcEnUsd(label.prixVente)) }} USD
+  </span>
+
+  <span class="warning" *ngIf="!dernierTaux && !loadingTaux">
+    Taux indisponible
+  </span>
+</div>
         <div class="label-barcode">
           <img [src]="getBarcodeUrl(label.produitId)" [alt]="label.codeBarres">
         </div>

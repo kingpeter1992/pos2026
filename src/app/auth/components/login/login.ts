@@ -15,6 +15,7 @@ import { DepotStore } from '../../../admin/achats/service/deposervice/DepotStore
 import { FournisseurStore } from '../../../admin/achats/service/facturefoiunrisseur/FournisseurStore';
 import { ReceptionAchatStore } from '../../../admin/achats/service/reception/ReceptionAchatStore';
 import { ServiceMouvementStockStore } from '../../../admin/stock/service/mouvement/ServiceMouvementStockStore';
+import { CaisseStoreService } from '../../../admin/caisse/services/CaisseServiceStore';
 
 @Component({
   selector: 'app-login',
@@ -53,12 +54,12 @@ export class Login implements  OnInit {
      private depotStore: DepotStore,
      private commandeAchatStore: CommandeAchatStore,
      private receptionAchatStore: ReceptionAchatStore,
-     private mvntStore :ServiceMouvementStockStore
+     private mvntStore :ServiceMouvementStockStore,
+     private storeCaisse : CaisseStoreService
   ) {}
 
   ngOnInit(): void {
     this.loading$ = this.loadingService.loading$;
-
     if (this.storageService.isLoggedIn()) {
       this.isLoggedIn = true;
       this.roles = this.storageService.getUser().roles ?? [];
@@ -124,6 +125,12 @@ export class Login implements  OnInit {
     commandeDash: this.commandeAchatStore.dashboard$.pipe(catchError(() => of(null))),
     receptions: this.receptionAchatStore.loadIfNeeded().pipe(catchError(() => of([]))),
     mvnts: this.mvntStore.loadIfNeeded().pipe(catchError(() => of([]))),
+    caisseSession: this.storeCaisse.loadSessionOuverte().pipe(catchError(() => of(null))),
+    caisseHistorique: this.storeCaisse.loadHistoriqueDuJour().pipe(catchError(() => of([]))),
+    tauxList: this.storeCaisse.loadTauxList().pipe(catchError(() => of([]))),
+    tauxActif: this.storeCaisse.loadTauxActif().pipe(catchError(() => of(null))),
+    dernierTaux: this.storeCaisse.loadDernierTaux().pipe(catchError(() => of(null))),
+
   }).subscribe({
     next: () => {
       this.route.navigateByUrl('/admin/pos/dashboard');

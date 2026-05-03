@@ -2,6 +2,7 @@ import { Component, computed, inject, OnDestroy, OnInit, signal } from '@angular
 import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { CommandeAchatStore } from '../../service/achat/CommandeAchatStore';
+import { CaisseStoreService } from '../../../caisse/services/CaisseServiceStore';
 
 export interface CommandeDashboardItemDto {
   id: number;
@@ -12,7 +13,12 @@ export interface CommandeDashboardItemDto {
   datePrevue?: string;
   statut?: string;
   montantTotal?: number;
+  montantTotalFc?: number;
+  montantTotalUsd?: number;
   devise?: string;
+  taux?: number;
+  tauxChange?: number;
+  tauxChangeUtilise?: number;
   quantiteTotale?: number;
   quantiteRecue?: number;
   progression?: number;
@@ -24,6 +30,8 @@ export interface FournisseurDashboardDto {
   fournisseurNom?: string;
   totalCommandes: number;
   montantTotal: number;
+  montantTotalFc?: number;
+  montantTotalUsd?: number;
 }
 
 export interface CommandeDashboardResponse {
@@ -37,6 +45,8 @@ export interface CommandeDashboardResponse {
 
   montantTotal: number;
   montantMoyen: number;
+  montantTotalUsd?: number;
+  montantMoyenUsd?: number;
 
   quantiteTotaleCommandee: number;
   quantiteTotaleRecue: number;
@@ -48,12 +58,15 @@ export interface CommandeDashboardResponse {
   alertes: string[];
 }
 
+
+
 @Component({
   selector: 'app-achats-dashboard-component',
   templateUrl: './achats-dashboard-component.html',
   styleUrl: './achats-dashboard-component.css',
   standalone: false
 })
+
 export class AchatsDashboardComponent implements  OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly storeAchat = inject(CommandeAchatStore);
@@ -80,7 +93,7 @@ export class AchatsDashboardComponent implements  OnInit, OnDestroy {
       this.subscriptions.add(
         this.storeAchat.dashboard$.subscribe((data: CommandeDashboardResponse | null) => {
           this.dashboard.set(data);
-          console.log('data', data)
+          console.log('Dashboard achats:', data);
         })
       );
     }
@@ -94,26 +107,24 @@ export class AchatsDashboardComponent implements  OnInit, OnDestroy {
     }
   }
 
-private loadData(): void {
-  if (typeof this.storeAchat.getDashboard === 'function') {
-    this.storeAchat.getDashboard();
-    console.log('Chargement du dashboard via getDashboard()', this.storeAchat);
-    return;
-  }
+  private loadData(): void {
+    if (typeof this.storeAchat.getDashboard === 'function') {
+      this.storeAchat.getDashboard();
+      return;
+    }
 
-  if (typeof this.storeAchat.loadDashboard === 'function') {
-    this.storeAchat.loadDashboard();
-    return;
-  }
+    if (typeof this.storeAchat.loadDashboard === 'function') {
+      this.storeAchat.loadDashboard();
+      return;
+    }
 
-  if (typeof this.storeAchat.refreshDashboard === 'function') {
-    this.storeAchat.refreshDashboard();
+    if (typeof this.storeAchat.refreshDashboard === 'function') {
+      this.storeAchat.refreshDashboard();
+    }
   }
-}
 
   readonly allCommandes = computed<CommandeDashboardItemDto[]>(() => {
-    const data = this.dashboard();
-    return data?.commandesRecentes ?? [];
+    return this.dashboard()?.commandesRecentes ?? [];
   });
 
   readonly filteredCommandes = computed<CommandeDashboardItemDto[]>(() => {
@@ -145,7 +156,11 @@ private loadData(): void {
   readonly totalRetard = computed(() => this.dashboard()?.totalRetard ?? 0);
 
   readonly montantTotal = computed(() => Number(this.dashboard()?.montantTotal ?? 0));
+  readonly montantTotalUsd = computed(() => Number((this.dashboard() as any)?.montantTotalUsd ?? 0));
+
   readonly montantMoyenCommande = computed(() => Number(this.dashboard()?.montantMoyen ?? 0));
+  readonly montantMoyenCommandeUsd = computed(() => Number((this.dashboard() as any)?.montantMoyenUsd ?? 0));
+
   readonly quantiteTotaleCommandee = computed(() => Number(this.dashboard()?.quantiteTotaleCommandee ?? 0));
   readonly quantiteTotaleRecue = computed(() => Number(this.dashboard()?.quantiteTotaleRecue ?? 0));
   readonly tauxReceptionGlobal = computed(() => Number(this.dashboard()?.tauxReceptionGlobal ?? 0));
@@ -235,6 +250,47 @@ private loadData(): void {
     return Number(item.joursRetard || 0);
   }
 
+  getMontantFcCommande(item: CommandeDashboardItemDto): number {
+    return Number(
+      (item as any).montantTotalFc ??
+      item.montantTotal ??
+      0
+    );
+  }
+
+  getMontantUsdCommande(item: CommandeDashboardItemDto): number {
+    const montantUsd = (item as any).montantTotalUsd;
+
+    if (montantUsd != null) {
+      return Number(montantUsd);
+    }
+
+    const montantFc = this.getMontantFcCommande(item);
+    const taux = Number((item as any).tauxChangeUtilise ?? (item as any).taux ?? 0);
+
+    if (!montantFc || taux <= 0) return 0;
+
+    return +(montantFc / taux).toFixed(2);
+  }
+
+  getMontantFcFournisseur(item: FournisseurDashboardDto): number {
+    return Number(
+      (item as any).montantTotalFc ??
+      item.montantTotal ??
+      0
+    );
+  }
+
+  getMontantUsdFournisseur(item: FournisseurDashboardDto): number {
+    const montantUsd = (item as any).montantTotalUsd;
+
+    if (montantUsd != null) {
+      return Number(montantUsd);
+    }
+
+    return 0;
+  }
+
   getStatutClass(statut?: string): string {
     const s = (statut || '').toUpperCase();
 
@@ -268,10 +324,10 @@ private loadData(): void {
     return item.refCommande || item.reference || `CMD-${item.id}`;
   }
 
-  formatMoney(value: number, devise: string = 'USD'): string {
+  formatMoney(value: number, devise: string = 'FC'): string {
     const formatted = new Intl.NumberFormat('fr-FR', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
+      minimumFractionDigits: devise === 'USD' ? 2 : 0,
+      maximumFractionDigits: devise === 'USD' ? 2 : 0
     }).format(Number(value || 0));
 
     return `${formatted} ${devise}`;
@@ -291,4 +347,6 @@ private loadData(): void {
   trackByText(index: number, item: string): string {
     return item;
   }
+
+
 }

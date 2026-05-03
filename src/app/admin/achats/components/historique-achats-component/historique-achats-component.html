@@ -10,8 +10,7 @@
       <div class="topbar-text">
         <div class="breadcrumb">Achats / Approvisionnement / Réceptions fournisseurs</div>
         <h1>Historique des réceptions</h1>
-        <p>Suivi des réceptions d'achat, contrôle des montants, analyse des frais et consultation détaillée des entrées
-        </p>
+        <p>Suivi des réceptions d'achat, contrôle des montants, analyse des frais et consultation détaillée des entrées</p>
       </div>
     </div>
 
@@ -20,9 +19,6 @@
         <mat-icon>sync</mat-icon>
         Actualiser
       </button>
-
-
-
     </div>
   </section>
 
@@ -148,7 +144,15 @@
             <span>Marchandise</span>
             <mat-icon>shopping_bag</mat-icon>
           </div>
-          <div class="kpi-value">{{ totalMarchandise() | number:'1.2-2' }}</div>
+
+          <div class="kpi-value">
+            {{ formatFc(totalMarchandise()) }} FC
+          </div>
+
+          <div class="kpi-sub" *ngIf="totalMarchandiseUsd() > 0">
+            ≈ {{ formatUsd(totalMarchandiseUsd()) }} USD
+          </div>
+
           <div class="kpi-foot">Valeur cumulée de la marchandise reçue</div>
         </mat-card>
 
@@ -157,7 +161,15 @@
             <span>Frais</span>
             <mat-icon>local_shipping</mat-icon>
           </div>
-          <div class="kpi-value">{{ totalFrais() | number:'1.2-2' }}</div>
+
+          <div class="kpi-value">
+            {{ formatFc(totalFrais()) }} FC
+          </div>
+
+          <div class="kpi-sub" *ngIf="totalFraisUsd() > 0">
+            ≈ {{ formatUsd(totalFraisUsd()) }} USD
+          </div>
+
           <div class="kpi-foot">Frais répartis sur les réceptions</div>
         </mat-card>
 
@@ -166,7 +178,15 @@
             <span>Total général</span>
             <mat-icon>payments</mat-icon>
           </div>
-          <div class="kpi-value">{{ totalGeneral() | number:'1.2-2' }}</div>
+
+          <div class="kpi-value">
+            {{ formatFc(totalGeneral()) }} FC
+          </div>
+
+          <div class="kpi-sub" *ngIf="totalGeneralUsd() > 0">
+            ≈ {{ formatUsd(totalGeneralUsd()) }} USD
+          </div>
+
           <div class="kpi-foot">Montant total des réceptions sélectionnées</div>
         </mat-card>
       </section>
@@ -253,21 +273,36 @@
             <ng-container matColumnDef="totalMarchandise">
               <th mat-header-cell *matHeaderCellDef class="th-right">Marchandise</th>
               <td mat-cell *matCellDef="let row" class="td-right strong">
-                {{ row.totalMarchandise | number:'1.2-2' }}
+                <div class="money-cell">
+                  <strong>{{ formatFc(getMarchandiseFc(row)) }} FC</strong>
+                  <small *ngIf="getMarchandiseUsd(row) > 0">
+                    ≈ {{ formatUsd(getMarchandiseUsd(row)) }} USD
+                  </small>
+                </div>
               </td>
             </ng-container>
 
             <ng-container matColumnDef="totalFrais">
               <th mat-header-cell *matHeaderCellDef class="th-right">Frais</th>
               <td mat-cell *matCellDef="let row" class="td-right">
-                {{ row.totalFrais | number:'1.2-2' }}
+                <div class="money-cell">
+                  <strong>{{ formatFc(getFraisFc(row)) }} FC</strong>
+                  <small *ngIf="getFraisUsd(row) > 0">
+                    ≈ {{ formatUsd(getFraisUsd(row)) }} USD
+                  </small>
+                </div>
               </td>
             </ng-container>
 
             <ng-container matColumnDef="totalGeneral">
               <th mat-header-cell *matHeaderCellDef class="th-right">Total général</th>
               <td mat-cell *matCellDef="let row" class="td-right strong">
-                {{ row.totalGeneral | number:'1.2-2' }}
+                <div class="money-cell total-money">
+                  <strong>{{ formatFc(getTotalFc(row)) }} FC</strong>
+                  <small *ngIf="getTotalUsd(row) > 0">
+                    ≈ {{ formatUsd(getTotalUsd(row)) }} USD
+                  </small>
+                </div>
               </td>
             </ng-container>
 
@@ -287,20 +322,20 @@
         <div class="side-head">
           <mat-icon>campaign</mat-icon>
           <span>Alertes</span>
-          <strong>{{ alertes.length }}</strong>
+          <strong>{{ alertes().length }}</strong>
         </div>
 
-        <div class="side-empty" *ngIf="!alertes.length">
+        <div class="side-empty" *ngIf="!alertes().length">
           <mat-icon>notifications_none</mat-icon>
           <p>Aucune alerte disponible</p>
         </div>
 
-      <div class="alert-stack" *ngIf="alertes().length">
-      <div class="alert-row" *ngFor="let alerte of alertes()">
-        <div class="alert-pill">{{ alerte.nb }}</div>
-        <div class="alert-text">{{ alerte.libelle }}</div>
-      </div>
-    </div>
+        <div class="alert-stack" *ngIf="alertes().length">
+          <div class="alert-row" *ngFor="let alerte of alertes()">
+            <div class="alert-pill">{{ alerte.nb }}</div>
+            <div class="alert-text">{{ alerte.libelle }}</div>
+          </div>
+        </div>
       </mat-card>
 
       <mat-card class="erp-card side-panel">
@@ -310,9 +345,6 @@
         </div>
 
         <div class="side-actions">
-
-
-
           <button mat-stroked-button type="button" [disabled]="!selectedReception()" (click)="detailLignes()">
             <mat-icon>view_list</mat-icon>
             Détails lignes
@@ -364,17 +396,32 @@
 
           <div class="summary-row">
             <label>Marchandise</label>
-            <strong>{{ selected.totalMarchandise | number:'1.2-2' }}</strong>
+            <strong>
+              {{ formatFc(getMarchandiseFc(selected)) }} FC
+              <small *ngIf="getMarchandiseUsd(selected) > 0">
+                ≈ {{ formatUsd(getMarchandiseUsd(selected)) }} USD
+              </small>
+            </strong>
           </div>
 
           <div class="summary-row">
             <label>Frais</label>
-            <strong>{{ selected.totalFrais | number:'1.2-2' }}</strong>
+            <strong>
+              {{ formatFc(getFraisFc(selected)) }} FC
+              <small *ngIf="getFraisUsd(selected) > 0">
+                ≈ {{ formatUsd(getFraisUsd(selected)) }} USD
+              </small>
+            </strong>
           </div>
 
           <div class="summary-row total">
             <label>Total général</label>
-            <strong>{{ selected.totalGeneral | number:'1.2-2' }}</strong>
+            <strong>
+              {{ formatFc(getTotalFc(selected)) }} FC
+              <small *ngIf="getTotalUsd(selected) > 0">
+                ≈ {{ formatUsd(getTotalUsd(selected)) }} USD
+              </small>
+            </strong>
           </div>
         </div>
       </mat-card>

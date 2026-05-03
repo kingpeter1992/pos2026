@@ -1,194 +1,402 @@
-<div class="pos-shell">
-  <section class="hero-bar">
-    <div class="hero-left">
-      <div class="title-wrap">
-        <span class="eyebrow">Point de vente</span>
-        <h1>POS Vente Pro</h1>
-        <p>Interface caisse moderne, rapide et pensée pour écran tactile.</p>
-      </div>
+<div class="rapport-page">
 
-      <div class="search-box">
-        <span class="material-symbols-outlined">search</span>
-        <input
-          type="text"
-          [value]="recherche()"
-          (input)="setRecherche($any($event.target).value)"
-          placeholder="Scanner ou rechercher un produit..." />
+  <div class="page-header">
+    <div class="title-zone">
+      <div class="icon-box">
+        <mat-icon>analytics</mat-icon>
+      </div>
+    <button mat-stroked-button color="warn" type="button" (click)="resetFilter()">
+      <mat-icon>restart_alt</mat-icon>
+      Réinitialiser
+    </button>
+      <div>
+        <div class="breadcrumb">POS / Rapports / Ventes</div>
+        <h1>Rapport des ventes POS</h1>
+        <p>Analyse du chiffre d’affaires, PMP, marge et détail des ventes par CST.</p>
       </div>
     </div>
 
-    <div class="hero-actions">
-      <button class="ghost-btn" type="button" (click)="activerScanner()">
-        <span class="material-symbols-outlined">qr_code_scanner</span>
-        {{ scannerActif() ? 'Scanner actif' : 'Activer scanner' }}
+    <div class="header-actions">
+      <button mat-stroked-button color="primary" (click)="loadRapport()">
+        <mat-icon>refresh</mat-icon>
+        Actualiser
       </button>
 
-      <button class="primary-btn" type="button" (click)="ouvrirProduitDialog()">
-        <span class="material-symbols-outlined">add_shopping_cart</span>
-        Ajouter produit
+      <button mat-flat-button color="accent" (click)="exportExcel()">
+        <mat-icon>table_view</mat-icon>
+        Excel
+      </button>
+
+      <button mat-flat-button color="warn" (click)="exportPdf()">
+        <mat-icon>picture_as_pdf</mat-icon>
+        PDF
       </button>
     </div>
-  </section>
+  </div>
 
-  <section class="kpi-grid">
-    <div class="kpi-card">
-      <span class="kpi-label">Articles</span>
-      <strong>{{ totalArticles() }}</strong>
-    </div>
-    <div class="kpi-card">
-      <span class="kpi-label">Sous-total</span>
-      <strong>{{ sousTotal() | number:'1.2-2' }} USD</strong>
-    </div>
-    <div class="kpi-card accent">
-      <span class="kpi-label">Remise</span>
-      <strong>{{ totalRemise() | number:'1.2-2' }} USD</strong>
-    </div>
-    <div class="kpi-card success">
-      <span class="kpi-label">À payer</span>
-      <strong>{{ totalGeneral() | number:'1.2-2' }} USD</strong>
-    </div>
-  </section>
+  <form class="filter-card" [formGroup]="filterForm">
+    <mat-form-field appearance="outline">
+      <mat-label>Date début</mat-label>
+      <input matInput type="datetime-local" formControlName="dateDebut">
+    </mat-form-field>
 
-  <section class="pos-grid">
-    <div class="cart-panel">
-      <div class="panel-head">
+    <mat-form-field appearance="outline">
+      <mat-label>Date fin</mat-label>
+      <input matInput type="datetime-local" formControlName="dateFin">
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Dépôt ID</mat-label>
+      <input matInput type="number" formControlName="depotId">
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Catégorie ID</mat-label>
+      <input matInput type="number" formControlName="categorieId">
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Tarif ID</mat-label>
+      <input matInput type="number" formControlName="tarifId">
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Caissier</mat-label>
+      <input matInput formControlName="caissier">
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Devise</mat-label>
+      <mat-select formControlName="devise">
+        <mat-option value="">Toutes</mat-option>
+        <mat-option value="CDF">CDF</mat-option>
+        <mat-option value="USD">USD</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <button mat-flat-button color="primary" type="button" (click)="loadRapport()">
+      <mat-icon>search</mat-icon>
+      Rechercher
+    </button>
+  </form>
+
+  @if (loading()) {
+    <div class="loader-card">
+      <mat-spinner diameter="42"></mat-spinner>
+      <span>Chargement du rapport...</span>
+    </div>
+  }
+
+  <div class="kpi-grid">
+    @for (card of resumeCards(); track card.title) {
+      <div class="kpi-card">
+        <div class="kpi-icon">
+          <mat-icon>{{ card.icon }}</mat-icon>
+        </div>
+
         <div>
-          <h2>Panier de vente</h2>
-          <span>{{ produits().length }} ligne(s)</span>
+          <div class="kpi-title">{{ card.title }}</div>
+          <div class="kpi-value">
+            {{ money(card.value) }}
+            <span>{{ card.suffix }}</span>
+          </div>
         </div>
-
-        <button class="danger-btn" type="button" (click)="viderPanier()">
-          <span class="material-symbols-outlined">delete</span>
-          Vider
-        </button>
       </div>
+    }
+  </div>
 
-      <div class="cart-table-wrap">
-        <table class="cart-table">
-          <thead>
-            <tr>
-              <th>Produit</th>
-              <th>PU</th>
-              <th>Qté</th>
-              <th>Remise</th>
-              <th>Total</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let line of produits()">
-              <td>
-                <div class="product-cell">
-                  <img [src]="line.imageUrl || 'https://placehold.co/80x80'" [alt]="line.designation" />
-                  <div>
-                    <strong>{{ line.designation }}</strong>
-                    <span>Code: {{ line.codeBarres || '-' }}</span>
-                    <small>Stock: {{ line.stock }}</small>
-                  </div>
-                </div>
-              </td>
-              <td>{{ line.prixUnitaire | number:'1.2-2' }}</td>
-              <td>
-                <div class="qty-box">
-                  <button type="button" (click)="decrementerQuantite(line)">-</button>
-                  <input
-                    type="number"
-                    min="1"
-                    [value]="line.quantite"
-                    (input)="updateQuantite(line, $any($event.target).value)" />
-                  <button type="button" (click)="incrementerQuantite(line)">+</button>
-                </div>
-              </td>
-              <td>
-                <input
-                  class="inline-input"
-                  type="number"
-                  min="0"
-                  [value]="line.remise"
-                  (input)="updateRemise(line, $any($event.target).value)" />
-              </td>
-              <td>
-                <strong>{{ (line.prixUnitaire * line.quantite - line.remise) | number:'1.2-2' }}</strong>
-              </td>
-              <td>
-                <button class="icon-btn remove" type="button" (click)="supprimerLigne(line)">
-                  <span class="material-symbols-outlined">delete</span>
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+  <div class="summary-card">
+    <div class="section-title">
+      <mat-icon>leaderboard</mat-icon>
+      <span>Résumé par CST</span>
     </div>
 
-    <aside class="summary-panel">
-      <div class="summary-card">
-        <h3>Informations vente</h3>
+    <div class="summary-table-wrapper">
+      <table class="summary-table">
+        <thead>
+          <tr>
+            <th>Cst</th>
+            <th>Total net</th>
+            <th>Total PMP</th>
+            <th>Marge</th>
+            <th>Total net CDF</th>
+            <th>Total PMP CDF</th>
+            <th>Marge CDF</th>
+            <th>% Marge</th>
+          </tr>
+        </thead>
 
-        <label class="field">
-          <span>Client</span>
-          <input
-            type="text"
-            [value]="clientNom()"
-            (input)="setClientNom($any($event.target).value)"
-            placeholder="CLIENT DIVERS" />
-        </label>
+        <tbody>
+          @for (row of kpis(); track row.cst) {
+            <tr>
+              <td>{{ row.cst }}</td>
+              <td>{{ money(row.totalNet) }}</td>
+              <td>{{ money(row.totalPmp) }}</td>
+              <td>{{ money(row.marge) }}</td>
+              <td>{{ money(row.totalNetCDF) }}</td>
+              <td>{{ money(row.totalPmpCDF) }}</td>
+              <td>{{ money(row.margeCDF) }}</td>
+              <td>{{ money(row.pourcentageMarge) }}%</td>
+            </tr>
+          }
 
-        <label class="field">
-          <span>Mode de paiement</span>
-          <select [value]="modePaiement()" (change)="setModePaiement($any($event.target).value)">
-            <option value="CASH">Cash</option>
-            <option value="CARTE">Carte</option>
-            <option value="MOBILE_MONEY">Mobile Money</option>
-            <option value="VIREMENT">Virement</option>
-          </select>
-        </label>
+          @if (totalGeneral()) {
+            <tr class="total-row">
+              <td>{{ totalGeneral()?.cst }}</td>
+              <td>{{ money(totalGeneral()?.totalNet) }}</td>
+              <td>{{ money(totalGeneral()?.totalPmp) }}</td>
+              <td>{{ money(totalGeneral()?.marge) }}</td>
+              <td>{{ money(totalGeneral()?.totalNetCDF) }}</td>
+              <td>{{ money(totalGeneral()?.totalPmpCDF) }}</td>
+              <td>{{ money(totalGeneral()?.margeCDF) }}</td>
+              <td>{{ money(totalGeneral()?.pourcentageMarge) }}%</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
 
-        <label class="field">
-          <span>Remise globale</span>
-          <input
-            type="number"
-            min="0"
-            [value]="remiseGlobale()"
-            (input)="setRemiseGlobale($any($event.target).value)" />
-        </label>
+  <div class="details-card">
+    <div class="details-header">
+      <div class="section-title">
+        <mat-icon>receipt_long</mat-icon>
+        <span>Détail des ventes</span>
       </div>
 
-      <div class="summary-card total-card">
-        <h3>Résumé paiement</h3>
+      <mat-form-field appearance="outline" class="search-field">
+        <mat-label>Recherche globale</mat-label>
+        <input matInput (keyup)="applySearch($event)" placeholder="Ticket, client, produit, référence...">
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+    </div>
 
-        <div class="total-row">
-          <span>Sous-total</span>
-          <strong>{{ sousTotal() | number:'1.2-2' }} USD</strong>
-        </div>
-        <div class="total-row">
-          <span>Remise</span>
-          <strong>{{ totalRemise() | number:'1.2-2' }} USD</strong>
-        </div>
-        <div class="total-row grand">
-          <span>Total à payer</span>
-          <strong>{{ totalGeneral() | number:'1.2-2' }} USD</strong>
-        </div>
+    <div class="table-scroll">
+      <table mat-table [dataSource]="dataSource" class="details-table">
 
-        <label class="field">
-          <span>Montant reçu</span>
-          <input
-            type="number"
-            min="0"
-            [value]="montantRecu()"
-            (input)="setMontantRecu($any($event.target).value)" />
-        </label>
+        <ng-container matColumnDef="succursale">
+          <th mat-header-cell *matHeaderCellDef>Succursale</th>
+          <td mat-cell *matCellDef="let r">{{ r.succursale }}</td>
+        </ng-container>
 
-        <div class="money-box" [class.ok]="montantRecu() >= totalGeneral() && totalGeneral() > 0">
-          <span>Monnaie à rendre</span>
-          <strong>{{ monnaie() | number:'1.2-2' }} USD</strong>
-        </div>
+        <ng-container matColumnDef="serviceCredite">
+          <th mat-header-cell *matHeaderCellDef>Service crédité</th>
+          <td mat-cell *matCellDef="let r">{{ r.serviceCredite }}</td>
+        </ng-container>
 
-        <button class="checkout-btn" type="button" (click)="enregistrerVente()">
-          <span class="material-symbols-outlined">point_of_sale</span>
-          Encaisser et imprimer
-        </button>
-      </div>
-    </aside>
-  </section>
+        <ng-container matColumnDef="module">
+          <th mat-header-cell *matHeaderCellDef>Module</th>
+          <td mat-cell *matCellDef="let r">{{ r.module }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="natureOperation">
+          <th mat-header-cell *matHeaderCellDef>Nature opération</th>
+          <td mat-cell *matCellDef="let r">{{ r.natureOperation }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="numeroCC">
+          <th mat-header-cell *matHeaderCellDef>N° CC</th>
+          <td mat-cell *matCellDef="let r">{{ r.numeroCC }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="dateCC">
+          <th mat-header-cell *matHeaderCellDef>Date CC</th>
+          <td mat-cell *matCellDef="let r">{{ formatDate(r.dateCC) }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="typeCommandeOuOR">
+          <th mat-header-cell *matHeaderCellDef>Type cde / OR</th>
+          <td mat-cell *matCellDef="let r">{{ r.typeCommandeOuOR }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="libelleType">
+          <th mat-header-cell *matHeaderCellDef>Libellé type</th>
+          <td mat-cell *matCellDef="let r">{{ r.libelleType }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="numeroClient">
+          <th mat-header-cell *matHeaderCellDef>N° Client</th>
+          <td mat-cell *matCellDef="let r">{{ r.numeroClient }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="nomClient">
+          <th mat-header-cell *matHeaderCellDef>Nom Client</th>
+          <td mat-cell *matCellDef="let r">{{ r.nomClient }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="codeRemise">
+          <th mat-header-cell *matHeaderCellDef>Code remise</th>
+          <td mat-cell *matCellDef="let r">{{ r.codeRemise }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="tarif">
+          <th mat-header-cell *matHeaderCellDef>Tarif</th>
+          <td mat-cell *matCellDef="let r">{{ r.tarif }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="operateur">
+          <th mat-header-cell *matHeaderCellDef>Opérateur</th>
+          <td mat-cell *matCellDef="let r">{{ r.operateur }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="quantiteCommandee">
+          <th mat-header-cell *matHeaderCellDef>Qté cdée</th>
+          <td mat-cell *matCellDef="let r">{{ money(r.quantiteCommandee) }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="quantiteFacturee">
+          <th mat-header-cell *matHeaderCellDef>Qté facturée</th>
+          <td mat-cell *matCellDef="let r">{{ money(r.quantiteFacturee) }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="userQuiALivre">
+          <th mat-header-cell *matHeaderCellDef>User livré</th>
+          <td mat-cell *matCellDef="let r">{{ r.userQuiALivre }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="numeroBL">
+          <th mat-header-cell *matHeaderCellDef>N° BL</th>
+          <td mat-cell *matCellDef="let r">{{ r.numeroBL }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="dateBL">
+          <th mat-header-cell *matHeaderCellDef>Date BL</th>
+          <td mat-cell *matCellDef="let r">{{ formatDate(r.dateBL) }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="userQuiAFacture">
+          <th mat-header-cell *matHeaderCellDef>User facturé</th>
+          <td mat-cell *matCellDef="let r">{{ r.userQuiAFacture }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="numeroFacture">
+          <th mat-header-cell *matHeaderCellDef>N° facture</th>
+          <td mat-cell *matCellDef="let r">{{ r.numeroFacture }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="dateFacture">
+          <th mat-header-cell *matHeaderCellDef>Date facture</th>
+          <td mat-cell *matCellDef="let r">{{ formatDate(r.dateFacture) }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="positionFacture">
+          <th mat-header-cell *matHeaderCellDef>Position</th>
+          <td mat-cell *matCellDef="let r">{{ r.positionFacture }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="numeroBonCommande">
+          <th mat-header-cell *matHeaderCellDef>N° Bon cde</th>
+          <td mat-cell *matCellDef="let r">{{ r.numeroBonCommande }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="libelleCommandeOuOR">
+          <th mat-header-cell *matHeaderCellDef>Libellé cde / OR</th>
+          <td mat-cell *matCellDef="let r">{{ r.libelleCommandeOuOR }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="numeroLigne">
+          <th mat-header-cell *matHeaderCellDef>N° ligne</th>
+          <td mat-cell *matCellDef="let r">{{ r.numeroLigne }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="cst">
+          <th mat-header-cell *matHeaderCellDef>Cst</th>
+          <td mat-cell *matCellDef="let r">{{ r.cst }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="reference">
+          <th mat-header-cell *matHeaderCellDef>Référence</th>
+          <td mat-cell *matCellDef="let r">{{ r.reference }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="designation">
+          <th mat-header-cell *matHeaderCellDef>Désignation</th>
+          <td mat-cell *matCellDef="let r" class="designation">{{ r.designation }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="codeRemiseLigne">
+          <th mat-header-cell *matHeaderCellDef>Code remise</th>
+          <td mat-cell *matCellDef="let r">{{ r.codeRemiseLigne }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="codeGestion">
+          <th mat-header-cell *matHeaderCellDef>Code gestion</th>
+          <td mat-cell *matCellDef="let r">{{ r.codeGestion }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="geree">
+          <th mat-header-cell *matHeaderCellDef>Gérée</th>
+          <td mat-cell *matCellDef="let r">{{ r.geree }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="coursDevise">
+          <th mat-header-cell *matHeaderCellDef>Cours devise</th>
+          <td mat-cell *matCellDef="let r">{{ money(r.coursDevise) }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="prixBrut">
+          <th mat-header-cell *matHeaderCellDef>Prix brut</th>
+          <td mat-cell *matCellDef="let r">{{ money(r.prixBrut) }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="remise">
+          <th mat-header-cell *matHeaderCellDef>Remise</th>
+          <td mat-cell *matCellDef="let r">{{ money(r.remise) }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="prixNet">
+          <th mat-header-cell *matHeaderCellDef>Prix net</th>
+          <td mat-cell *matCellDef="let r">{{ money(r.prixNet) }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="pmp">
+          <th mat-header-cell *matHeaderCellDef>PMP</th>
+          <td mat-cell *matCellDef="let r">{{ money(r.pmp) }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="totalNet">
+          <th mat-header-cell *matHeaderCellDef>Total NET</th>
+          <td mat-cell *matCellDef="let r">{{ money(r.totalNet) }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="totalPmp">
+          <th mat-header-cell *matHeaderCellDef>Total PMP</th>
+          <td mat-cell *matCellDef="let r">{{ money(r.totalPmp) }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="marge">
+          <th mat-header-cell *matHeaderCellDef>Marge</th>
+          <td mat-cell *matCellDef="let r" class="marge">{{ money(r.marge) }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="pourcentageMarge">
+          <th mat-header-cell *matHeaderCellDef>% Marge</th>
+          <td mat-cell *matCellDef="let r" class="marge-pct">
+            {{ money(r.pourcentageMarge) }}%
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="tauxTva">
+          <th mat-header-cell *matHeaderCellDef>Taux TVA</th>
+          <td mat-cell *matCellDef="let r">{{ money(r.tauxTva) }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="totalTtc">
+          <th mat-header-cell *matHeaderCellDef>Total TTC</th>
+          <td mat-cell *matCellDef="let r">{{ money(r.totalTtc) }}</td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+
+      </table>
+    </div>
+
+    <mat-paginator
+      [pageSize]="25"
+      [pageSizeOptions]="[10, 25, 50, 100]"
+      showFirstLastButtons>
+    </mat-paginator>
+  </div>
+
 </div>

@@ -431,3 +431,52 @@
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+
+.money-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  line-height: 1.15;
+}
+
+.money-block strong {
+  font-size: 14px;
+  font-weight: 800;
+  color: #064e3b;
+}
+
+.currency-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-end;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  color: #065f46;
+  background: #d1fae5;
+  border: 1px solid #a7f3d0;
+}
+
+.secondary-money {
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.rate-line {
+  font-size: 10px;
+  color: #94a3b8;
+}
+
+.total-money strong {
+  color: #b91c1c;
+  font-size: 15px;
+}
+
+.primary-money strong {
+  color: #0f766e;
+}

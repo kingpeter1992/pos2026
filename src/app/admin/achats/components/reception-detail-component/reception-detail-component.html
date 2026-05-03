@@ -4,6 +4,7 @@
 </h2>
 
 <mat-dialog-content class="dialog-content">
+
   <div class="dialog-header">
     <div class="info-card">
       <label>Référence</label>
@@ -24,6 +25,11 @@
       <label>Date</label>
       <strong>{{ data?.dateReception | date:'dd/MM/yyyy' }}</strong>
     </div>
+
+    <div class="info-card">
+      <label>Taux réception</label>
+      <strong>{{ formatFc(getTauxReception()) }} FC/USD</strong>
+    </div>
   </div>
 
   <div class="mini-kpis">
@@ -34,12 +40,26 @@
 
     <div class="mini-kpi">
       <span>Montant achat</span>
-      <strong>{{ totalAchat() | number:'1.2-2' }}</strong>
+      <strong>{{ formatFc(totalAchat()) }} FC</strong>
+      <small *ngIf="totalAchatUsd() > 0">
+        ≈ {{ formatUsd(totalAchatUsd()) }} USD
+      </small>
     </div>
 
     <div class="mini-kpi">
       <span>Part frais</span>
-      <strong>{{ totalFrais() | number:'1.2-2' }}</strong>
+      <strong>{{ formatFc(totalFrais()) }} FC</strong>
+      <small *ngIf="totalFraisUsd() > 0">
+        ≈ {{ formatUsd(totalFraisUsd()) }} USD
+      </small>
+    </div>
+
+    <div class="mini-kpi">
+      <span>Total final</span>
+      <strong>{{ formatFc(totalFinalFc()) }} FC</strong>
+      <small *ngIf="totalFinalUsd() > 0">
+        ≈ {{ formatUsd(totalFinalUsd()) }} USD
+      </small>
     </div>
   </div>
 
@@ -48,57 +68,98 @@
 
       <ng-container matColumnDef="produit">
         <th mat-header-cell *matHeaderCellDef>Produit</th>
-        <td mat-cell *matCellDef="let row">{{ row.produitNom || '-' }}</td>
+        <td mat-cell *matCellDef="let row">
+          {{ row.produitNom || '-' }}
+        </td>
       </ng-container>
 
       <ng-container matColumnDef="categorie">
         <th mat-header-cell *matHeaderCellDef>Catégorie</th>
-        <td mat-cell *matCellDef="let row">{{ row.categorieNom || '-' }}</td>
+        <td mat-cell *matCellDef="let row">
+          {{ row.categorieNom || '-' }}
+        </td>
       </ng-container>
 
       <ng-container matColumnDef="quantiteRecue">
         <th mat-header-cell *matHeaderCellDef class="th-right">Qté reçue</th>
-        <td mat-cell *matCellDef="let row" class="td-right">{{ row.quantiteRecue | number:'1.2-2' }}</td>
+        <td mat-cell *matCellDef="let row" class="td-right">
+          {{ row.quantiteRecue | number:'1.2-2' }}
+        </td>
       </ng-container>
 
       <ng-container matColumnDef="prixAchatUnitaire">
         <th mat-header-cell *matHeaderCellDef class="th-right">Prix achat</th>
-        <td mat-cell *matCellDef="let row" class="td-right">{{ row.prixAchatUnitaire | number:'1.2-2' }}</td>
+        <td mat-cell *matCellDef="let row" class="td-right">
+          <div class="money-cell">
+            <strong>{{ formatFc(getPrixAchatFc(row)) }} FC</strong>
+            <small *ngIf="getPrixAchatUsd(row) > 0">
+              ≈ {{ formatUsd(getPrixAchatUsd(row)) }} USD
+            </small>
+          </div>
+        </td>
       </ng-container>
 
       <ng-container matColumnDef="montantAchat">
         <th mat-header-cell *matHeaderCellDef class="th-right">Montant achat</th>
-        <td mat-cell *matCellDef="let row" class="td-right strong">{{ row.montantAchat | number:'1.2-2' }}</td>
+        <td mat-cell *matCellDef="let row" class="td-right strong">
+          <div class="money-cell">
+            <strong>{{ formatFc(getMontantAchatFc(row)) }} FC</strong>
+            <small *ngIf="getMontantAchatUsd(row) > 0">
+              ≈ {{ formatUsd(getMontantAchatUsd(row)) }} USD
+            </small>
+          </div>
+        </td>
       </ng-container>
 
       <ng-container matColumnDef="partFrais">
         <th mat-header-cell *matHeaderCellDef class="th-right">Part frais</th>
-        <td mat-cell *matCellDef="let row" class="td-right">{{ row.partFrais | number:'1.2-2' }}</td>
+        <td mat-cell *matCellDef="let row" class="td-right">
+          <div class="money-cell">
+            <strong>{{ formatFc(getPartFraisFc(row)) }} FC</strong>
+            <small *ngIf="getPartFraisUsd(row) > 0">
+              ≈ {{ formatUsd(getPartFraisUsd(row)) }} USD
+            </small>
+          </div>
+        </td>
       </ng-container>
 
       <ng-container matColumnDef="fraisUnitaire">
         <th mat-header-cell *matHeaderCellDef class="th-right">Frais unitaire</th>
-        <td mat-cell *matCellDef="let row" class="td-right">{{ row.fraisUnitaire | number:'1.2-2' }}</td>
+        <td mat-cell *matCellDef="let row" class="td-right">
+          <div class="money-cell">
+            <strong>{{ formatFc(getFraisUnitaireFc(row)) }} FC</strong>
+            <small *ngIf="getFraisUnitaireUsd(row) > 0">
+              ≈ {{ formatUsd(getFraisUnitaireUsd(row)) }} USD
+            </small>
+          </div>
+        </td>
       </ng-container>
 
       <ng-container matColumnDef="coutUnitaireFinal">
         <th mat-header-cell *matHeaderCellDef class="th-right">Coût final</th>
-        <td mat-cell *matCellDef="let row" class="td-right strong">{{ row.coutUnitaireFinal | number:'1.2-2' }}</td>
+        <td mat-cell *matCellDef="let row" class="td-right strong">
+          <div class="money-cell total-money">
+            <strong>{{ formatFc(getCoutFinalFc(row)) }} FC</strong>
+            <small *ngIf="getCoutFinalUsd(row) > 0">
+              ≈ {{ formatUsd(getCoutFinalUsd(row)) }} USD
+            </small>
+          </div>
+        </td>
       </ng-container>
-
 
       <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
       <tr mat-row *matRowDef="let row; columns: displayedColumns; trackBy: trackByLine"></tr>
     </table>
   </div>
-        <button
-      mat-flat-button
-      color="primary"
-      type="button"
-      (click)="goToLocators()">
-      <mat-icon>inventory_2</mat-icon>
-      Affecter les locators
-    </button>
+
+  <button
+    mat-flat-button
+    color="primary"
+    type="button"
+    (click)="goToLocators()">
+    <mat-icon>inventory_2</mat-icon>
+    Affecter les locators
+  </button>
 
 </mat-dialog-content>
 

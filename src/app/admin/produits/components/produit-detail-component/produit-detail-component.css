@@ -163,3 +163,27 @@
     padding: 12px;
   }
 }
+
+
+.price-detail-box {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+}
+
+.price-detail-box strong {
+  font-size: 15px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.price-detail-box small {
+  font-size: 12px;
+  color: #0369a1;
+  font-weight: 700;
+}
+
+.price-detail-box .warning {
+  color: #c2410c;
+}

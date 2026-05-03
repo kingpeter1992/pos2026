@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
-import { catchError, finalize, map, shareReplay, tap } from 'rxjs/operators';
+import { catchError, finalize, map, shareReplay, take, tap } from 'rxjs/operators';
 import { CommandeAchatResponse, CommandeAchatRequest, CommandeAchatListItem } from '../../models/commande-achat.model';
 import { CommandeAchat } from './commande-achat';
 
@@ -8,7 +8,6 @@ import { CommandeAchat } from './commande-achat';
   providedIn: 'root'
 })
 export class CommandeAchatStore {
-
 
 
   getDashboard() {
@@ -38,6 +37,13 @@ export class CommandeAchatStore {
 
   constructor(private api: CommandeAchat) {}
 
+
+
+   refresh(): Observable<CommandeAchatListItem[]> {
+  this.loaded = false;
+  return this.loadIfNeeded();
+}
+
    findById(id: number): Observable<CommandeAchatResponse> {
   return this.api.findById(id);
 }
@@ -56,7 +62,7 @@ export class CommandeAchatStore {
     this.currentRequest$ = this.api.findAll().pipe(
       tap(data => {
         this.commandesSubject.next(data);
-        console.log('Commandes d\'achat chargées', data);
+       // console.log('Commandes d\'achat chargées', data);
         this.loaded = true;
       }),
       catchError(err => {
@@ -73,86 +79,6 @@ export class CommandeAchatStore {
     return this.currentRequest$;
   }
 
-  searchLocal(request: any): Observable<CommandeAchatResponse[]> {
-    this.loadingSubject.next(true);
-
-    const source = this.commandesSubject.value;
-    let filtered = [...source];
-
-    const keyword = (request?.keyword || '').toString().toLowerCase().trim();
-    const fournisseur = (request?.fournisseur || '').toString().toLowerCase().trim();
-    const position = request?.position || null;
-
-    const dateDebut = request?.dateDebut ? new Date(request.dateDebut) : null;
-    const dateFin = request?.dateFin ? new Date(request.dateFin) : null;
-
-    if (keyword) {
-      filtered = filtered.filter(item =>
-        (item.reference || '').toLowerCase().includes(keyword) ||
-        (item.fournisseurNom || '').toLowerCase().includes(keyword) ||
-        (item.observation || '').toLowerCase().includes(keyword)
-      );
-    }
-
-    if (fournisseur) {
-      filtered = filtered.filter(item =>
-        (item.fournisseurNom || '').toLowerCase().includes(fournisseur)
-      );
-    }
-
-    if (position) {
-      filtered = filtered.filter(item => item.statut === position);
-    }
-
-    if (dateDebut) {
-      filtered = filtered.filter(item => {
-        const dateCommande = new Date(item.dateCommande);
-        return dateCommande >= dateDebut;
-      });
-    }
-
-    if (dateFin) {
-      filtered = filtered.filter(item => {
-        const dateCommande = new Date(item.dateCommande);
-        return dateCommande <= dateFin;
-      });
-    }
-
-    if (request?.vingtDerniers) {
-      filtered = filtered
-        .sort((a, b) => new Date(b.dateCommande).getTime() - new Date(a.dateCommande).getTime())
-        .slice(0, 20);
-    }
-
-    if (request?.enCours) {
-      filtered = filtered.filter(item => item.statut === 'EN_COURS');
-    }
-
-    if (request?.terminee) {
-      filtered = filtered.filter(item => item.statut === 'TERMINEE');
-    }
-
-    if (request?.partielLivre) {
-      filtered = filtered.filter(item => item.statut === 'PARTIELLE_LIVREE');
-    }
-
-    if (request?.livre) {
-      filtered = filtered.filter(item => item.statut === 'LIVREE');
-    }
-
-    if (request?.nonLivre) {
-      filtered = filtered.filter(item => item.statut === 'NON_LIVREE');
-    }
-
-    if (request?.transferee) {
-      filtered = filtered.filter(item => item.statut === 'TRANSFEREE');
-    }
-
-    this.commandesSubject.next(filtered);
-    this.loadingSubject.next(false);
-
-    return of(filtered);
-  }
 
   resetSearch(): void {
     this.commandesSubject.next(this.commandesSubject.value);
@@ -309,4 +235,126 @@ update(id: number, payload: CommandeAchatRequest): Observable<any> {
    get snapshot(): CommandeAchatResponse[] {
     return this.commandesSubject.value;
   }
+
+searchLocal(filter: any): Observable<CommandeAchatListItem[]> {
+  return this.commandes$.pipe(
+    take(1),
+    map((list: CommandeAchatListItem[]) => {
+      let rows = [...(list ?? [])];
+
+      const keyword = String(filter.keyword ?? '').trim().toLowerCase();
+      const fournisseur = String(filter.fournisseur ?? '').trim().toLowerCase();
+      const position = String(filter.position ?? '').trim().toLowerCase();
+
+      const dateDebut = filter.dateDebut ? new Date(filter.dateDebut) : null;
+      const dateFin = filter.dateFin ? new Date(filter.dateFin) : null;
+
+      if (dateFin) {
+        dateFin.setHours(23, 59, 59, 999);
+      }
+
+      if (keyword) {
+        rows = rows.filter(c => {
+          const text = [
+            c.refCommande,
+            c.libelle,
+            c.fournisseurNom,
+            c.statut,
+            c.operateur,
+            c.user,
+            c.observation,
+            c.devise
+          ]
+            .map(v => String(v ?? '').toLowerCase())
+            .join(' ');
+
+          return text.includes(keyword);
+        });
+      }
+
+      if (fournisseur) {
+        rows = rows.filter(c =>
+          String(c.fournisseurNom ?? '').toLowerCase().includes(fournisseur)
+        );
+      }
+
+      if (position) {
+        rows = rows.filter(c =>
+          String(
+            (c as any).positionCommande ??
+            (c as any).positionLivraison ??
+            c.statut ??
+            ''
+          ).toLowerCase().includes(position)
+        );
+      }
+
+      if (dateDebut || dateFin) {
+        rows = rows.filter(c => {
+          if (!c.dateCommande) return false;
+
+          const d = new Date(c.dateCommande);
+
+          if (dateDebut && d < dateDebut) return false;
+          if (dateFin && d > dateFin) return false;
+
+          return true;
+        });
+      }
+
+      const statutsAutorises: string[] = [];
+
+      if (filter.enCours) {
+        statutsAutorises.push('BROUILLON', 'EN_COURS', 'VALIDEE', 'VALIDE');
+      }
+
+      if (filter.terminee) {
+        statutsAutorises.push('RECEPTIONNEE', 'TERMINEE', 'CLOTUREE');
+      }
+
+      if (filter.nonLivre) {
+        statutsAutorises.push('NON_LIVREE', 'NON_LIVRE');
+      }
+
+      if (filter.partielLivre) {
+        statutsAutorises.push('RECEPTION_PARTIELLE', 'PARTIELLEMENT_LIVREE', 'PARTIEL_LIVRE');
+      }
+
+      if (filter.livre) {
+        statutsAutorises.push('LIVREE', 'RECEPTIONNEE');
+      }
+
+      if (statutsAutorises.length > 0) {
+        rows = rows.filter(c => {
+          const statut = String(c.statut ?? '').trim().toUpperCase();
+          return statutsAutorises.some(s => statut.includes(s));
+        });
+      }
+
+      if (filter.mesCommandes) {
+        const user = JSON.parse(sessionStorage.getItem('auth-user') || '{}');
+        const username = String(
+          user.username ?? user.userName ?? user.nom ?? user.email ?? ''
+        ).toLowerCase();
+
+        if (username) {
+          rows = rows.filter(c =>
+            String(c.operateur ?? c.user ?? '').toLowerCase().includes(username)
+          );
+        }
+      }
+
+      rows.sort((a, b) =>
+        new Date(b.dateCommande ?? 0).getTime() -
+        new Date(a.dateCommande ?? 0).getTime()
+      );
+
+      if (filter.vingtDerniers) {
+        rows = rows.slice(0, 20);
+      }
+
+      return rows;
+    })
+  );
+}
 }

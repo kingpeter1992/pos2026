@@ -1,132 +1,204 @@
+<div class="bordereau-detail" *ngIf="bordereau as b; else loadingTpl">
 
+  <section class="premium-hero">
+    <div class="hero-glow"></div>
 
-<div class="bordereau-detail" *ngIf="bordereau as b">
-  <mat-card class="hero-card">
-    <div class="hero-header">
-      <div>
-        <div class="breadcrumb">Inventaire / Bordereau / {{ b.reference }}</div>
+    <div class="hero-top">
+      <div class="hero-title">
+        <div class="breadcrumb">
+          <mat-icon>inventory_2</mat-icon>
+          Inventaire / Bordereau / Comptage physique
+        </div>
+
         <h1>{{ b.reference }}</h1>
-        <p>Saisie du comptage physique et traitement du bordereau.</p>
+
+        <p>
+          Saisie professionnelle du comptage physique, validation du bordereau,
+          lancement des variances et mise à jour du stock.
+        </p>
+
+        <div class="hero-badges">
+          <span class="status-badge">{{ b.statut }}</span>
+
+          <span class="soft-badge">
+            <mat-icon>tag</mat-icon>
+            N° {{ b.numeroOrdre || '-' }}
+          </span>
+
+          <span class="soft-badge">
+            <mat-icon>place</mat-icon>
+            {{ b.locatorCode || 'Tous locators' }}
+          </span>
+        </div>
       </div>
 
       <div class="hero-actions">
-        <button mat-stroked-button (click)="printBordereauPdf()">
-  <mat-icon>picture_as_pdf</mat-icon>
-    Imprimer PDF
-  </button>
-
-  <button
-  mat-stroked-button
-  color="primary"
-  (click)="saveComptage()"
-  [disabled]="submitting() || !canEdit()">
-  Enregistrer
-</button>
-
-<button
-  mat-flat-button
-  color="primary"
-  (click)="validerBordereau()"
-  [disabled]="submitting() || !canValidate()">
-  Valider bordereau
-</button>
-
-<button
-  mat-flat-button
-  color="warn"
-  (click)="lancerVariances()"
-  [disabled]="submitting() || !canLancerVariances()">
-  Lancer variances
-</button>
-
-<button
-  mat-flat-button
-  color="accent"
-  (click)="miseAJourStock()"
-  [disabled]="submitting() || !canUpdateStock()">
-  Mise à jour stock
-</button>
-
-
-        <!-- <button
-          mat-stroked-button
-          color="primary"
-          (click)="saveComptage()"
-          [disabled]="submitting() || !canEdit()">
-          Enregistrer
+        <button mat-flat-button class="btn-pdf" (click)="printBordereauPdf()">
+          <mat-icon>picture_as_pdf</mat-icon>
+          PDF
         </button>
+
         <button
           mat-flat-button
-          color="primary"
-          (click)="validerBordereau()"
+          class="btn-save"
+          (click)="saveComptage()"
           [disabled]="submitting() || !canEdit()">
-          Valider bordereau
-        </button> -->
+          <mat-icon>save</mat-icon>
+          Enregistrer
+        </button>
 
+        <button
+          mat-flat-button
+          class="btn-primary"
+          (click)="validerBordereau()"
+          [disabled]="submitting() || !canValidate()">
+          <mat-icon>verified</mat-icon>
+          Valider
+        </button>
+
+        <button
+          mat-flat-button
+          class="btn-warning"
+          (click)="lancerVariances()"
+          [disabled]="submitting() || !canLancerVariances()">
+          <mat-icon>compare_arrows</mat-icon>
+          Variances
+        </button>
+
+        <button
+          mat-flat-button
+          class="btn-success"
+          (click)="miseAJourStock()"
+          [disabled]="submitting() || !canUpdateStock()">
+          <mat-icon>inventory</mat-icon>
+          MAJ Stock
+        </button>
       </div>
     </div>
+  </section>
 
-    <div class="hero-grid">
-      <div class="meta-box">
+  <section class="kpi-grid">
+    <mat-card class="kpi-card blue">
+      <div class="kpi-icon">
+        <mat-icon>qr_code_2</mat-icon>
+      </div>
+      <div>
         <span>Référence</span>
         <strong>{{ b.reference }}</strong>
       </div>
+    </mat-card>
 
-      <div class="meta-box">
-        <span>N°</span>
-        <strong>{{ b.numeroOrdre }}</strong>
+    <mat-card class="kpi-card cyan">
+      <div class="kpi-icon">
+        <mat-icon>numbers</mat-icon>
       </div>
+      <div>
+        <span>N° Bordereau</span>
+        <strong>{{ b.numeroOrdre || '-' }}</strong>
+      </div>
+    </mat-card>
 
-      <div class="meta-box">
+    <mat-card class="kpi-card orange">
+      <div class="kpi-icon">
+        <mat-icon>place</mat-icon>
+      </div>
+      <div>
         <span>Locator</span>
         <strong>{{ b.locatorCode || 'Tous' }}</strong>
       </div>
+    </mat-card>
 
-      <div class="meta-box">
+    <mat-card class="kpi-card purple">
+      <div class="kpi-icon">
+        <mat-icon>fact_check</mat-icon>
+      </div>
+      <div>
         <span>Statut</span>
         <strong>{{ b.statut }}</strong>
       </div>
+    </mat-card>
 
-      <div class="meta-box">
+    <mat-card class="kpi-card green">
+      <div class="kpi-icon">
+        <mat-icon>format_list_numbered</mat-icon>
+      </div>
+      <div>
         <span>Lignes</span>
         <strong>{{ totalLignes() }}</strong>
       </div>
+    </mat-card>
 
-      <div class="meta-box">
+    <mat-card class="kpi-card dark">
+      <div class="kpi-icon">
+        <mat-icon>edit_note</mat-icon>
+      </div>
+      <div>
         <span>Saisies</span>
         <strong>{{ totalSaisies() }}</strong>
       </div>
+    </mat-card>
+  </section>
+
+  <mat-card class="progress-card">
+    <div class="progress-header">
+      <div>
+        <h3>Progression du comptage</h3>
+        <p>{{ totalSaisies() }} ligne(s) saisie(s) sur {{ totalLignes() }}</p>
+      </div>
+
+      <div class="progress-chip">
+        {{ totalLignes() ? ((totalSaisies() / totalLignes()) * 100 | number:'1.0-0') : 0 }} %
+      </div>
     </div>
+
+    <p-progressBar
+      [value]="totalLignes() ? ((totalSaisies() / totalLignes()) * 100) : 0">
+    </p-progressBar>
   </mat-card>
 
+  <mat-card class="print-card count-sheet-card">
+    <div class="card-header">
+      <div>
+        <h2>Carte de comptage physique</h2>
+        <p>Saisie des quantités physiques par ligne de bordereau.</p>
+      </div>
 
+      <span class="count-pill">{{ lignesEditables.length }} article(s)</span>
+    </div>
 
- <mat-card class="print-card count-sheet-card">
-  <app-inventaire-card-print
-    [inventaire]="{
-      id: 0,
-      reference: b.inventaireReference || '',
-      type: 'GLOBAL',
-      statut: b.statut,
-      depotId: null,
-      depotNom: lignesEditables[0]?.depotNom || null,
-      locatorId: null,
-      locatorCode: b.locatorCode || null,
-      dateInventaire: b.dateCreation || null,
-      dateOuverture: null,
-      dateValidation: null,
-      dateCloture: null,
-      memorise: true,
-      gelStockTheorique: true,
-      varianceLancee: false,
-      valide: false,
-      cloture: false,
-      bordereauxGeneres: true,
-      commentaire: null
-    }"
-    [bordereau]="b"
-    [lignes]="lignesEditables"
-    [editable]="canEdit()">
-  </app-inventaire-card-print>
-</mat-card>
+    <app-inventaire-card-print
+      [inventaire]="{
+        id: 0,
+        reference: b.inventaireReference || '',
+        type: 'GLOBAL',
+        statut: b.statut,
+        depotId: null,
+        depotNom: lignesEditables[0]?.depotNom || null,
+        locatorId: null,
+        locatorCode: b.locatorCode || null,
+        dateInventaire: b.dateCreation || null,
+        dateOuverture: null,
+        dateValidation: null,
+        dateCloture: null,
+        memorise: true,
+        gelStockTheorique: true,
+        varianceLancee: false,
+        valide: false,
+        cloture: false,
+        bordereauxGeneres: true,
+        commentaire: null
+      }"
+      [bordereau]="b"
+      [lignes]="lignesEditables"
+      [editable]="canEdit()">
+    </app-inventaire-card-print>
+  </mat-card>
+
 </div>
+
+<ng-template #loadingTpl>
+  <div class="page-loader">
+    <mat-spinner diameter="42"></mat-spinner>
+    <p>Chargement du bordereau...</p>
+  </div>
+</ng-template>

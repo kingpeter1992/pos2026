@@ -17,33 +17,59 @@ export interface ProduitRequest {
   codeBarres?: string;
   nom: string;
   description?: string;
+
   categorieId?: number | null;
+
+  fournisseurId?: number | null;
+
+  prixAchat?: number;
   prixVente: number;
+  prixVenteFc?: number;
+  prixVenteUsd?: number;
+  tauxChangeUtilise?: number;
+
   stockMinimum: number;
-    stockMaximum:number
-    perissable?:string
+  stockMaximum: number;
+
+  actif?: boolean;
+  perissable?: string;
 
   images?: ImagePhotoRequest[];
 }
 
+
 export interface ProduitResponse {
   id: number;
+
   codeBarres: string;
   nom: string;
   description?: string;
+
   categorieId?: number | null;
   categorieNom?: string;
-  prixVente: number;
-  prixAchat?: number;
-  stockMinimum: number;
-  stockMaximum:number
-  actif: boolean;
-  dateCreation: string;
-  barcodeUrl: string;
-  perisable?:string
-  images: ImagePhotoResponse[];
-}
 
+  fournisseurId?: number | null;
+  fournisseurNom?: string;
+
+  prixAchat?: number;
+  prixVente: number;
+
+  prixVenteFc?: number;
+  prixVenteUsd?: number;
+  tauxChangeUtilise?: number;
+
+  stockMinimum: number;
+  stockMaximum: number;
+
+  actif: boolean;
+
+  perissable?: string;
+
+  dateCreation: string;
+
+  images: ImagePhotoResponse[];
+
+}
 
 export interface ImagePhotoRequest {
   nomFichier?: string;

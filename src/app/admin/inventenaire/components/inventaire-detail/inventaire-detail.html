@@ -1,52 +1,180 @@
 <div class="inventory-detail" *ngIf="inventaire() as inv">
-  <mat-card class="hero-card">
-    <div class="hero-header">
-      <div>
-        <div class="breadcrumb">Inventaire / {{ inv.reference }}</div>
+
+  <section class="premium-hero">
+    <div class="hero-bg"></div>
+
+    <div class="hero-content">
+      <button mat-icon-button class="back-btn" (click)="back()">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+
+      <div class="hero-main">
+        <div class="breadcrumb">
+          <mat-icon>inventory_2</mat-icon>
+          Inventaire / Détail
+        </div>
+
         <h1>{{ inv.reference }}</h1>
-        <p>Gestion des bordereaux de comptage de cet inventaire.</p>
+
+        <p>
+          Gestion opérationnelle des bordereaux, comptage physique, variances
+          et mise à jour du stock.
+        </p>
+
+        <div class="hero-badges">
+          <span class="status-badge" [ngClass]="statutClass(inv.statut)">
+            {{ statutLabel(inv.statut) }}
+          </span>
+
+          <span class="soft-badge">
+            <mat-icon>warehouse</mat-icon>
+            {{ inv.depotNom || 'Aucun dépôt' }}
+          </span>
+
+          <span class="soft-badge">
+            <mat-icon>place</mat-icon>
+            {{ inv.locatorCode || 'Tous locators' }}
+          </span>
+        </div>
       </div>
 
       <div class="hero-actions">
-        <button mat-flat-button color="primary" (click)="openGenererBordereauxDialog(inv)"
+        <button
+          mat-flat-button
+          class="btn-primary"
+          (click)="openGenererBordereauxDialog(inv)"
           [disabled]="!canGenererBordereaux()">
           <mat-icon>library_add</mat-icon>
-          Générer les bordereaux
+          Générer bordereaux
         </button>
 
-      </div>
-    </div>
+        <button
+          mat-flat-button
+          class="btn-warning"
+          (click)="lancerVariances()"
+          [disabled]="!canLaunchVariance()">
+          <mat-icon>compare_arrows</mat-icon>
+          Lancer variances
+        </button>
 
-    <div class="hero-grid">
-      <div class="meta-box">
-        <span>Type</span>
-        <strong>{{ inv.type }}</strong>
-      </div>
-      <div class="meta-box">
-        <span>Dépôt</span>
-        <strong>{{ inv.depotNom || '-' }}</strong>
-      </div>
-      <div class="meta-box">
-        <span>Locator</span>
-        <strong>{{ inv.locatorCode || '-' }}</strong>
-      </div>
-      <div class="meta-box">
-        <span>Statut</span>
-        <strong>{{ inv.statut }}</strong>
-      </div>
-      <div class="meta-box">
-        <span>Bordereaux</span>
-        <strong>{{ bordereaux().length }}</strong>
+        <button
+          mat-flat-button
+          class="btn-success"
+          (click)="validerInventaire()"
+          [disabled]="!canValidateInventaire()">
+          <mat-icon>task_alt</mat-icon>
+          Valider
+        </button>
+
+        <button
+          mat-flat-button
+          class="btn-danger"
+          (click)="cloturerInventaire()"
+          [disabled]="!canCloseInventaire()">
+          <mat-icon>lock</mat-icon>
+          Clôturer
+        </button>
       </div>
     </div>
-  </mat-card>
+  </section>
+
+  <section class="kpi-grid">
+    <mat-card class="kpi-card blue">
+      <div class="kpi-icon">
+        <mat-icon>category</mat-icon>
+      </div>
+      <div>
+        <span>Type</span>
+        <strong>{{ inv.type || '-' }}</strong>
+      </div>
+    </mat-card>
+
+    <mat-card class="kpi-card cyan">
+      <div class="kpi-icon">
+        <mat-icon>receipt_long</mat-icon>
+      </div>
+      <div>
+        <span>Bordereaux</span>
+        <strong>{{ totalBordereaux() }}</strong>
+      </div>
+    </mat-card>
+
+    <mat-card class="kpi-card orange">
+      <div class="kpi-icon">
+        <mat-icon>format_list_numbered</mat-icon>
+      </div>
+      <div>
+        <span>Lignes</span>
+        <strong>{{ totalLignes() }}</strong>
+      </div>
+    </mat-card>
+
+    <mat-card class="kpi-card green">
+      <div class="kpi-icon">
+        <mat-icon>inventory</mat-icon>
+      </div>
+      <div>
+        <span>Stock mis à jour</span>
+        <strong>{{ bordereauxStockMaj() }}/{{ totalBordereaux() }}</strong>
+      </div>
+    </mat-card>
+
+    <mat-card class="kpi-card purple">
+      <div class="kpi-icon">
+        <mat-icon>monitoring</mat-icon>
+      </div>
+      <div>
+        <span>Progression MAJ</span>
+        <strong>{{ progressionStockMaj() }}%</strong>
+      </div>
+    </mat-card>
+
+    <mat-card class="kpi-card dark">
+      <div class="kpi-icon">
+        <mat-icon>payments</mat-icon>
+      </div>
+      <div>
+        <span>Valeur écarts</span>
+        <strong>{{ totalValeurEcart() | number:'1.2-2':'fr-FR' }}</strong>
+      </div>
+    </mat-card>
+  </section>
+
+  <section class="progress-zone">
+    <mat-card class="progress-card">
+      <div class="progress-header">
+        <div>
+          <h3>Avancement de la mise à jour stock</h3>
+          <p>Bordereaux déjà appliqués au stock physique.</p>
+        </div>
+
+        <div class="progress-chip">
+          {{ progressionStockMaj() }}%
+        </div>
+      </div>
+
+      <p-progressBar [value]="progressionStockMaj()"></p-progressBar>
+    </mat-card>
+  </section>
 
   <mat-card class="table-card" *ngIf="hasBordereaux(); else noBordereaux">
-    <div class="section-title">
-      <span>Bordereaux de l’inventaire</span>
+    <div class="section-header">
+      <div>
+        <h2>Bordereaux de comptage</h2>
+        <p>Liste des bordereaux générés pour cet inventaire.</p>
+      </div>
+
+      <span class="count-pill">{{ bordereaux().length }} bordereau(x)</span>
     </div>
 
-    <p-table [value]="bordereaux()" responsiveLayout="scroll">
+    <p-table
+      [value]="bordereaux()"
+      responsiveLayout="scroll"
+      styleClass="premium-table p-datatable-sm"
+      [paginator]="true"
+      [rows]="10"
+      [rowsPerPageOptions]="[10, 20, 50]">
+
       <ng-template pTemplate="header">
         <tr>
           <th>Référence</th>
@@ -63,16 +191,63 @@
 
       <ng-template pTemplate="body" let-row>
         <tr>
-          <td>{{ row.reference }}</td>
-          <td>{{ row.numeroOrdre }}</td>
-          <td>{{ row.nombreLignes }}</td>
-          <td>{{ row.locatorCode || '-' }}</td>
-          <td>{{ row.afficherQuantiteTheorique ? 'Oui' : 'Non' }}</td>
-          <td>{{ row.stockMisAJour ? 'Oui' : 'Non' }}</td>
-          <td>{{ row.statut }}</td>
-          <td>{{ row.dateSaisie | date:'dd/MM/yyyy HH:mm' }}</td>
+          <td>
+            <div class="ref-cell">
+              <div class="ref-icon">
+                <mat-icon>description</mat-icon>
+              </div>
+              <div>
+                <strong>{{ row.reference }}</strong>
+                <span>Bordereau</span>
+              </div>
+            </div>
+          </td>
+
+          <td>
+            <span class="number-pill">#{{ row.numeroOrdre }}</span>
+          </td>
+
+          <td>
+            <span class="soft-chip">{{ row.nombreLignes || 0 }} ligne(s)</span>
+          </td>
+
+          <td>
+            <div class="mini-info">
+              <mat-icon>place</mat-icon>
+              <span>{{ row.locatorCode || '-' }}</span>
+            </div>
+          </td>
+
+          <td>
+            <span class="yes-no" [class.ok]="row.afficherQuantiteTheorique">
+              {{ row.afficherQuantiteTheorique ? 'Oui' : 'Non' }}
+            </span>
+          </td>
+
+          <td>
+            <span class="yes-no" [class.ok]="row.stockMisAJour">
+              {{ row.stockMisAJour ? 'Oui' : 'Non' }}
+            </span>
+          </td>
+
+          <td>
+            <span class="status-badge small" [ngClass]="statutClass(row.statut)">
+              {{ statutLabel(row.statut) }}
+            </span>
+          </td>
+
+          <td>
+            <span class="date-pill">
+              {{ row.dateSaisie | date:'dd/MM/yyyy HH:mm' }}
+            </span>
+          </td>
+
           <td class="text-right">
-            <button mat-stroked-button color="primary" (click)="openBordereauDetail(row)">
+            <button
+              mat-flat-button
+              class="detail-btn"
+              (click)="openBordereauDetail(row)">
+              <mat-icon>visibility</mat-icon>
               Détail
             </button>
           </td>
@@ -82,27 +257,45 @@
   </mat-card>
 
   <ng-template #noBordereaux>
-    <mat-card class="empty-sheet-card">
-      <mat-icon>inventory_2</mat-icon>
-      <h3>Aucun bordereau généré</h3>
-      <p>Commence par générer les bordereaux de cet inventaire.</p>
-
-      <div class="empty-actions">
-        <button mat-flat-button color="primary" (click)="openGenererBordereauxDialog(inv)"
-          [disabled]="!canGenererBordereaux()">
-          <mat-icon>library_add</mat-icon>
-          Générer les bordereaux
-        </button>
+    <mat-card class="empty-card">
+      <div class="empty-icon">
+        <mat-icon>inventory_2</mat-icon>
       </div>
+
+      <h3>Aucun bordereau généré</h3>
+
+      <p>
+        Commence par générer les bordereaux de comptage physique pour cet inventaire.
+      </p>
+
+      <button
+        mat-flat-button
+        class="btn-primary"
+        (click)="openGenererBordereauxDialog(inv)"
+        [disabled]="!canGenererBordereaux()">
+        <mat-icon>library_add</mat-icon>
+        Générer les bordereaux
+      </button>
     </mat-card>
   </ng-template>
 
-  <mat-card class="table-card" *ngIf="variances().length > 0">
-    <div class="section-title">
-      <span>Résumé des variances</span>
+  <mat-card class="table-card variance-card" *ngIf="variances().length > 0">
+    <div class="section-header">
+      <div>
+        <h2>Résumé des variances</h2>
+        <p>Analyse des écarts entre stock théorique et stock physique retenu.</p>
+      </div>
+
+      <span class="count-pill">{{ variances().length }} variance(s)</span>
     </div>
 
-    <p-table [value]="variances()" responsiveLayout="scroll">
+    <p-table
+      [value]="variances()"
+      responsiveLayout="scroll"
+      styleClass="premium-table p-datatable-sm"
+      [paginator]="true"
+      [rows]="10">
+
       <ng-template pTemplate="header">
         <tr>
           <th>Théorique</th>
@@ -116,14 +309,27 @@
 
       <ng-template pTemplate="body" let-row>
         <tr>
-          <td>{{ row.stockTheorique | number:'1.0-3' }}</td>
-          <td>{{ row.stockPhysiqueRetenu | number:'1.0-3' }}</td>
-          <td>{{ row.ecart | number:'1.0-3' }}</td>
-          <td>{{ row.type }}</td>
-          <td>{{ row.valeurEcart | number:'1.2-2' }}</td>
-          <td>{{ row.appliquee ? 'Oui' : 'Non' }}</td>
+          <td>{{ row.stockTheorique | number:'1.0-3':'fr-FR' }}</td>
+          <td>{{ row.stockPhysiqueRetenu | number:'1.0-3':'fr-FR' }}</td>
+          <td>
+            <strong [class.ecart-plus]="row.ecart > 0" [class.ecart-minus]="row.ecart < 0">
+              {{ row.ecart | number:'1.0-3':'fr-FR' }}
+            </strong>
+          </td>
+          <td>
+            <span class="soft-chip">{{ row.type }}</span>
+          </td>
+          <td>
+            <strong>{{ row.valeurEcart | number:'1.2-2':'fr-FR' }}</strong>
+          </td>
+          <td>
+            <span class="yes-no" [class.ok]="row.appliquee">
+              {{ row.appliquee ? 'Oui' : 'Non' }}
+            </span>
+          </td>
         </tr>
       </ng-template>
     </p-table>
   </mat-card>
+
 </div>

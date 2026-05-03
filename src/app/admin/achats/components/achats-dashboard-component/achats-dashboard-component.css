@@ -730,3 +730,18 @@ mat-icon {
     width: 100%;
   }
 }
+
+.kpi-sub,
+.money-cell small {
+  display: block;
+  margin-top: 4px;
+  font-size: 20px;
+  font-weight: 700;
+  color: #010a0e;
+}
+
+.money-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}

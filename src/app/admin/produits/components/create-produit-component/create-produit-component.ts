@@ -13,6 +13,7 @@ import {
   Html5QrcodeSupportedFormats,
   Html5QrcodeCameraScanConfig
 } from 'html5-qrcode';
+import { CaisseStoreService } from '../../../caisse/services/CaisseServiceStore';
 
 @Component({
   selector: 'app-create-produit-component',
@@ -29,7 +30,9 @@ export class CreateProduitComponent implements OnInit, OnDestroy {
   private hasPlayedBeep = false;
   previews: string[] = [];
   selectedImages: ImagePhotoRequest[] = [];
-
+dernierTaux = 0;
+prixUsd = 0;
+loadingTaux = false;
   cameraOpen = false;
   cameraLoading = false;
   cameraError = '';
@@ -57,27 +60,82 @@ export class CreateProduitComponent implements OnInit, OnDestroy {
     private produitStore: ProduitStoreService,
     private toast: Toast,
     private imageOptimizer: ImageOptimizer,
-    private router: Router
+    private router: Router,
+      private caisseStore: CaisseStoreService
+
   ) { }
 
-  ngOnInit(): void {
-    this.categorieStore.categories$.subscribe(data => {
-      this.categories = data;
-    });
+ngOnInit(): void {
+  this.categorieStore.categories$.subscribe(data => {
+    this.categories = data;
+  });
 
-    this.categorieStore.loadIfNeeded().subscribe();
+  this.categorieStore.loadIfNeeded().subscribe();
 
-    this.form = this.fb.group({
-      codeBarres: [''],
-      nom: ['', [Validators.required, Validators.maxLength(150)]],
-      description: [''],
-      categorieId: [null],
-      perissable: ['NON'],
-      prixVente: [0, [Validators.required, Validators.min(0)]],
-      stockMinimum: [0, [Validators.required, Validators.min(0)]],
-      stockMaximum: [0, [Validators.required, Validators.min(0)]]
-    });
+  this.form = this.fb.group({
+    codeBarres: [''],
+    nom: ['', [Validators.required, Validators.maxLength(150)]],
+    description: [''],
+    categorieId: [null],
+    perissable: ['NON'],
+
+    // Ici le prix est saisi en Franc Congolais
+    prixVente: [0, [Validators.required, Validators.min(0)]],
+
+    stockMinimum: [0, [Validators.required, Validators.min(0)]],
+    stockMaximum: [0, [Validators.required, Validators.min(0)]]
+  });
+
+  this.chargerDernierTauxActif();
+
+  this.form.get('prixVente')?.valueChanges.subscribe(() => {
+    this.calculPrixUsd();
+  });
+}
+
+
+private chargerDernierTauxActif(): void {
+  this.loadingTaux = true;
+  this.caisseStore.loadTauxActif().subscribe({
+    next: (taux) => {
+      this.dernierTaux = Number(taux?.taux ?? 0);
+      this.calculPrixUsd();
+      this.loadingTaux = false;
+    },
+    error: (err) => {
+      console.error(err);
+      this.loadingTaux = false;
+      this.dernierTaux = 0;
+      this.prixUsd = 0;
+      this.toast.warning('Aucun taux de change actif trouvé.');
+    }
+  });
+}
+
+private calculPrixUsd(): void {
+  const prixFc = Number(this.form.get('prixVente')?.value ?? 0);
+
+  if (!prixFc || !this.dernierTaux || this.dernierTaux <= 0) {
+    this.prixUsd = 0;
+    return;
   }
+
+  this.prixUsd = +(prixFc / this.dernierTaux).toFixed(2);
+}
+
+formatFc(value: number): string {
+  return new Intl.NumberFormat('fr-FR', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(Number(value || 0));
+}
+
+formatUsd(value: number): string {
+  return new Intl.NumberFormat('fr-FR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(Number(value || 0));
+}
 
   ngOnDestroy(): void {
     this.stopCamera();
@@ -122,11 +180,16 @@ export class CreateProduitComponent implements OnInit, OnDestroy {
 
     const formValue = this.form.getRawValue();
 
-    const payload: ProduitRequest = {
-      ...formValue,
-      codeBarres: formValue.codeBarres?.trim() || null,
-      images: this.selectedImages
-    } as ProduitRequest;
+  const payload: ProduitRequest = {
+    ...formValue,
+
+    prixVenteFc: formValue.prixVente,
+    prixVenteUsd: this.prixUsd,
+    tauxChangeUtilise: this.dernierTaux,
+
+    codeBarres: formValue.codeBarres?.trim() || null,
+    images: this.selectedImages
+  };
 
     this.loading = true;
 

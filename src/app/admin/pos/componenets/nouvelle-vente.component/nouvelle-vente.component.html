@@ -8,7 +8,7 @@
       <div>
         <div class="breadcrumb">POS / Pharmacie / Vente</div>
         <h1>Caisse pharmacie</h1>
-        <p>Scan, ajout direct, encaissement tactile</p>
+        <p>FC monnaie principale • USD secondaire selon le taux du stock</p>
       </div>
     </div>
 
@@ -34,8 +34,7 @@
     <div
       class="stock-alert-item"
       *ngFor="let alerte of alertesStock(); let i = index"
-      [ngClass]="{ 'danger': true, 'blink': i === 0 }"
-    >
+      [ngClass]="{ danger: true, blink: i === 0 }">
       <mat-icon class="alert-icon">warning</mat-icon>
       <div class="alert-content">
         <div class="alert-title">Attention</div>
@@ -71,7 +70,8 @@
       </div>
       <div class="kpi-content">
         <span>Remise</span>
-        <h2>{{ formatMoney(totalRemise()) }}</h2>
+        <h2>{{ formatFC(totalRemise()) }}</h2>
+        <small class="secondary-money">{{ formatUSD(totalRemiseUSD()) }}</small>
       </div>
     </mat-card>
 
@@ -81,15 +81,14 @@
       </div>
       <div class="kpi-content">
         <span>Total</span>
-        <h2>{{ formatMoney(totalGeneral()) }} USD</h2>
+        <h2>{{ formatFC(totalGeneral()) }}</h2>
+        <small class="secondary-money">{{ formatUSD(totalGeneralUSD()) }}</small>
       </div>
     </mat-card>
   </div>
 
   <div class="vente-layout">
-    <!-- COLONNE GAUCHE -->
     <div class="vente-left">
-
       <mat-card class="panel panel-large panier-panel">
         <div class="panel-toolbar top-toolbar reduced-toolbar">
           <div class="panel-title">
@@ -120,8 +119,7 @@
                   mat-icon-button
                   type="button"
                   (click)="selectRow(row.id); $event.stopPropagation()"
-                  [class.active-radio]="isSelected(row.id)"
-                >
+                  [class.active-radio]="isSelected(row.id)">
                   <mat-icon>
                     {{ isSelected(row.id) ? 'radio_button_checked' : 'radio_button_unchecked' }}
                   </mat-icon>
@@ -144,15 +142,22 @@
               <td mat-cell *matCellDef="let row">
                 <div class="product-cell">
                   <strong>{{ row.produit }}</strong>
-                  <small>Stock: {{ row.stock }}</small>
-                  <small>Tarif: {{ row.tarifNom || '-' }}</small>
+                  <small>Stock : {{ row.stock }}</small>
+                  <small>Tarif : {{ row.tarifNom || '-' }}</small>
+                  <small>Taux stock : {{ formatTauxProduit(row.produitTarifie) }}</small>
                 </div>
               </td>
             </ng-container>
 
             <ng-container matColumnDef="prix">
               <th mat-header-cell *matHeaderCellDef>PU</th>
-              <td mat-cell *matCellDef="let row">{{ formatMoney(row.prix) }}</td>
+              <td mat-cell *matCellDef="let row">
+                <div class="money-block primary-money">
+                  <span class="currency-label">FC</span>
+                  <strong>{{ formatFC(row.prixCDF) }}</strong>
+                  <small class="secondary-money">{{ formatUSD(row.prixUSD) }}</small>
+                </div>
+              </td>
             </ng-container>
 
             <ng-container matColumnDef="quantite">
@@ -162,7 +167,9 @@
                   <button mat-mini-fab type="button" (click)="decrementer(row.id); $event.stopPropagation()">
                     <mat-icon>remove</mat-icon>
                   </button>
+
                   <span>{{ row.quantite }}</span>
+
                   <button mat-mini-fab type="button" (click)="incrementer(row.id); $event.stopPropagation()">
                     <mat-icon>add</mat-icon>
                   </button>
@@ -172,13 +179,23 @@
 
             <ng-container matColumnDef="remise">
               <th mat-header-cell *matHeaderCellDef>Remise</th>
-              <td mat-cell *matCellDef="let row">{{ formatMoney(row.remise) }}</td>
+              <td mat-cell *matCellDef="let row">
+                <div class="money-block discount-money">
+                  <span class="currency-label">FC</span>
+                  <strong>{{ formatFC(row.remiseCDF) }}</strong>
+                  <small class="secondary-money">{{ formatUSD(row.remiseUSD) }}</small>
+                </div>
+              </td>
             </ng-container>
 
             <ng-container matColumnDef="total">
               <th mat-header-cell *matHeaderCellDef>Total</th>
               <td mat-cell *matCellDef="let row" class="total-cell">
-                {{ formatMoney(ligneTotal(row)) }}
+                <div class="money-block total-money">
+                  <span class="currency-label">FC</span>
+                  <strong>{{ formatFC(ligneTotal(row)) }}</strong>
+                  <small class="secondary-money">{{ formatUSD(ligneTotalUSD(row)) }}</small>
+                </div>
               </td>
             </ng-container>
 
@@ -189,20 +206,20 @@
                   mat-mini-fab
                   color="warn"
                   type="button"
-                  (click)="supprimerLigne(row.id); $event.stopPropagation()"
-                >
+                  (click)="supprimerLigne(row.id); $event.stopPropagation()">
                   <mat-icon>delete</mat-icon>
                 </button>
               </td>
             </ng-container>
 
             <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+
             <tr
               mat-row
               *matRowDef="let row; columns: displayedColumns"
               (click)="selectRow(row.id)"
-              [class.selected-row]="isSelected(row.id)"
-            ></tr>
+              [class.selected-row]="isSelected(row.id)">
+            </tr>
           </table>
 
           <div class="empty-state" *ngIf="!lignes().length">
@@ -232,17 +249,13 @@
               [(ngModel)]="recherche"
               (ngModelChange)="onRechercheChange($event)"
               (keyup.enter)="ajouterPremierResultatRecherche()"
-              placeholder="Ex: Paracétamol, 3400..., vitamine C..."
-            />
+              placeholder="Ex: Paracétamol, 3400..., vitamine C..." />
             <mat-icon matPrefix>search</mat-icon>
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="toolbar-field compact-field">
             <mat-label>Tarif</mat-label>
-            <mat-select
-              [value]="selectedTarifId()"
-              (selectionChange)="onTarifChange($event.value)"
-            >
+            <mat-select [value]="selectedTarifId()" (selectionChange)="onTarifChange($event.value)">
               <mat-option *ngFor="let t of tarifsActifs()" [value]="t.id">
                 {{ t.nom }}
               </mat-option>
@@ -252,9 +265,7 @@
 
           <mat-form-field appearance="outline" class="toolbar-field compact-field">
             <mat-label>Dépôt</mat-label>
-            <mat-select
-              [ngModel]="selectedDepotId()"
-              (ngModelChange)="onDepotChange($event)">
+            <mat-select [ngModel]="selectedDepotId()" (ngModelChange)="onDepotChange($event)">
               <mat-option [value]="null">-- Choisir --</mat-option>
               <mat-option *ngFor="let depot of depotsActifs()" [value]="depot.id">
                 {{ depot.nom }}
@@ -275,6 +286,11 @@
             <span>{{ ticketNumero }}</span>
           </div>
 
+          <div class="live-chip rate">
+            <mat-icon>currency_exchange</mat-icon>
+            <span>Taux caisse : 1 USD = {{ formatFC(tauxChange()) }}</span>
+          </div>
+
           <div class="live-chip scan" [class.active]="scanAutoActif">
             <mat-icon>{{ scanAutoActif ? 'videocam' : 'videocam_off' }}</mat-icon>
             <span>{{ scanAutoActif ? 'Scan auto actif' : 'Scan inactif' }}</span>
@@ -286,17 +302,22 @@
             type="button"
             class="result-item pharmacie-item"
             *ngFor="let p of produitsFiltres()"
-            (click)="ajouterDepuisRecherche(p)"
-          >
+            (click)="ajouterDepuisRecherche(p)">
             <div class="result-main">
               <strong>{{ p.nom }}</strong>
               <small>{{ p.reference || '-' }} • {{ p.codeBarres }}</small>
               <small>{{ p.categorieNom || 'Produit' }}</small>
+              <small>Taux stock : {{ formatTauxProduit(p) }}</small>
             </div>
 
             <div class="result-side">
-              <span class="stock-chip">Stock: {{ p.stock || 0 }}</span>
-              <span class="price-chip">{{ formatMoney(p.prixUnitaire) }} USD</span>
+              <span class="stock-chip">Stock : {{ p.stock || 0 }}</span>
+
+              <div class="money-block result-money">
+                <span class="currency-label">FC</span>
+                <strong>{{ formatFC(p.prixUnitaireCDF) }}</strong>
+                <small class="secondary-money">{{ formatUSD(p.prixUnitaireUSD) }}</small>
+              </div>
             </div>
           </button>
         </div>
@@ -315,22 +336,13 @@
           </div>
 
           <div class="scan-camera-box">
-            <video
-              #scannerVideo
-              autoplay
-              muted
-              playsinline
-              class="scanner-video"
-            ></video>
-
+            <video #scannerVideo autoplay muted playsinline class="scanner-video"></video>
             <div class="scan-frame"></div>
 
             <div class="scan-overlay-bottom">
               <div class="scan-status" [class.ready]="scanAutoActif">
                 <mat-icon>{{ scanAutoActif ? 'check_circle' : 'info' }}</mat-icon>
-                <span>
-                  {{ scanMessage || 'Place le code-barres devant la caméra' }}
-                </span>
+                <span>{{ scanMessage || 'Place le code-barres devant la caméra' }}</span>
               </div>
 
               <div class="scan-actions">
@@ -360,8 +372,7 @@
               class="quick-product-card"
               *ngFor="let p of produitsTarifies(); let i = index"
               [hidden]="i > 11 && !showAllQuickProducts"
-              (click)="ajouterProduitTactile(p)"
-            >
+              (click)="ajouterProduitTactile(p)">
               <div class="qp-top">
                 <div class="qp-icon">
                   <mat-icon>medication</mat-icon>
@@ -371,7 +382,13 @@
 
               <div class="qp-name">{{ p.nom }}</div>
               <div class="qp-meta">{{ p.codeBarres || p.reference || '-' }}</div>
-              <div class="qp-price">{{ formatMoney(p.prixUnitaire) }} USD</div>
+
+              <div class="money-block qp-money">
+                <span class="currency-label">FC</span>
+                <strong>{{ formatFC(p.prixUnitaireCDF) }}</strong>
+                <small class="secondary-money">{{ formatUSD(p.prixUnitaireUSD) }}</small>
+                <small class="rate-line">{{ formatTauxProduit(p) }}</small>
+              </div>
             </button>
           </div>
 
@@ -388,10 +405,8 @@
           </div>
         </mat-card>
       </div>
-
     </div>
 
-    <!-- COLONNE DROITE -->
     <div class="vente-right">
       <mat-card class="panel payment-panel sticky-panel">
         <div class="panel-title simple reduced">
@@ -400,7 +415,15 @@
           </div>
           <div>
             <h3>Paiement</h3>
-            <span>Encaissement rapide</span>
+            <span>Encaissement en FC</span>
+          </div>
+        </div>
+
+        <div class="taux-box">
+          <mat-icon>currency_exchange</mat-icon>
+          <div>
+            <span>Dernier taux actif caisse</span>
+            <strong>1 USD = {{ formatFC(tauxChange()) }}</strong>
           </div>
         </div>
 
@@ -421,37 +444,53 @@
           </mat-form-field>
 
           <mat-form-field appearance="outline">
-            <mat-label>Montant reçu</mat-label>
+            <mat-label>Montant reçu en FC</mat-label>
             <input matInput type="number" [(ngModel)]="montantRecu" />
+            <span matSuffix>FC&nbsp;</span>
           </mat-form-field>
         </div>
 
         <div class="resume-box payment-resume">
           <div class="resume-line">
             <span>Sous-total</span>
-            <strong>{{ formatMoney(sousTotal()) }} USD</strong>
+            <div class="amount-block">
+              <strong>{{ formatFC(sousTotal()) }}</strong>
+              <small class="secondary-money">{{ formatUSD(sousTotalUSD()) }}</small>
+            </div>
           </div>
 
           <div class="resume-line">
             <span>Remise</span>
-            <strong>- {{ formatMoney(totalRemise()) }} USD</strong>
+            <div class="amount-block">
+              <strong>- {{ formatFC(totalRemise()) }}</strong>
+              <small class="secondary-money">- {{ formatUSD(totalRemiseUSD()) }}</small>
+            </div>
           </div>
 
           <div class="resume-line grand-total">
-            <span>Total</span>
-            <strong>{{ formatMoney(totalGeneral()) }} USD</strong>
+            <span>Total à payer</span>
+            <div class="amount-block">
+              <strong>{{ formatFC(totalGeneral()) }}</strong>
+              <small class="secondary-money">{{ formatUSD(totalGeneralUSD()) }}</small>
+            </div>
           </div>
 
           <mat-divider></mat-divider>
 
           <div class="resume-line">
             <span>Reçu</span>
-            <strong>{{ formatMoney(montantRecu || 0) }} USD</strong>
+            <div class="amount-block">
+              <strong>{{ formatFC(montantRecu || 0) }}</strong>
+              <small class="secondary-money">{{ formatUSD(montantRecuUSD()) }}</small>
+            </div>
           </div>
 
           <div class="resume-line monnaie">
             <span>Monnaie</span>
-            <strong>{{ formatMoney(monnaie()) }} USD</strong>
+            <div class="amount-block">
+              <strong>{{ formatFC(monnaie()) }}</strong>
+              <small class="secondary-money">{{ formatUSD(monnaieUSD()) }}</small>
+            </div>
           </div>
         </div>
 

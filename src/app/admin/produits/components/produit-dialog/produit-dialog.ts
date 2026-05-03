@@ -46,7 +46,7 @@ export class ProduitDialog implements OnInit {
       prixVente: [this.data.produit?.prixVente ?? 0, [Validators.required, Validators.min(0)]],
       stockMinimum: [this.data.produit?.stockMinimum ?? 0, [Validators.required, Validators.min(0)]],
       stockMaximum: [this.data.produit?.stockMaximum ?? 0, [Validators.required, Validators.min(0)]],
-      perissable: [this.data.produit?.perisable || 'NON', Validators.required],
+      perissable: [this.data.produit?.perissable || 'NON', Validators.required],
       actif: [this.data.produit?.actif ?? true]
     });
 

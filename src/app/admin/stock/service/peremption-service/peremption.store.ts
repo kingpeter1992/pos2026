@@ -124,11 +124,8 @@ loadAlertes(): void {
     .subscribe({
       next: (data) => {
         const alertes = data ?? [];
-
         console.log('=== ALERTES API ===');
         console.log(alertes);
-        console.log('Total alertes reçues :', alertes.length);
-
         this.allAlertes.set(alertes);
 
         // TEST SANS FILTRE

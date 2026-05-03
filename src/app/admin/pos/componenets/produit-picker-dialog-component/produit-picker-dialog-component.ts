@@ -295,13 +295,102 @@ produits = signal<ProduitTarifieDialog[]>([]);
     return n > 0 ? n : 1;
   }
 
-  private toNumber(value: any): number {
-    if (value === null || value === undefined || value === '') return 0;
-    const n = Number(value);
-    return Number.isNaN(n) ? 0 : n;
-  }
 
-  private arrondir2(value: number): number {
-    return Number(this.toNumber(value).toFixed(2));
-  }
+
+
+  formatFC(value: number | null | undefined): string {
+  return `${this.arrondir2(this.toNumber(value)).toLocaleString('fr-FR', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2
+  })} FC`;
+}
+
+formatUSD(value: number | null | undefined): string {
+  return `${this.arrondir2(this.toNumber(value)).toLocaleString('fr-FR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })} USD`;
+}
+
+getPrixFC(p: any): number {
+  return this.toNumber(
+    p?.prixUnitaireCDF ??
+    p?.prixFinalCDF ??
+    p?.prixFinal ??
+    p?.prixUnitaire ??
+    0
+  );
+}
+
+getPrixUSD(p: any): number {
+  return this.toNumber(
+    p?.prixUnitaireUSD ??
+    p?.prixFinalUSD ??
+    0
+  );
+}
+
+getRemiseFC(p: any): number {
+  return this.toNumber(
+    p?.montantRemiseCDF ??
+    p?.montantRemise ??
+    0
+  );
+}
+
+getRemiseUSD(p: any): number {
+  return this.toNumber(
+    p?.montantRemiseUSD ??
+    0
+  );
+}
+
+getSousTotalSelectionFC(produitId: number): number {
+  const item = this.selectedItems().get(produitId);
+  if (!item) return 0;
+
+  return this.arrondir2(this.getPrixFC(item.produit) * this.toNumber(item.quantite));
+}
+
+getSousTotalSelectionUSD(produitId: number): number {
+  const item = this.selectedItems().get(produitId);
+  if (!item) return 0;
+
+  return this.arrondir2(this.getPrixUSD(item.produit) * this.toNumber(item.quantite));
+}
+
+totalMontantFC(): number {
+  let total = 0;
+
+  this.selectedItems().forEach(item => {
+    total += this.getPrixFC(item.produit) * this.toNumber(item.quantite);
+  });
+
+  return this.arrondir2(total);
+}
+
+totalMontantUSD(): number {
+  let total = 0;
+
+  this.selectedItems().forEach(item => {
+    total += this.getPrixUSD(item.produit) * this.toNumber(item.quantite);
+  });
+
+  return this.arrondir2(total);
+}
+
+formatTauxProduit(p: any): string {
+  const taux = this.toNumber(p?.tauxChangeUtilise);
+  return taux > 0 ? `1 USD = ${this.formatFC(taux)}` : 'Taux non défini';
+}
+
+private toNumber(value: any): number {
+  if (value === null || value === undefined || value === '') return 0;
+  const n = Number(value);
+  return Number.isNaN(n) ? 0 : n;
+}
+
+private arrondir2(value: number): number {
+  return Number(this.toNumber(value).toFixed(2));
+}
 }

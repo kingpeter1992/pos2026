@@ -1,20 +1,24 @@
 import { ChangeDetectionStrategy, Component, computed, inject, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { InventaireBordereauStoreService } from '../../service/bordereau/inventaire-bordereau-store.service';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { Toast } from '../../../../shares/services/toast/toast';
 
 @Component({
   selector: 'app-inventaire-bordereau-detail-component',
   templateUrl: './inventaire-bordereau-detail-component.html',
   styleUrl: './inventaire-bordereau-detail-component.css',
   standalone: false,
-    changeDetection: ChangeDetectionStrategy.OnPush
-
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class InventaireBordereauDetailComponent  implements OnInit {
- readonly bordereauStore = inject(InventaireBordereauStoreService);
+
+  readonly bordereauStore = inject(InventaireBordereauStoreService);
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly toast = inject(Toast);
+
 
   bordereauId!: number;
   bordereau: any | null = null;
@@ -69,23 +73,32 @@ export class InventaireBordereauDetailComponent  implements OnInit {
     }));
 
     this.bordereauStore.saveLignes(this.bordereauId, payload, {
-      next: () => this.loadDetail()
+      next: () => {this.loadDetail()
+        this.toast.success('Comptage enregistré avec succès');
+        this.router.navigate(['admin/inventaire/inventaires']);
+            }
     });
   }
 
   validerBordereau(): void {
     if (!this.bordereauId) return;
-
     this.bordereauStore.validerBordereau(this.bordereauId, 'ADMIN POS', {
-      next: () => this.loadDetail()
+      next: () =>{
+        this.loadDetail();
+        this.toast.success('Bordereau validé avec succès');
+        this.router.navigate(['admin/inventaire/inventaires']);
+      }
     });
   }
 
   miseAJourStock(): void {
     if (!this.bordereauId) return;
-
-    this.bordereauStore.miseAJourStock(this.bordereauId, 'ADMIN POS', {
-      next: () => this.loadDetail()
+    this.bordereauStore.miseAJourStock(this.bordereauId, 'ADMIN', {
+      next: () => {
+        this.loadDetail();
+        this.toast.success('Stock mis à jour avec succès');
+        this.router.navigate(['admin/inventaire/inventaires']);
+      }
     });
   }
 
@@ -124,7 +137,12 @@ lancerVariances(): void {
   if (!this.bordereauId) return;
 
   this.bordereauStore.lancerVariances(this.bordereauId, {
-    next: () => this.loadDetail()
+    next: () => {
+      this.loadDetail();
+      this.toast.success('Variances lancées avec succès');
+      this.router.navigate(['admin/inventaire/inventaires']);
+    }
+
   });
 }
 
@@ -136,34 +154,93 @@ lancerVariances(): void {
 
 
 printBordereauPdf(): void {
-  if (!this.bordereau) {
-    return;
-  }
+  if (!this.bordereau) return;
 
   const doc = new jsPDF('p', 'mm', 'a4');
 
-  const marginLeft = 10;
-  let y = 14;
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
 
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(14);
-  doc.text('BORDEREAU DE COMPTAGE PHYSIQUE', marginLeft, y);
-
-  y += 8;
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
-
-  doc.text(`Réf. bordereau : ${this.bordereau.reference || '-'}`, marginLeft, y);
-  y += 6;
-  doc.text(`N° bordereau : ${this.bordereau.numeroOrdre ?? '-'}`, marginLeft, y);
-  y += 6;
-  doc.text(`Locator global : ${this.bordereau.locatorCode || 'Tous'}`, marginLeft, y);
-  y += 6;
-  doc.text(`Statut : ${this.bordereau.statut || '-'}`, marginLeft, y);
-
-  y += 8;
+  const marginX = 12;
+  let y = 12;
 
   const showTheo = !!this.bordereau.afficherQuantiteTheorique;
+
+  const formatQty = (value: any): string => {
+    if (value === null || value === undefined || value === '') return '';
+    return new Intl.NumberFormat('fr-FR', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 3
+    }).format(Number(value));
+  };
+
+  const drawHeader = (): void => {
+    doc.setFillColor(15, 23, 42);
+    doc.roundedRect(marginX, 8, pageWidth - marginX * 2, 30, 3, 3, 'F');
+
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.text('BORDEREAU DE COMPTAGE PHYSIQUE', marginX + 5, 19);
+
+    doc.setFontSize(8.5);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Inventaire • Comptage • Validation stock', marginX + 5, 26);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.text(this.bordereau.reference || '-', pageWidth - marginX - 5, 19, {
+      align: 'right'
+    });
+
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Date impression : ${new Date().toLocaleDateString('fr-FR')}`, pageWidth - marginX - 5, 26, {
+      align: 'right'
+    });
+
+    doc.setTextColor(15, 23, 42);
+  };
+
+  const drawInfoBox = (): void => {
+    y = 45;
+
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(marginX, y, pageWidth - marginX * 2, 34, 3, 3, 'FD');
+
+    const col1 = marginX + 5;
+    const col2 = marginX + 72;
+    const col3 = marginX + 138;
+
+    doc.setFontSize(8);
+    doc.setTextColor(100, 116, 139);
+    doc.setFont('helvetica', 'bold');
+
+    doc.text('RÉF. BORDEREAU', col1, y + 8);
+    doc.text('N° BORDEREAU', col2, y + 8);
+    doc.text('STATUT', col3, y + 8);
+
+    doc.text('LOCATOR', col1, y + 22);
+    doc.text('INVENTAIRE', col2, y + 22);
+    doc.text('LIGNES', col3, y + 22);
+
+    doc.setFontSize(10);
+    doc.setTextColor(15, 23, 42);
+    doc.setFont('helvetica', 'bold');
+
+    doc.text(String(this.bordereau.reference || '-'), col1, y + 14);
+    doc.text(String(this.bordereau.numeroOrdre ?? '-'), col2, y + 14);
+    doc.text(String(this.bordereau.statut || '-'), col3, y + 14);
+
+    doc.text(String(this.bordereau.locatorCode || 'Tous'), col1, y + 28);
+    doc.text(String(this.bordereau.inventaireReference || '-'), col2, y + 28);
+    doc.text(String(this.lignesEditables.length || 0), col3, y + 28);
+
+    y += 44;
+  };
+
+  drawHeader();
+  drawInfoBox();
 
   const head = [
     showTheo
@@ -178,8 +255,8 @@ printBordereauPdf(): void {
         row.codeArticle || '-',
         row.designation || '-',
         row.locatorCode || '-',
-        row.quantiteTheorique ?? '',
-        row.quantiteComptee ?? ''
+        formatQty(row.quantiteTheorique),
+        formatQty(row.quantiteComptee)
       ];
     }
 
@@ -188,7 +265,7 @@ printBordereauPdf(): void {
       row.codeArticle || '-',
       row.designation || '-',
       row.locatorCode || '-',
-      row.quantiteComptee ?? ''
+      formatQty(row.quantiteComptee)
     ];
   });
 
@@ -196,39 +273,100 @@ printBordereauPdf(): void {
     startY: y,
     head,
     body,
+    margin: { left: marginX, right: marginX },
+    theme: 'grid',
     styles: {
-      fontSize: 8.5,
-      cellPadding: 2,
+      font: 'helvetica',
+      fontSize: 8,
+      cellPadding: 2.2,
       valign: 'middle',
+      textColor: [30, 41, 59],
+      lineColor: [226, 232, 240],
+      lineWidth: 0.1,
       overflow: 'linebreak'
     },
     headStyles: {
-      fontStyle: 'bold'
+      fillColor: [15, 23, 42],
+      textColor: [255, 255, 255],
+      fontStyle: 'bold',
+      halign: 'center'
+    },
+    alternateRowStyles: {
+      fillColor: [248, 250, 252]
     },
     columnStyles: showTheo
       ? {
-          0: { cellWidth: 14 },
+          0: { cellWidth: 14, halign: 'center' },
           1: { cellWidth: 28 },
-          2: { cellWidth: 56 },
+          2: { cellWidth: 58 },
           3: { cellWidth: 28 },
-          4: { cellWidth: 24 },
-          5: { cellWidth: 30 }
+          4: { cellWidth: 26, halign: 'right' },
+          5: { cellWidth: 30, halign: 'right' }
         }
       : {
-          0: { cellWidth: 14 },
+          0: { cellWidth: 14, halign: 'center' },
           1: { cellWidth: 30 },
-          2: { cellWidth: 66 },
+          2: { cellWidth: 68 },
           3: { cellWidth: 30 },
-          4: { cellWidth: 36 }
-        }
+          4: { cellWidth: 36, halign: 'right' }
+        },
+    didDrawPage: () => {
+      const pageNumber = doc.getNumberOfPages();
+
+      doc.setFontSize(8);
+      doc.setTextColor(100, 116, 139);
+      doc.text(
+        `Page ${pageNumber}`,
+        pageWidth - marginX,
+        pageHeight - 8,
+        { align: 'right' }
+      );
+
+      doc.text(
+        'Document généré automatiquement par le système POS',
+        marginX,
+        pageHeight - 8
+      );
+    }
   });
 
-  const finalY = (doc as any).lastAutoTable.finalY || y + 10;
+  let finalY = (doc as any).lastAutoTable.finalY || y + 10;
 
-  doc.setFontSize(10);
-  doc.text('Agent de comptage : ____________________', marginLeft, finalY + 12);
-  doc.text('Contrôle : ____________________', marginLeft + 70, finalY + 12);
-  doc.text('Validation : ____________________', marginLeft + 130, finalY + 12);
+  if (finalY > 235) {
+    doc.addPage();
+    finalY = 25;
+  }
+
+  finalY += 12;
+
+  doc.setDrawColor(226, 232, 240);
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(marginX, finalY, pageWidth - marginX * 2, 36, 3, 3, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.setTextColor(15, 23, 42);
+
+  const sigY = finalY + 10;
+  const lineY = finalY + 25;
+
+  doc.text('Agent de comptage', marginX + 10, sigY);
+  doc.text('Contrôle', pageWidth / 2, sigY, { align: 'center' });
+  doc.text('Validation / Cachet', pageWidth - marginX - 10, sigY, { align: 'right' });
+
+  doc.setDrawColor(148, 163, 184);
+
+  doc.line(marginX + 10, lineY, marginX + 55, lineY);
+  doc.line(pageWidth / 2 - 23, lineY, pageWidth / 2 + 23, lineY);
+  doc.line(pageWidth - marginX - 58, lineY, pageWidth - marginX - 10, lineY);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(100, 116, 139);
+
+  doc.text('Nom & signature', marginX + 10, lineY + 5);
+  doc.text('Nom & signature', pageWidth / 2, lineY + 5, { align: 'center' });
+  doc.text('Signature & cachet', pageWidth - marginX - 10, lineY + 5, { align: 'right' });
 
   doc.save(`${this.bordereau.reference || 'bordereau-comptage'}.pdf`);
 }

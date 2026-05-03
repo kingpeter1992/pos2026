@@ -26,6 +26,8 @@ export class Sidebar implements OnInit {
   public items5: any[] = [];
   public items6: any[] = [];
   public items7: any[] = [];
+  public items8: any[] = [];
+
 
 
 
@@ -52,8 +54,9 @@ export class Sidebar implements OnInit {
     this.buildMenu3();
     this.buildMenu4()
     this.buildMenu5();
-     this.buildMenu6(); // ✅ important
-      this.buildMenu7();
+    this.buildMenu6(); // ✅ important
+    this.buildMenu7();
+    this.buildMenu8();
 
   }
 
@@ -84,7 +87,7 @@ export class Sidebar implements OnInit {
   }
 
   buildMenu3(): void {
-    this.items3 = this.menuPropertisGestionCaisse.map(menu => ({
+    this.items3 = this.menuPropertisGestionFour.map(menu => ({
       label: menu.titre,
       icon: menu.icon,
       items: menu.sousMenus?.map(sub => ({
@@ -152,6 +155,21 @@ buildMenu4(): void {
 
 
 
+  buildMenu8(): void {
+    this.items8 = this.menuPropertisGestionCaisse.map(menu => ({
+      label: menu.titre,
+      icon: menu.icon,
+      items: menu.sousMenus?.map(sub => ({
+        label: sub.titre,
+        icon: sub.icon,
+        routerLink: sub.url,      // <-- utilisation de routerLink
+        routerLinkActiveOptions: { exact: true }
+      })) || [],
+    }));
+  }
+
+
+
 
 public menuPropertisGestion: Array<Menu> = [
   {
@@ -163,16 +181,17 @@ public menuPropertisGestion: Array<Menu> = [
       { id: '1-1', titre: 'Tableau de bord POS', icon: 'pi pi-chart-line', url: '/admin/pos/dashboard' },
       { id: '1-2', titre: 'Nouvelle vente', icon: 'pi pi-shopping-bag', url: '/admin/pos/vente' },
       { id: '1-3', titre: 'Historique des ventes', icon: 'pi pi-history', url: '/admin/pos/historique-ventes' },
-      { id: '1-4', titre: 'Avoir vente', icon: 'pi pi-refresh', url: '/admin/pos/retours' },
+  //    { id: '1-4', titre: 'Avoir vente', icon: 'pi pi-refresh', url: '/admin/pos/retours' },
 //      { id: '1-5', titre: 'Tickets', icon: 'pi pi-print', url: '/admin/pos/tickets' },
       { id: '1-6', titre: 'Rapports de ventes', icon: 'pi pi-chart-bar', url: '/admin/pos/rapports' },
       //TarifVenteComponent
       { id: '1-7', titre: 'Tarifs de vente', icon: 'pi pi-tags', url: '/admin/pos/tarifs' },
-      { id: '1-8', titre: 'Règles tarifaires', icon: 'pi pi-list', url: '/admin/pos/tarif-regles' }
+      { id: '1-8', titre: 'Règles tarifaires', icon: 'pi pi-list', url: '/admin/pos/tarif-regles' },
 
      ]
   }
 ];
+
 
 public menuPropertisGestionNegoce: Array<Menu> = [
   {
@@ -191,7 +210,7 @@ public menuPropertisGestionNegoce: Array<Menu> = [
   }
 ];
 
-public menuPropertisGestionCaisse: Array<Menu> = [
+public menuPropertisGestionFour: Array<Menu> = [
   {
     id: '3',
     icon: 'pi pi-truck',
@@ -217,7 +236,6 @@ public menuPropertisGestionAchats: Array<Menu> = [
       { id: '4-3', titre: 'Réceptions', icon: 'pi pi-download', url: '/admin/achats/receptionslist' },
       { id: '4-5', titre: 'Suggestions de réapprovisionnement', icon: 'pi pi-lightbulb', url: '/admin/achats/suggestions' },
   //    { id: '4-6', titre: 'Analyse achats', icon: 'pi pi-chart-bar', url: '/admin/achats/analyse' },
-      { id: '4-7', titre: 'Prévisions achats', icon: 'pi pi-calendar', url: '/admin/achats/previsions' }
     ]
   }
 ];
@@ -231,9 +249,9 @@ public menuPropertisGestionInventaire: Array<Menu> = [
     url: '/admin/inventaire',
     sousMenus: [
       { id: '5-1', titre: 'Tableau de bord inventaire', icon: 'pi pi-chart-line', url: '/admin/inventaire/dashboard' },
-      { id: '5-2', titre: 'Inventaires', icon: 'pi pi-file', url: '/admin/inventaire/inventaires' },
-      { id: '5-3', titre: 'Détails inventaire', icon: 'pi pi-info-circle', url: '/admin/inventaire/details' },
-      { id: '5-5', titre: 'Bordereaux de comptage', icon: 'pi pi-list', url: '/admin/inventaire/bordereaux' },
+//      { id: '5-2', titre: 'Inventaires', icon: 'pi pi-file', url: '/admin/inventaire/inventaires' },
+  //    { id: '5-3', titre: 'Détails inventaire', icon: 'pi pi-info-circle', url: '/admin/inventaire/details' },
+    //  { id: '5-5', titre: 'Bordereaux de comptage', icon: 'pi pi-list', url: '/admin/inventaire/bordereaux' },
       { id: '5-6', titre: 'Variances inventaire', icon: 'pi pi-exclamation-triangle', url: '/admin/inventaire/variances' }
     ]
   }
@@ -249,12 +267,32 @@ public menuPropertisGestionStock: Array<Menu> = [
       { id: '5-1', titre: 'Stock actuel', icon: 'pi pi-inbox', url: '/admin/stock/actuel' },
       { id: '5-2', titre: 'Mouvements de stock', icon: 'pi pi-sort-alt', url: '/admin/stock/mouvements' },
       { id: '5-3', titre: 'Alertes stock', icon: 'pi pi-bell', url: '/admin/stock/alertes' },
+            { id: '4-7', titre: 'Provisions achats', icon: 'pi pi-calendar', url: '/admin/achats/previsions' }
+
   //    { id: '5-4', titre: 'Produits en rupture', icon: 'pi pi-exclamation-triangle', url: '/admin/stock/ruptures' },
    //   { id: '5-5', titre: 'Stock faible', icon: 'pi pi-filter', url: '/admin/stock/faible' },
   //    { id: '5-6', titre: 'Inventaire', icon: 'pi pi-check-square', url: '/admin/stock/inventaire' }
     ]
   }
 ];
+
+public menuPropertisGestionCaisse: Array<Menu> = [
+  {
+    id: '3',
+    icon: 'pi pi-wallet', // Gestion Caisse
+    titre: 'Gestion Caisse',
+    url: '/admin/caisse',
+    sousMenus: [
+      { id: '1', titre: 'Dashboard', icon: 'pi pi-chart-line', url: '/admin/caisse/CaisseDashboard' },
+      { id: '3', titre: 'Rapports', icon: 'pi pi-file', url: '/admin/caisse/repport' },
+      { id: '4', titre: 'Taux de change', icon: 'pi pi-money-bill', url: '/admin/caisse/taux-echange' }
+    ]
+  },
+];
+
+
+
+
 
 public menuPropertisGestionAdmin: Array<Menu> = [
   {
@@ -264,8 +302,8 @@ public menuPropertisGestionAdmin: Array<Menu> = [
     url: '/admin/settings',
     sousMenus: [
       { id: '6-1', titre: 'Utilisateurs', icon: 'pi pi-users', url: '/admin/users' },
-      { id: '6-2', titre: 'Rôles et permissions', icon: 'pi pi-shield', url: '/admin/roles' },
-      { id: '6-3', titre: 'Paramètres', icon: 'pi pi-sliders-h', url: '/admin/params' }
+//      { id: '6-2', titre: 'Rôles et permissions', icon: 'pi pi-shield', url: '/admin/roles' },
+//      { id: '6-3', titre: 'Paramètres', icon: 'pi pi-sliders-h', url: '/admin/params' }
     ]
   }
 ];
@@ -305,4 +343,11 @@ get canViewInventaire(): boolean {
 get canViewAdmin(): boolean {
   return this.showAdminBoard;
 }
+
+get canViewCaisse(): boolean {
+  return this.showAdminBoard || this.showfinanceBoard;
+}
+
+
+
 }

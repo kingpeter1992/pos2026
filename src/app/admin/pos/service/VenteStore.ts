@@ -1,8 +1,9 @@
 import { Injectable, computed, inject, signal } from "@angular/core";
 import { BehaviorSubject, catchError, finalize, map, Observable, of, shareReplay, tap } from "rxjs";
-import { VenteApiService, VentePayload, VenteResponse } from "./vente-api-service";
 import { ProduitService } from "../../produits/service/produit-service/produit-service";
 import { Toast } from "../../../shares/services/toast/toast";
+import { VenteApiService } from "./vente-api-service";
+import { VenteRequest, VenteResponse } from "../../produits/models/vente.model";
 
 @Injectable({
   providedIn: 'root'
@@ -427,7 +428,7 @@ loadProduits(force = false): Observable<any[]> {
   }
 
   // ===== SAVE =====
-save(payload: VentePayload): Observable<VenteResponse> {
+save(payload: VenteRequest): Observable<VenteResponse> {
   this._loading.set(true);
 
   return this.venteService.save(payload).pipe(
@@ -455,11 +456,6 @@ annulerVente(id: number, commentaire: string): Observable<any> {
     }),
     finalize(() => this._loading.set(false)),
     catchError((err) => {
-      console.error('Erreur retour vente :', err);
-       console.error('status :', err?.status);
-  console.error('message :', err?.message);
-  console.error('error :', err?.error);
-
   this.toastr.error(
     err?.error?.message || err?.message || 'Erreur lors du retour de vente.'
   );

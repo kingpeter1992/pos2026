@@ -1,292 +1,339 @@
 <div class="dialog-full-container">
+  <div class="erp-form-page">
+    <mat-card class="erp-shell">
 
+      <div class="erp-header dialog-header">
+        <div class="erp-header-left">
+          <div class="erp-header-icon">
+            <mat-icon>{{ isEditMode ? 'edit_note' : 'add_shopping_cart' }}</mat-icon>
+          </div>
 
-<div class="erp-form-page">
-  <mat-card class="erp-shell">
+          <div class="erp-header-text">
+            <div class="erp-breadcrumb">Achats / Commandes fournisseurs</div>
 
-    <!-- HEADER -->
-    <div class="erp-header dialog-header">
-      <div class="erp-header-left">
-        <div class="erp-header-icon">
-          <mat-icon>{{ isEditMode ? 'edit_note' : 'add_shopping_cart' }}</mat-icon>
+            <h1>
+              {{ isEditMode ? 'Modification commande fournisseur' : 'Nouvelle commande fournisseur' }}
+            </h1>
+
+            <p>
+              {{
+                isEditMode
+                  ? 'Modification d’une commande existante avec contrôle des lignes et montants'
+                  : 'Création d’une commande fournisseur avec gestion des produits et des montants'
+              }}
+            </p>
+          </div>
         </div>
 
-        <div class="erp-header-text">
-          <div class="erp-breadcrumb">Achats / Commandes fournisseurs</div>
-          <h1>
-            {{ isEditMode ? 'Modification commande fournisseur' : 'Nouvelle commande fournisseur' }}
-          </h1>
-          <p>
-            {{
-            isEditMode
-            ? 'Modification d’une commande existante avec contrôle des lignes et montants'
-            : 'Création d’une commande fournisseur avec gestion des produits et des montants'
-            }}
-          </p>
+        <div class="erp-header-actions">
+          <button mat-stroked-button type="button" (click)="cancel()">
+            <mat-icon>arrow_back</mat-icon>
+            Retour
+          </button>
+
+          <button
+            mat-flat-button
+            color="primary"
+            type="button"
+            (click)="enregistrer()"
+            [disabled]="loading || form.invalid">
+
+            <mat-icon>{{ isEditMode ? 'save_as' : 'save' }}</mat-icon>
+            {{ loading ? 'Traitement...' : (isEditMode ? 'Mettre à jour' : 'Enregistrer') }}
+          </button>
         </div>
       </div>
 
-      <div class="erp-header-actions">
-        <button mat-stroked-button (click)="cancel()">
-          <mat-icon>arrow_back</mat-icon>
-          Retour
-        </button>
+      <mat-card-content class="erp-content dialog-body">
+        <form [formGroup]="form" class="erp-form-layout">
 
-        <button mat-flat-button color="primary"
-                (click)="enregistrer()"
-                [disabled]="loading || form.invalid">
-          <mat-icon>{{ isEditMode ? 'save_as' : 'save' }}</mat-icon>
-          {{ loading ? 'Traitement...' : (isEditMode ? 'Mettre à jour' : 'Enregistrer') }}
-        </button>
-      </div>
-    </div>
+          <div class="erp-main-column">
 
-    <mat-card-content class="erp-content dialog-body">
-      <form [formGroup]="form" class="erp-form-layout">
+            <section class="erp-section-card info-section">
+              <div class="erp-section-head">
+                <div class="erp-section-title">
+                  <div class="erp-icon-box blue">
+                    <mat-icon>business_center</mat-icon>
+                  </div>
 
-        <!-- ================= MAIN ================= -->
-        <div class="erp-main-column">
-
-          <!-- ================= INFOS ================= -->
-          <section class="erp-section-card info-section">
-            <div class="erp-section-head">
-              <div class="erp-section-title">
-                <div class="erp-icon-box blue">
-                  <mat-icon>business_center</mat-icon>
-                </div>
-                <div>
-                  <h3>Informations générales</h3>
-                  <span>Données principales de la commande</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="erp-grid erp-grid-4">
-
-              <!-- FOURNISSEUR -->
-              <mat-form-field appearance="outline" class="span-2">
-                <mat-label>Fournisseur</mat-label>
-                <input matInput formControlName="fournisseur"
-                       [matAutocomplete]="autoFournisseur">
-
-                <mat-autocomplete #autoFournisseur="matAutocomplete"
-                                  [displayWith]="displayFournisseur.bind(this)"
-                                  (optionSelected)="onFournisseurSelected($event.option.value)">
-                  <mat-option *ngFor="let f of filteredFournisseurs$ | async" [value]="f">
-                    <div class="option-title">{{ f.nom }}</div>
-                    <div class="option-subtitle">
-                      {{ f.telephone || '—' }} • {{ f.email || '—' }}
-                    </div>
-                  </mat-option>
-                </mat-autocomplete>
-              </mat-form-field>
-
-              <!-- REFERENCE -->
-              <mat-form-field appearance="outline">
-                <mat-label>Référence</mat-label>
-                <input matInput formControlName="reference">
-                <mat-icon matSuffix>badge</mat-icon>
-              </mat-form-field>
-
-              <!-- DEVISE -->
-              <mat-form-field appearance="outline">
-                <mat-label>Devise</mat-label>
-                <mat-select formControlName="devise">
-                  <mat-option value="USD">USD</mat-option>
-                  <mat-option value="CDF">CDF</mat-option>
-                </mat-select>
-              </mat-form-field>
-
-              <!-- TAUX -->
-              <mat-form-field appearance="outline">
-                <mat-label>Taux</mat-label>
-                <input matInput type="number" formControlName="taux">
-                <mat-icon matSuffix>currency_exchange</mat-icon>
-              </mat-form-field>
-
-              <!-- DATE COMMANDE -->
-              <mat-form-field appearance="outline">
-                <mat-label>Date commande</mat-label>
-                <input matInput type="date" formControlName="dateCommande">
-              </mat-form-field>
-
-              <!-- DATE LIVRAISON -->
-              <mat-form-field appearance="outline">
-                <mat-label>Date livraison prévue</mat-label>
-                <input matInput type="date" formControlName="dateLivraisonPrevue">
-              </mat-form-field>
-
-            </div>
-
-            <!-- OBSERVATION -->
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Observation</mat-label>
-              <textarea matInput rows="3" formControlName="observation"></textarea>
-            </mat-form-field>
-          </section>
-
-          <!-- ================= LIGNES ================= -->
-          <section class="erp-section-card lines-section">
-
-            <div class="erp-section-head compact">
-              <div class="erp-section-title">
-                <div class="erp-icon-box emerald">
-                  <mat-icon>inventory_2</mat-icon>
-                </div>
-                <div>
-                  <h3>Lignes de commande</h3>
-                  <span>Produits, quantités, prix et remises</span>
+                  <div>
+                    <h3>Informations générales</h3>
+                    <span>Données principales de la commande</span>
+                  </div>
                 </div>
               </div>
 
-              <button mat-flat-button color="primary" (click)="ajouterLigne()">
-                <mat-icon>add</mat-icon>
-                Ajouter
-              </button>
-            </div>
+              <div class="erp-grid erp-grid-4">
 
-            <div class="erp-lines-container">
+                <mat-form-field appearance="outline" class="span-2">
+                  <mat-label>Fournisseur</mat-label>
 
-              <!-- HEADER TABLE -->
-              <div class="erp-lines-header">
-                <span>Produit</span>
-                <span>Qté</span>
-                <span>Prix</span>
-                <span>Remise</span>
-                <span>Total</span>
+                  <input
+                    matInput
+                    formControlName="fournisseur"
+                    [matAutocomplete]="autoFournisseur">
+
+                  <mat-autocomplete
+                    #autoFournisseur="matAutocomplete"
+                    [displayWith]="displayFournisseur.bind(this)"
+                    (optionSelected)="onFournisseurSelected($event.option.value)">
+
+                    <mat-option
+                      *ngFor="let f of filteredFournisseurs$ | async"
+                      [value]="f">
+
+                      <div class="option-title">{{ f.nom }}</div>
+
+                      <div class="option-subtitle">
+                        {{ f.telephone || '—' }} • {{ f.email || '—' }}
+                      </div>
+                    </mat-option>
+                  </mat-autocomplete>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Référence</mat-label>
+                  <input matInput formControlName="reference">
+                  <mat-icon matSuffix>badge</mat-icon>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Devise principale</mat-label>
+                  <mat-select formControlName="devise">
+                    <mat-option value="CDF">FC</mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Taux actif</mat-label>
+                  <input matInput type="number" formControlName="taux">
+                  <mat-icon matSuffix>currency_exchange</mat-icon>
+                  <mat-hint *ngIf="loadingTaux">Chargement du taux...</mat-hint>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Date commande</mat-label>
+                  <input matInput type="date" formControlName="dateCommande">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Date livraison prévue</mat-label>
+                  <input matInput type="date" formControlName="dateLivraisonPrevue">
+                </mat-form-field>
+
               </div>
 
-              <!-- LIGNES -->
-              <div formArrayName="lignes" class="erp-lines-grid">
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Observation</mat-label>
+                <textarea matInput rows="3" formControlName="observation"></textarea>
+              </mat-form-field>
+            </section>
 
-                <div class="erp-line-card"
-                     *ngFor="let ligne of lignes.controls; let i = index; trackBy: trackByIndex"
-                     [formGroupName]="i">
+            <section class="erp-section-card lines-section">
 
-                  <!-- TOP -->
-                  <div class="erp-line-top">
-                    <div class="line-index">{{ i + 1 }}</div>
-
-                    <div class="erp-line-actions">
-                      <button mat-icon-button color="primary"
-                              (click)="scannerProduit(i)">
-                        <mat-icon>qr_code_scanner</mat-icon>
-                      </button>
-
-                      <button mat-icon-button color="warn"
-                              (click)="supprimerLigne(i)"
-                              [disabled]="lignes.length === 1">
-                        <mat-icon>delete</mat-icon>
-                      </button>
-                    </div>
+              <div class="erp-section-head compact">
+                <div class="erp-section-title">
+                  <div class="erp-icon-box emerald">
+                    <mat-icon>inventory_2</mat-icon>
                   </div>
 
-                  <!-- GRID -->
-                  <div class="erp-grid erp-grid-4">
-
-                    <!-- PRODUIT -->
-                    <mat-form-field appearance="outline" class="span-2">
-                      <mat-label>ID produit</mat-label>
-                      <input matInput type="number"
-                             formControlName="produitId"
-                             (blur)="onProduitIdBlur(i)">
-
-                      <button mat-icon-button matSuffix
-                              (click)="ouvrirSelectionProduit(i)">
-                        <mat-icon>search</mat-icon>
-                      </button>
-                    </mat-form-field>
-
-                    <mat-form-field appearance="outline">
-                      <mat-label>Quantité</mat-label>
-                      <input matInput type="number" formControlName="quantite">
-                    </mat-form-field>
-
-                    <mat-form-field appearance="outline">
-                      <mat-label>Prix</mat-label>
-                      <input matInput type="number" formControlName="prixUnitaire">
-                    </mat-form-field>
-
-                    <mat-form-field appearance="outline">
-                      <mat-label>Remise</mat-label>
-                      <input matInput type="number" formControlName="remise">
-                    </mat-form-field>
+                  <div>
+                    <h3>Lignes de commande</h3>
+                    <span>Produits, quantités, prix FC et conversion USD</span>
                   </div>
-
-                  <!-- INFO PRODUIT -->
-                  <div class="erp-product-info" *ngIf="ligne.get('produitNom')?.value">
-                    <span>{{ ligne.get('produitNom')?.value }}</span>
-                    <span>{{ ligne.get('produitCategorie')?.value }}</span>
-                    <span>{{ ligne.get('codeBarres')?.value }}</span>
-                  </div>
-
-                  <!-- TOTAL -->
-                  <div class="erp-line-footer">
-                    <span>Total ligne</span>
-                    <strong>{{ getSousTotal(i) | number:'1.2-2' }}</strong>
-                  </div>
-
                 </div>
-              </div>
 
-              <!-- ACTIONS -->
-              <div class="erp-lines-footer-actions">
-                <button mat-stroked-button (click)="exportLignesToExcel()">
-                  <mat-icon>table_view</mat-icon>
-                  Excel
+                <button mat-flat-button color="primary" type="button" (click)="ajouterLigne()">
+                  <mat-icon>add</mat-icon>
+                  Ajouter
                 </button>
               </div>
 
-            </div>
-          </section>
+              <div class="erp-lines-container">
 
-          <!-- ALERT -->
-          <div *ngIf="successMessage" class="erp-alert success">
-            {{ successMessage }}
+                <div class="erp-lines-table-wrap">
+                  <table class="erp-lines-table">
+
+                    <thead>
+                      <tr>
+                        <th style="width: 50px;">#</th>
+                        <th>Produit</th>
+                        <th style="width: 120px;">Qté</th>
+                        <th style="width: 160px;">Prix Unit. FC</th>
+                        <th style="width: 140px;">Remise FC</th>
+                        <th style="width: 180px;">Total</th>
+                        <th style="width: 110px;">Actions</th>
+                      </tr>
+                    </thead>
+
+                    <tbody formArrayName="lignes">
+
+                      <tr
+                        *ngFor="let ligne of lignes.controls; let i = index; trackBy: trackByIndex"
+                        [formGroupName]="i">
+
+                        <td class="line-number">
+                          {{ i + 1 }}
+                        </td>
+
+                        <td class="produit-cell">
+                          <div class="produit-select-row">
+                            <mat-form-field appearance="outline" class="product-id-field">
+                              <mat-label>ID produit</mat-label>
+
+                              <input
+                                matInput
+                                type="number"
+                                formControlName="produitId"
+                                (blur)="onProduitIdBlur(i)">
+
+                              <button
+                                mat-icon-button
+                                matSuffix
+                                type="button"
+                                matTooltip="Sélectionner produit"
+                                (click)="ouvrirSelectionProduit(i)">
+                                <mat-icon>search</mat-icon>
+                              </button>
+                            </mat-form-field>
+
+                            <button
+                              mat-icon-button
+                              color="primary"
+                              type="button"
+                              matTooltip="Scanner produit"
+                              (click)="scannerProduit(i)">
+                              <mat-icon>qr_code_scanner</mat-icon>
+                            </button>
+                          </div>
+
+                          <div class="product-mini-info" *ngIf="ligne.get('produitNom')?.value">
+                            <strong>{{ ligne.get('produitNom')?.value }}</strong>
+                            <span>{{ ligne.get('produitCategorie')?.value || 'Sans catégorie' }}</span>
+                            <small>{{ ligne.get('codeBarres')?.value || 'Sans code-barres' }}</small>
+                          </div>
+                        </td>
+
+                        <td>
+                          <mat-form-field appearance="outline" class="line-input">
+                            <input matInput type="number" formControlName="quantite">
+                          </mat-form-field>
+                        </td>
+
+                        <td>
+                          <mat-form-field appearance="outline" class="line-input">
+                            <input matInput type="number" formControlName="prixUnitaire">
+                            <span matTextSuffix>FC</span>
+                          </mat-form-field>
+                        </td>
+
+                        <td>
+                          <mat-form-field appearance="outline" class="line-input">
+                            <input matInput type="number" formControlName="remise">
+                            <span matTextSuffix>FC</span>
+                          </mat-form-field>
+                        </td>
+
+                        <td class="total-cell">
+                          <div class="money-line">
+                            <strong>
+                              {{ formatFc(ligne.get('montantLigneFc')?.value) }} FC
+                            </strong>
+
+                            <small>
+                              ≈ {{ formatUsd(ligne.get('montantLigneUsd')?.value) }} USD
+                            </small>
+                          </div>
+                        </td>
+
+                        <td class="actions-cell">
+                          <button
+                            mat-icon-button
+                            color="warn"
+                            type="button"
+                            matTooltip="Supprimer"
+                            (click)="supprimerLigne(i)"
+                            [disabled]="lignes.length === 1">
+                            <mat-icon>delete</mat-icon>
+                          </button>
+                        </td>
+
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <div class="erp-lines-footer-actions">
+                  <button mat-stroked-button type="button" (click)="exportLignesToExcel()">
+                    <mat-icon>table_view</mat-icon>
+                    Excel
+                  </button>
+                </div>
+
+              </div>
+            </section>
+
+            <div *ngIf="successMessage" class="erp-alert success">
+              {{ successMessage }}
+            </div>
+
+            <div *ngIf="errorMessage" class="erp-alert error">
+              {{ errorMessage }}
+            </div>
+
           </div>
 
-          <div *ngIf="errorMessage" class="erp-alert error">
-            {{ errorMessage }}
-          </div>
+          <aside class="erp-side-column">
+            <mat-card class="erp-side-card">
 
-        </div>
+              <h3>Résumé</h3>
 
-        <!-- ================= SIDE ================= -->
-        <aside class="erp-side-column">
-          <mat-card class="erp-side-card">
+              <div class="summary-item">
+                <span>Mode</span>
+                <strong>{{ isEditMode ? 'Modification' : 'Création' }}</strong>
+              </div>
 
-            <h3>Résumé</h3>
+              <div class="summary-item">
+                <span>Lignes</span>
+                <strong>{{ lignes.length }}</strong>
+              </div>
 
-            <div class="summary-item">
-              <span>Mode</span>
-              <strong>{{ isEditMode ? 'Modification' : 'Création' }}</strong>
-            </div>
+              <div class="summary-item">
+                <span>Devise principale</span>
+                <strong>FC</strong>
+              </div>
 
-            <div class="summary-item">
-              <span>Lignes</span>
-              <strong>{{ lignes.length }}</strong>
-            </div>
+              <div class="summary-money-box">
 
-            <div class="summary-item">
-              <span>Devise</span>
-              <strong>{{ form.get('devise')?.value }}</strong>
-            </div>
+                <div class="money-main">
+                  {{ formatFc(calculMontantFc()) }} FC
+                </div>
 
-            <div class="summary-total">
-              {{ montantTotal | number:'1.2-2' }}
-            </div>
+                <div class="money-sub" *ngIf="form.get('taux')?.value">
+                  ≈ {{ formatUsd(calculMontantUsd()) }} USD
+                </div>
 
-            <button mat-flat-button color="primary"
-                    (click)="enregistrer()"
-                    [disabled]="loading || form.invalid">
-              {{ isEditMode ? 'Mettre à jour' : 'Enregistrer' }}
-            </button>
+                <div class="money-rate">
+                  Taux utilisé :
+                  {{ formatFc(form.get('taux')?.value) }} FC
+                </div>
 
-          </mat-card>
-        </aside>
+              </div>
 
-      </form>
-    </mat-card-content>
-  </mat-card>
-</div>
+              <button
+                mat-flat-button
+                color="primary"
+                type="button"
+                (click)="enregistrer()"
+                [disabled]="loading || form.invalid">
+                {{ isEditMode ? 'Mettre à jour' : 'Enregistrer' }}
+              </button>
+
+            </mat-card>
+          </aside>
+
+        </form>
+      </mat-card-content>
+    </mat-card>
+  </div>
 </div>

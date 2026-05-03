@@ -1,32 +1,32 @@
 import {
   Tooltip,
   TooltipModule
-} from "./chunk-BTBIY4LS.js";
-import "./chunk-KGGKRTM5.js";
+} from "./chunk-HAQMNYPT.js";
+import "./chunk-7UCKY64M.js";
 import {
   MotionDirective,
   MotionModule
-} from "./chunk-F3PLYW4L.js";
-import "./chunk-FKXCHV6Q.js";
+} from "./chunk-ZPJDKWWE.js";
+import "./chunk-JTVFCTJC.js";
 import {
   ChevronDownIcon,
   ChevronRightIcon
-} from "./chunk-ANNUHNKV.js";
+} from "./chunk-LBPOTBPX.js";
 import {
   BaseComponent,
   PARENT_INSTANCE
-} from "./chunk-QHHCEJQD.js";
-import {
-  Bind,
-  BindModule
-} from "./chunk-N2RGNCB4.js";
+} from "./chunk-NDIQFAFR.js";
 import {
   BaseStyle
-} from "./chunk-B4O47KEV.js";
+} from "./chunk-6G44MAVM.js";
 import {
   PrimeTemplate,
   SharedModule
-} from "./chunk-3RIOP4RR.js";
+} from "./chunk-BBHGKBG3.js";
+import {
+  Bind,
+  BindModule
+} from "./chunk-7B2URI3E.js";
 import {
   J2 as J,
   Q,
@@ -43,18 +43,18 @@ import {
   RouterLink,
   RouterLinkActive,
   RouterModule
-} from "./chunk-EPTZPHIQ.js";
-import "./chunk-V6OZAMSC.js";
-import "./chunk-FS5LNX2V.js";
-import "./chunk-Q7OE62FZ.js";
+} from "./chunk-UC37G54Z.js";
+import "./chunk-XJFQEXGG.js";
+import "./chunk-OVBDVDNA.js";
+import "./chunk-4GEMBC34.js";
 import {
   CommonModule,
   NgForOf,
   NgIf,
   NgStyle,
   NgTemplateOutlet
-} from "./chunk-PWYZQKDD.js";
-import "./chunk-RB3D7EIV.js";
+} from "./chunk-NWGCBTQU.js";
+import "./chunk-DIYC4QG4.js";
 import {
   ChangeDetectionStrategy,
   Component,
@@ -104,7 +104,7 @@ import {
   ɵɵtext,
   ɵɵtextInterpolate,
   ɵɵviewQuery
-} from "./chunk-BTZAHDHR.js";
+} from "./chunk-FKCUFCP6.js";
 import {
   EventEmitter,
   InjectionToken,
@@ -117,13 +117,13 @@ import {
   ɵɵnamespaceSVG,
   ɵɵresetView,
   ɵɵrestoreView
-} from "./chunk-7KWL4VMN.js";
-import "./chunk-HWYXSU2G.js";
+} from "./chunk-KDX5GZJX.js";
 import "./chunk-JRFR6BLO.js";
+import "./chunk-HWYXSU2G.js";
 import "./chunk-MARUHEWW.js";
 import {
   __spreadValues
-} from "./chunk-KWSTWQNB.js";
+} from "./chunk-7WUTQBRG.js";
 
 // node_modules/@primeuix/styles/dist/panelmenu/index.mjs
 var style = "\n    .p-panelmenu {\n        display: flex;\n        flex-direction: column;\n        gap: dt('panelmenu.gap');\n    }\n\n    .p-panelmenu-panel {\n        background: dt('panelmenu.panel.background');\n        border-width: dt('panelmenu.panel.border.width');\n        border-style: solid;\n        border-color: dt('panelmenu.panel.border.color');\n        color: dt('panelmenu.panel.color');\n        border-radius: dt('panelmenu.panel.border.radius');\n        padding: dt('panelmenu.panel.padding');\n    }\n\n    .p-panelmenu-panel:first-child {\n        border-width: dt('panelmenu.panel.first.border.width');\n        border-start-start-radius: dt('panelmenu.panel.first.top.border.radius');\n        border-start-end-radius: dt('panelmenu.panel.first.top.border.radius');\n    }\n\n    .p-panelmenu-panel:last-child {\n        border-width: dt('panelmenu.panel.last.border.width');\n        border-end-start-radius: dt('panelmenu.panel.last.bottom.border.radius');\n        border-end-end-radius: dt('panelmenu.panel.last.bottom.border.radius');\n    }\n\n    .p-panelmenu-header {\n        outline: 0 none;\n    }\n\n    .p-panelmenu-header-content {\n        border-radius: dt('panelmenu.item.border.radius');\n        transition:\n            background dt('panelmenu.transition.duration'),\n            color dt('panelmenu.transition.duration'),\n            outline-color dt('panelmenu.transition.duration'),\n            box-shadow dt('panelmenu.transition.duration');\n        outline-color: transparent;\n        color: dt('panelmenu.item.color');\n    }\n\n    .p-panelmenu-header-link {\n        display: flex;\n        gap: dt('panelmenu.item.gap');\n        padding: dt('panelmenu.item.padding');\n        align-items: center;\n        user-select: none;\n        cursor: pointer;\n        position: relative;\n        text-decoration: none;\n        color: inherit;\n    }\n\n    .p-panelmenu-header-icon,\n    .p-panelmenu-item-icon {\n        color: dt('panelmenu.item.icon.color');\n    }\n\n    .p-panelmenu-submenu-icon {\n        color: dt('panelmenu.submenu.icon.color');\n    }\n\n    .p-panelmenu-submenu-icon:dir(rtl) {\n        transform: rotate(180deg);\n    }\n\n    .p-panelmenu-header:not(.p-disabled):focus-visible .p-panelmenu-header-content {\n        background: dt('panelmenu.item.focus.background');\n        color: dt('panelmenu.item.focus.color');\n    }\n\n    .p-panelmenu-header:not(.p-disabled):focus-visible .p-panelmenu-header-content .p-panelmenu-header-icon {\n        color: dt('panelmenu.item.icon.focus.color');\n    }\n\n    .p-panelmenu-header:not(.p-disabled):focus-visible .p-panelmenu-header-content .p-panelmenu-submenu-icon {\n        color: dt('panelmenu.submenu.icon.focus.color');\n    }\n\n    .p-panelmenu-header:not(.p-disabled) .p-panelmenu-header-content:hover {\n        background: dt('panelmenu.item.focus.background');\n        color: dt('panelmenu.item.focus.color');\n    }\n\n    .p-panelmenu-header:not(.p-disabled) .p-panelmenu-header-content:hover .p-panelmenu-header-icon {\n        color: dt('panelmenu.item.icon.focus.color');\n    }\n\n    .p-panelmenu-header:not(.p-disabled) .p-panelmenu-header-content:hover .p-panelmenu-submenu-icon {\n        color: dt('panelmenu.submenu.icon.focus.color');\n    }\n\n    .p-panelmenu-submenu {\n        margin: 0;\n        padding: 0 0 0 dt('panelmenu.submenu.indent');\n        outline: 0;\n        list-style: none;\n    }\n\n    .p-panelmenu-submenu:dir(rtl) {\n        padding: 0 dt('panelmenu.submenu.indent') 0 0;\n    }\n\n    .p-panelmenu-item-link {\n        display: flex;\n        gap: dt('panelmenu.item.gap');\n        padding: dt('panelmenu.item.padding');\n        align-items: center;\n        user-select: none;\n        cursor: pointer;\n        text-decoration: none;\n        color: inherit;\n        position: relative;\n        overflow: hidden;\n    }\n\n    .p-panelmenu-item-label {\n        line-height: 1;\n    }\n\n    .p-panelmenu-item-content {\n        border-radius: dt('panelmenu.item.border.radius');\n        transition:\n            background dt('panelmenu.transition.duration'),\n            color dt('panelmenu.transition.duration'),\n            outline-color dt('panelmenu.transition.duration'),\n            box-shadow dt('panelmenu.transition.duration');\n        color: dt('panelmenu.item.color');\n        outline-color: transparent;\n    }\n\n    .p-panelmenu-item.p-focus > .p-panelmenu-item-content {\n        background: dt('panelmenu.item.focus.background');\n        color: dt('panelmenu.item.focus.color');\n    }\n\n    .p-panelmenu-item.p-focus > .p-panelmenu-item-content .p-panelmenu-item-icon {\n        color: dt('panelmenu.item.focus.color');\n    }\n\n    .p-panelmenu-item.p-focus > .p-panelmenu-item-content .p-panelmenu-submenu-icon {\n        color: dt('panelmenu.submenu.icon.focus.color');\n    }\n\n    .p-panelmenu-item:not(.p-disabled) > .p-panelmenu-item-content:hover {\n        background: dt('panelmenu.item.focus.background');\n        color: dt('panelmenu.item.focus.color');\n    }\n\n    .p-panelmenu-item:not(.p-disabled) > .p-panelmenu-item-content:hover .p-panelmenu-item-icon {\n        color: dt('panelmenu.item.icon.focus.color');\n    }\n\n    .p-panelmenu-item:not(.p-disabled) > .p-panelmenu-item-content:hover .p-panelmenu-submenu-icon {\n        color: dt('panelmenu.submenu.icon.focus.color');\n    }\n\n    .p-panelmenu-content-container {\n        display: grid;\n        grid-template-rows: 1fr;\n    }\n\n    .p-panelmenu-content-wrapper {\n        min-height: 0;\n    }\n";

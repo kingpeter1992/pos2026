@@ -1,4 +1,10 @@
 export interface StockProduitView {
+  tauxChangeUtilise?: number;
+  pmpFc?: number;
+  pmpUsd?: number;
+  valeurStockFc?: number;
+  valeurStockUsd?: number;
+
   stockId: number;
   produitId: number;
   nomProduit: string;
@@ -35,12 +41,26 @@ export interface ProvisionStockResponse {
   codeBarres: string;
   produitNom: string;
   categorieNom: string;
+
   quantiteDisponible: number;
+
+  tauxChangeUtilise: number;
+
   pmp: number;
+  pmpFc: number;
+  pmpUsd: number;
+
   valeurStock: number;
+  valeurStockFc: number;
+  valeurStockUsd: number;
+
   joursSansVente: number;
   tauxProvision: number;
+
   montantProvision: number;
+  montantProvisionFc: number;
+  montantProvisionUsd: number;
+
   niveauRisque: 'FAIBLE' | 'MOYEN' | 'ELEVE' | 'TOTAL';
 }
 

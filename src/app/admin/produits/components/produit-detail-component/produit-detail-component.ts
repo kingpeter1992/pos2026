@@ -3,6 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ProduitStoreService } from '../../core/produit-store.service';
 import { ProduitResponse } from '../../models/produit.model';
 import { ProduitService } from '../../service/produit-service/produit-service';
+import { CaisseStoreService } from '../../../caisse/services/CaisseServiceStore';
 
 @Component({
   selector: 'app-produit-detail-component',
@@ -10,22 +11,27 @@ import { ProduitService } from '../../service/produit-service/produit-service';
   styleUrl: './produit-detail-component.css',
   standalone: false,
 })
+
 export class ProduitDetailComponent implements OnInit {
   produit?: ProduitResponse;
   loading = false;
   imageActive?: string | null;
 
+  dernierTaux = 0;
+  loadingTaux = false;
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private produitStore: ProduitStoreService,
-    private produitService: ProduitService
+    private produitService: ProduitService,
+    private caisseStore: CaisseStoreService
   ) {}
 
   ngOnInit(): void {
+    this.chargerDernierTauxActif();
     const id = Number(this.route.snapshot.paramMap.get('id'));
     if (!id) return;
-
     const local = this.produitStore.value.find(p => p.id === id);
     if (local) {
       this.produit = local;
@@ -44,6 +50,44 @@ export class ProduitDetailComponent implements OnInit {
         this.loading = false;
       }
     });
+  }
+
+  private chargerDernierTauxActif(): void {
+    this.loadingTaux = true;
+
+    this.caisseStore.loadTauxActif().subscribe({
+      next: (taux) => {
+        this.dernierTaux = Number(taux?.taux ?? 0);
+        this.loadingTaux = false;
+      },
+      error: (err) => {
+        console.error(err);
+        this.dernierTaux = 0;
+        this.loadingTaux = false;
+      }
+    });
+  }
+
+  convertirFcEnUsd(montantFc: number): number {
+    if (!montantFc || !this.dernierTaux || this.dernierTaux <= 0) {
+      return 0;
+    }
+
+    return +(Number(montantFc) / this.dernierTaux).toFixed(2);
+  }
+
+  formatFc(value: number): string {
+    return new Intl.NumberFormat('fr-FR', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(Number(value || 0));
+  }
+
+  formatUsd(value: number): string {
+    return new Intl.NumberFormat('fr-FR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(Number(value || 0));
   }
 
   getImagePrincipale(produit: ProduitResponse): string | null {

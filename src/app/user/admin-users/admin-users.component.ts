@@ -127,4 +127,15 @@ saveRoles(user: any) {
     complete: () => (this.savingRolesRow[user.id] = false),
   });
 }
+get totalUsers(): number {
+  return this.users.length;
+}
+
+get activeUsers(): number {
+  return this.users.filter(u => u.active).length;
+}
+
+get blockedUsers(): number {
+  return this.users.filter(u => !u.active).length;
+}
 }

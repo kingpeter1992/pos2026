@@ -1,0 +1,427 @@
+<div class="cash-page">
+
+  <div class="hero">
+    <div class="hero-left">
+      <div class="hero-icon">
+        <mat-icon>account_balance_wallet</mat-icon>
+      </div>
+
+      <div>
+        <div class="breadcrumb">POS / Finance / Caisse</div>
+        <h1>Tableau de bord caisse</h1>
+        <p>Ouverture, encaissement, décaissement, suivi des soldes et historique journalier.</p>
+      </div>
+    </div>
+
+    <div class="hero-actions">
+      <button mat-stroked-button type="button" (click)="refresh()">
+        <mat-icon>refresh</mat-icon>
+        Actualiser
+      </button>
+
+      <button mat-raised-button color="primary" type="button"
+              *ngIf="!session"
+              (click)="openOuvrirDialog()">
+        <mat-icon>lock_open</mat-icon>
+        Ouvrir caisse
+      </button>
+
+      <button mat-raised-button color="warn" type="button"
+              *ngIf="session"
+              (click)="openCloturerDialog()">
+        <mat-icon>lock</mat-icon>
+        Clôturer caisse
+      </button>
+    </div>
+  </div>
+
+  <div class="session-strip" [class.closed]="!session">
+    <div class="session-left">
+      <div class="status-dot"></div>
+
+      <div>
+        <strong>{{ session ? 'Caisse ouverte' : 'Caisse fermée' }}</strong>
+
+        <span>
+          {{ session ? ('Ouverte le ' + (session.dateOuverture | date:'dd/MM/yyyy HH:mm')) : 'Aucune session active' }}
+        </span>
+      </div>
+    </div>
+
+    <div class="mini-card">
+  <span>Taux actif</span>
+  <strong>{{ tauxChange | number:'1.0-2' }}</strong>
+</div>
+    <div class="session-right">
+      <div class="mini-card">
+        <span>Session</span>
+        <strong>{{ session?.id || '—' }}</strong>
+      </div>
+
+      <div class="mini-card">
+        <span>Date jour</span>
+        <strong>{{ session?.dateJour ? (session?.dateJour | date:'dd/MM/yyyy') : '—' }}</strong>
+      </div>
+
+      <div class="mini-card">
+        <span>Taux</span>
+        <strong>{{ tauxChange | number:'1.0-2' }}</strong>
+      </div>
+    </div>
+  </div>
+
+  <div class="kpi-grid">
+
+    <mat-card class="kpi primary">
+      <div class="kpi-top">
+        <span>Solde USD</span>
+        <mat-icon>attach_money</mat-icon>
+      </div>
+
+      <h2>{{ soldeUSD | number:'1.2-2' }} USD</h2>
+
+      <p>
+        Enc : {{ totalEncUSD | number:'1.2-2' }}
+        • Déc : {{ totalDecUSD | number:'1.2-2' }}
+      </p>
+    </mat-card>
+
+    <mat-card class="kpi dark">
+      <div class="kpi-top">
+        <span>Solde CDF</span>
+        <mat-icon>payments</mat-icon>
+      </div>
+
+      <h2>{{ soldeCDF | number:'1.0-0' }} CDF</h2>
+
+      <p>
+        Enc : {{ totalEncCDF | number:'1.0-0' }}
+        • Déc : {{ totalDecCDF | number:'1.0-0' }}
+      </p>
+    </mat-card>
+
+    <mat-card class="kpi">
+      <div class="kpi-top">
+        <span>Transactions</span>
+        <mat-icon>receipt_long</mat-icon>
+      </div>
+
+      <h2>{{ historique.length }}</h2>
+
+      <p>Opérations enregistrées aujourd’hui</p>
+    </mat-card>
+
+    <mat-card class="kpi">
+      <div class="kpi-top">
+        <span>Solde net jour</span>
+        <mat-icon>trending_up</mat-icon>
+      </div>
+
+      <h2>{{ totalNetUSD | number:'1.2-2' }} USD</h2>
+
+      <p>{{ totalNetCDF | number:'1.0-0' }} CDF</p>
+    </mat-card>
+
+  </div>
+
+  <div class="main-grid">
+
+    <mat-card class="operation-panel">
+
+      <div class="panel-head">
+        <div>
+          <h2>Nouvelle opération</h2>
+          <p>Entrée ou sortie simple de caisse</p>
+        </div>
+
+        <span class="session-chip" [class.off]="!session">
+          <mat-icon>{{ session ? 'toggle_on' : 'toggle_off' }}</mat-icon>
+          {{ session ? 'Active' : 'Inactive' }}
+        </span>
+      </div>
+
+      <form [formGroup]="opForm" (ngSubmit)="submitOperation()" class="operation-form">
+
+        <div class="form-row">
+          <mat-form-field appearance="outline">
+            <mat-label>Type opération</mat-label>
+
+            <mat-select formControlName="type">
+              <mat-option *ngFor="let t of types" [value]="t">
+                {{ t === 'ENCAISSEMENT' ? 'Encaissement (+)' : 'Décaissement (-)' }}
+              </mat-option>
+            </mat-select>
+
+            <mat-error>Type obligatoire</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Devise</mat-label>
+
+            <mat-select formControlName="devise">
+              <mat-option *ngFor="let d of devises" [value]="d">
+                {{ d }}
+              </mat-option>
+            </mat-select>
+
+            <mat-error>Devise obligatoire</mat-error>
+          </mat-form-field>
+        </div>
+
+        <div class="amount-box">
+          <label>Montant opération</label>
+
+          <input type="number"
+                 formControlName="montant"
+                 placeholder="0.00"
+                 min="0.01"
+                 step="0.01">
+
+          <span>{{ opForm.get('devise')?.value }}</span>
+        </div>
+
+        <div class="form-row">
+          <mat-form-field appearance="outline">
+            <mat-label>Catégorie</mat-label>
+
+            <mat-select formControlName="category">
+              <mat-option *ngFor="let c of categories" [value]="c">
+                {{ c }}
+              </mat-option>
+            </mat-select>
+
+            <mat-error>Catégorie obligatoire</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Mode paiement</mat-label>
+
+            <mat-select formControlName="modePaiement">
+              <mat-option *ngFor="let m of modes" [value]="m">
+                {{ m }}
+              </mat-option>
+            </mat-select>
+
+            <mat-error>Mode de paiement obligatoire</mat-error>
+          </mat-form-field>
+        </div>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Référence</mat-label>
+
+          <input matInput
+                 formControlName="reference"
+                 placeholder="Ex : DEPENSE-001 / RECETTE-001">
+
+          <mat-icon matSuffix>qr_code</mat-icon>
+
+          <mat-hint>Si vide, une référence sera générée automatiquement.</mat-hint>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Description / motif</mat-label>
+
+          <textarea matInput
+                    rows="3"
+                    formControlName="description"
+                    placeholder="Ex : Achat fournitures, alimentation caisse, paiement service...">
+          </textarea>
+        </mat-form-field>
+
+        <div class="rule-box">
+          <mat-icon>info</mat-icon>
+
+          <span>
+            Caisse normale : choisissez le type, la devise, le montant, la catégorie et le mode de paiement.
+          </span>
+        </div>
+
+        <div class="form-actions">
+          <button mat-raised-button color="primary" type="submit"
+                  [disabled]="!session || opForm.invalid || (store.loadingOperation$ | async)">
+            <mat-icon>save</mat-icon>
+            Enregistrer
+          </button>
+
+          <button mat-button type="button"
+                  (click)="resetOperationForm()"
+                  [disabled]="store.loadingOperation$ | async">
+            Réinitialiser
+          </button>
+        </div>
+
+      </form>
+
+    </mat-card>
+
+    <mat-card class="history-panel">
+
+      <div class="panel-head">
+        <div>
+          <h2>Historique du jour</h2>
+          <p>Mouvements de caisse filtrables</p>
+        </div>
+      </div>
+
+      <div class="filters" [formGroup]="filterForm">
+
+        <mat-form-field appearance="outline" class="search-field">
+          <mat-label>Recherche</mat-label>
+
+          <input matInput
+                 formControlName="q"
+                 placeholder="Référence, motif, catégorie...">
+
+          <mat-icon matSuffix>search</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Devise</mat-label>
+
+          <mat-select formControlName="devise">
+            <mat-option value="">Toutes</mat-option>
+            <mat-option value="USD">USD</mat-option>
+            <mat-option value="CDF">CDF</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Type</mat-label>
+
+          <mat-select formControlName="type">
+            <mat-option value="">Tous</mat-option>
+            <mat-option value="ENCAISSEMENT">Encaissement</mat-option>
+            <mat-option value="DECAISSEMENT">Décaissement</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Mode</mat-label>
+
+          <mat-select formControlName="mode">
+            <mat-option value="">Tous</mat-option>
+            <mat-option value="CASH">Cash</mat-option>
+            <mat-option value="MOBILE_MONEY">Mobile Money</mat-option>
+            <mat-option value="BANQUE">Banque</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Catégorie</mat-label>
+
+          <mat-select formControlName="category">
+            <mat-option value="">Toutes</mat-option>
+
+            <mat-option *ngFor="let c of categories" [value]="c">
+              {{ c }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+      </div>
+
+      <div class="table-shell">
+
+        <table mat-table [dataSource]="filtered">
+
+          <ng-container matColumnDef="date">
+            <th mat-header-cell *matHeaderCellDef>Date</th>
+
+            <td mat-cell *matCellDef="let t">
+              <strong>{{ t.dateTransaction | date:'HH:mm' }}</strong>
+              <span>{{ t.dateTransaction | date:'dd/MM/yyyy' }}</span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="type">
+            <th mat-header-cell *matHeaderCellDef>Type</th>
+
+            <td mat-cell *matCellDef="let t">
+              <span class="type-badge"
+                    [class.in]="t.type === 'ENCAISSEMENT'"
+                    [class.out]="t.type === 'DECAISSEMENT'">
+                {{ t.type === 'ENCAISSEMENT' ? '+' : '-' }} {{ t.type }}
+              </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="montant">
+            <th mat-header-cell *matHeaderCellDef>Montant</th>
+
+            <td mat-cell *matCellDef="let t">
+              <strong class="amount"
+                      [class.out]="t.type === 'DECAISSEMENT'">
+                {{ t.montant | number:'1.0-2' }} {{ t.devise }}
+              </strong>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="ref">
+            <th mat-header-cell *matHeaderCellDef>Référence</th>
+
+            <td mat-cell *matCellDef="let t">
+              <strong>{{ t.reference || '-' }}</strong>
+              <span>{{ t.category }} • {{ t.modePaiement }}</span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="desc">
+            <th mat-header-cell *matHeaderCellDef>Motif</th>
+
+            <td mat-cell *matCellDef="let t" class="desc-cell">
+              {{ t.description || '-' }}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="solde">
+            <th mat-header-cell *matHeaderCellDef>Solde</th>
+
+            <td mat-cell *matCellDef="let t">
+              <span>Avant : {{ t.soldeAvant | number:'1.0-2' }}</span>
+              <strong>Après : {{ t.soldeApres | number:'1.0-2' }}</strong>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="receipt">
+            <th mat-header-cell *matHeaderCellDef>Reçu</th>
+
+            <td mat-cell *matCellDef="let t">
+              <button mat-icon-button color="primary"
+                      type="button"
+                      (click)="preview(t)">
+                <mat-icon>download</mat-icon>
+              </button>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row
+              *matHeaderRowDef="['date','type','montant','ref','desc','solde','receipt']">
+          </tr>
+
+          <tr mat-row
+              *matRowDef="let row; columns: ['date','type','montant','ref','desc','solde','receipt'];">
+          </tr>
+
+        </table>
+
+        <div class="empty" *ngIf="filtered.length === 0">
+          <mat-icon>inbox</mat-icon>
+          <strong>Aucune transaction trouvée</strong>
+          <span>Effectue une opération ou modifie les filtres.</span>
+        </div>
+
+      </div>
+
+    </mat-card>
+
+  </div>
+
+  <div class="overlay"
+       *ngIf="(store.loadingSession$ | async)
+           || (store.loadingHistorique$ | async)
+           || (store.loadingOperation$ | async)">
+    <mat-spinner diameter="44"></mat-spinner>
+    <span>Traitement en cours...</span>
+  </div>
+
+</div>

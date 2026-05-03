@@ -1,7 +1,6 @@
 <div class="stock-page">
   <mat-card class="stock-shell">
 
-    <!-- HEADER -->
     <div class="page-header">
       <div class="header-left">
         <div class="header-icon">
@@ -12,13 +11,23 @@
           <div class="breadcrumb">Stocks / Inventaire</div>
           <h1>Affichage du stock</h1>
           <p>
-            Suivi des quantités disponibles, du coût de revient, de la marge et
-            de la valeur potentielle de vente
+            Suivi des quantités disponibles, du coût de revient FC/USD,
+            de la marge et de la valeur potentielle de vente
           </p>
         </div>
       </div>
 
       <div class="header-actions">
+        <button mat-stroked-button color="primary" type="button" (click)="exportExcel()">
+          <mat-icon>table_view</mat-icon>
+          Excel
+        </button>
+
+        <button mat-stroked-button color="accent" type="button" (click)="exportPdf()">
+          <mat-icon>picture_as_pdf</mat-icon>
+          PDF
+        </button>
+
         <button mat-stroked-button type="button" (click)="refresh()">
           <mat-icon>refresh</mat-icon>
           Actualiser
@@ -26,100 +35,166 @@
       </div>
     </div>
 
-    <!-- KPI -->
-    <div class="kpi-grid">
-      <div class="kpi-card">
-        <div class="kpi-icon blue">
-          <mat-icon>widgets</mat-icon>
+    <div class="kpi-premium-grid">
+
+      <div class="kpi-premium-card main">
+        <div class="kpi-top">
+          <div class="kpi-premium-icon blue">
+            <mat-icon>inventory_2</mat-icon>
+          </div>
+          <span class="kpi-chip">Stock</span>
         </div>
-        <div>
-          <div class="kpi-value">{{ totalProduits() }}</div>
-          <div class="kpi-label">Lignes de stock</div>
-        </div>
+
+        <div class="kpi-big-value">{{ totalProduits() }}</div>
+        <div class="kpi-title">Lignes de stock</div>
+        <div class="kpi-subtitle">Articles actuellement affichés</div>
       </div>
 
-      <div class="kpi-card">
-        <div class="kpi-icon green">
-          <mat-icon>scale</mat-icon>
+      <div class="kpi-premium-card">
+        <div class="kpi-top">
+          <div class="kpi-premium-icon green">
+            <mat-icon>scale</mat-icon>
+          </div>
+          <span class="kpi-chip success">Quantité</span>
         </div>
-        <div>
-          <div class="kpi-value">{{ formatNumber(totalQuantite()) }}</div>
-          <div class="kpi-label">Quantité totale</div>
-        </div>
+
+        <div class="kpi-big-value">{{ formatNumber(totalQuantite(), 3) }}</div>
+        <div class="kpi-title">Quantité totale</div>
+        <div class="kpi-subtitle">Somme des quantités disponibles</div>
       </div>
 
-      <div class="kpi-card">
-        <div class="kpi-icon purple">
-          <mat-icon>payments</mat-icon>
+      <div class="kpi-premium-card money">
+        <div class="kpi-top">
+          <div class="kpi-premium-icon purple">
+            <mat-icon>payments</mat-icon>
+          </div>
+          <span class="kpi-chip">FC</span>
         </div>
-        <div>
-          <div class="kpi-value">{{ formatNumber(totalRevient()) }}</div>
-          <div class="kpi-label">Revient total</div>
-        </div>
+
+        <div class="kpi-big-value">{{ formatNumber(totalRevientFc()) }}</div>
+        <div class="kpi-title">Revient total FC</div>
+        <div class="kpi-subtitle">Valeur du stock en francs</div>
       </div>
 
-      <div class="kpi-card">
-        <div class="kpi-icon emerald">
-          <mat-icon>trending_up</mat-icon>
+      <div class="kpi-premium-card money">
+        <div class="kpi-top">
+          <div class="kpi-premium-icon cyan">
+            <mat-icon>attach_money</mat-icon>
+          </div>
+          <span class="kpi-chip">USD</span>
         </div>
-        <div>
-          <div class="kpi-value">{{ formatNumber(totalMarge()) }}</div>
-          <div class="kpi-label">Marge totale</div>
-        </div>
+
+        <div class="kpi-big-value">{{ formatNumber(totalRevientUsd(), 4) }}</div>
+        <div class="kpi-title">Revient total USD</div>
+        <div class="kpi-subtitle">Équivalent en dollars</div>
       </div>
 
-      <div class="kpi-card">
-        <div class="kpi-icon cyan">
-          <mat-icon>sell</mat-icon>
+      <div class="kpi-premium-card">
+        <div class="kpi-top">
+          <div class="kpi-premium-icon emerald">
+            <mat-icon>trending_up</mat-icon>
+          </div>
+          <span class="kpi-chip success">Marge FC</span>
         </div>
-        <div>
-          <div class="kpi-value">{{ formatNumber(totalValeurVente()) }}</div>
-          <div class="kpi-label">Valeur vente potentielle</div>
-        </div>
+
+        <div class="kpi-big-value">{{ formatNumber(totalMargeFc()) }}</div>
+        <div class="kpi-title">Marge totale FC</div>
+        <div class="kpi-subtitle">Marge estimée en francs</div>
       </div>
 
-      <div class="kpi-card">
-        <div class="kpi-icon orange">
-          <mat-icon>warning_amber</mat-icon>
+      <div class="kpi-premium-card">
+        <div class="kpi-top">
+          <div class="kpi-premium-icon cyan">
+            <mat-icon>trending_up</mat-icon>
+          </div>
+          <span class="kpi-chip">Marge USD</span>
         </div>
-        <div>
-          <div class="kpi-value">{{ totalAlertesRupture() }}</div>
-          <div class="kpi-label">Sous stock</div>
-        </div>
+
+        <div class="kpi-big-value">{{ formatNumber(totalMargeUsd(), 4) }}</div>
+        <div class="kpi-title">Marge totale USD</div>
+        <div class="kpi-subtitle">Équivalent en dollars</div>
       </div>
 
-      <div class="kpi-card">
-        <div class="kpi-icon red">
-          <mat-icon>error_outline</mat-icon>
+      <div class="kpi-premium-card">
+        <div class="kpi-top">
+          <div class="kpi-premium-icon cyan">
+            <mat-icon>sell</mat-icon>
+          </div>
+          <span class="kpi-chip">Vente</span>
         </div>
-        <div>
-          <div class="kpi-value">{{ totalRuptures() }}</div>
-          <div class="kpi-label">Ruptures</div>
-        </div>
+
+        <div class="kpi-big-value">{{ formatNumber(totalValeurVenteFc()) }}</div>
+        <div class="kpi-title">Valeur vente FC</div>
+        <div class="kpi-subtitle">Quantité × prix de vente FC</div>
       </div>
 
-      <div class="kpi-card">
-        <div class="kpi-icon sky">
-          <mat-icon>inventory</mat-icon>
+      <div class="kpi-premium-card">
+        <div class="kpi-top">
+          <div class="kpi-premium-icon cyan">
+            <mat-icon>attach_money</mat-icon>
+          </div>
+          <span class="kpi-chip">USD</span>
         </div>
-        <div>
-          <div class="kpi-value">{{ totalSurplus() }}</div>
-          <div class="kpi-label">Surstock</div>
-        </div>
+
+        <div class="kpi-big-value">{{ formatNumber(totalValeurVenteUsd(), 4) }}</div>
+        <div class="kpi-title">Valeur vente USD</div>
+        <div class="kpi-subtitle">Équivalent en dollars</div>
       </div>
 
-      <div class="kpi-card">
-        <div class="kpi-icon success">
-          <mat-icon>check_circle</mat-icon>
+      <div class="kpi-premium-card alert">
+        <div class="kpi-top">
+          <div class="kpi-premium-icon orange">
+            <mat-icon>warning_amber</mat-icon>
+          </div>
+          <span class="kpi-chip warning">Alerte</span>
         </div>
-        <div>
-          <div class="kpi-value">{{ totalNormaux() }}</div>
-          <div class="kpi-label">Normal</div>
-        </div>
+
+        <div class="kpi-big-value">{{ totalAlertesRupture() }}</div>
+        <div class="kpi-title">Sous stock</div>
+        <div class="kpi-subtitle">Stock inférieur au minimum</div>
       </div>
+
+      <div class="kpi-premium-card danger">
+        <div class="kpi-top">
+          <div class="kpi-premium-icon red">
+            <mat-icon>error_outline</mat-icon>
+          </div>
+          <span class="kpi-chip danger">Critique</span>
+        </div>
+
+        <div class="kpi-big-value">{{ totalRuptures() }}</div>
+        <div class="kpi-title">Ruptures</div>
+        <div class="kpi-subtitle">Articles sans quantité disponible</div>
+      </div>
+
+      <div class="kpi-premium-card">
+        <div class="kpi-top">
+          <div class="kpi-premium-icon sky">
+            <mat-icon>inventory</mat-icon>
+          </div>
+          <span class="kpi-chip info">Surplus</span>
+        </div>
+
+        <div class="kpi-big-value">{{ totalSurplus() }}</div>
+        <div class="kpi-title">Surstock</div>
+        <div class="kpi-subtitle">Stock au-dessus du maximum</div>
+      </div>
+
+      <div class="kpi-premium-card">
+        <div class="kpi-top">
+          <div class="kpi-premium-icon success">
+            <mat-icon>check_circle</mat-icon>
+          </div>
+          <span class="kpi-chip success">OK</span>
+        </div>
+
+        <div class="kpi-big-value">{{ totalNormaux() }}</div>
+        <div class="kpi-title">Normal</div>
+        <div class="kpi-subtitle">Stock dans la plage normale</div>
+      </div>
+
     </div>
 
-    <!-- FILTRES -->
     <div class="filter-bar">
       <mat-form-field appearance="outline">
         <mat-label>Recherche</mat-label>
@@ -133,9 +208,7 @@
 
       <mat-form-field appearance="outline">
         <mat-label>Dépôt</mat-label>
-        <mat-select
-          [ngModel]="depotFilter()"
-          (ngModelChange)="onDepotChange($event)">
+        <mat-select [ngModel]="depotFilter()" (ngModelChange)="onDepotChange($event)">
           <mat-option value="">Tous</mat-option>
           @for (depot of depots(); track depot) {
             <mat-option [value]="depot">{{ depot }}</mat-option>
@@ -145,9 +218,7 @@
 
       <mat-form-field appearance="outline">
         <mat-label>Statut</mat-label>
-        <mat-select
-          [ngModel]="statutFilter()"
-          (ngModelChange)="onStatutChange($event)">
+        <mat-select [ngModel]="statutFilter()" (ngModelChange)="onStatutChange($event)">
           <mat-option value="">Tous</mat-option>
           <mat-option value="NORMAL">Normal</mat-option>
           <mat-option value="ALERTE_RUPTURE">Sous stock</mat-option>
@@ -157,111 +228,46 @@
       </mat-form-field>
     </div>
 
-    <!-- TABLE -->
     @if (!loading()) {
       <div class="table-wrapper">
         <div class="table-scroll">
+
           <table mat-table [dataSource]="filteredStocks()" class="stock-table">
 
             <ng-container matColumnDef="produit">
-              <th mat-header-cell *matHeaderCellDef>Produit</th>
+              <th mat-header-cell *matHeaderCellDef>Article</th>
               <td mat-cell *matCellDef="let row">
                 <div class="product-cell">
                   <div class="product-name">{{ row.nomProduit }}</div>
+                  <small>Code : {{ row.codeBarre || '-' }}</small>
+                  <small>Catégorie : {{ row.categorie || '-' }}</small>
                 </div>
               </td>
             </ng-container>
 
-            <ng-container matColumnDef="codeBarre">
-              <th mat-header-cell *matHeaderCellDef>Code barre</th>
-              <td mat-cell *matCellDef="let row">{{ row.codeBarre || '-' }}</td>
-            </ng-container>
-
-            <ng-container matColumnDef="categorie">
-              <th mat-header-cell *matHeaderCellDef>Catégorie</th>
-              <td mat-cell *matCellDef="let row">{{ row.categorie || '-' }}</td>
-            </ng-container>
-
             <ng-container matColumnDef="depot">
-              <th mat-header-cell *matHeaderCellDef>Dépôt</th>
-              <td mat-cell *matCellDef="let row">{{ row.nomDepot || '-' }}</td>
+              <th mat-header-cell *matHeaderCellDef>Localisation</th>
+              <td mat-cell *matCellDef="let row">
+                <div class="product-cell">
+                  <strong>{{ row.nomDepot || '-' }}</strong>
+                  <small>Emplacement : {{ row.locatorCode || '-' }}</small>
+                </div>
+              </td>
             </ng-container>
-            <ng-container matColumnDef="emplacement">
-            <th mat-header-cell *matHeaderCellDef>Emplacement</th>
-            <td mat-cell *matCellDef="let row">
-              <span class="locator-chip" *ngIf="row.locatorCode; else noLocator">
-                <mat-icon>inventory_2</mat-icon>
-                {{ row.locatorCode }}
-              </span>
-              <ng-template #noLocator>-</ng-template>
-            </td>
-          </ng-container>
 
             <ng-container matColumnDef="quantite">
-              <th mat-header-cell *matHeaderCellDef class="text-right">Qté dispo</th>
+              <th mat-header-cell *matHeaderCellDef class="text-right">Stock</th>
               <td mat-cell *matCellDef="let row" class="text-right">
-                {{ formatNumber(row.quantiteDisponible) }}
-              </td>
-            </ng-container>
-
-            <ng-container matColumnDef="min">
-              <th mat-header-cell *matHeaderCellDef class="text-right">Stock min</th>
-              <td mat-cell *matCellDef="let row" class="text-right">
-                {{ formatNumber(row.stockMinimum) }}
-              </td>
-            </ng-container>
-
-            <ng-container matColumnDef="max">
-              <th mat-header-cell *matHeaderCellDef class="text-right">Stock max</th>
-              <td mat-cell *matCellDef="let row" class="text-right">
-                {{ formatNumber(row.stockMaximum) }}
-              </td>
-            </ng-container>
-
-            <ng-container matColumnDef="pmp">
-              <th mat-header-cell *matHeaderCellDef class="text-right">Revient unitaire</th>
-              <td mat-cell *matCellDef="let row" class="text-right">
-                {{ formatNumber(row.pmp) }}
-              </td>
-            </ng-container>
-
-            <ng-container matColumnDef="tauxMarge">
-              <th mat-header-cell *matHeaderCellDef class="text-right">Marge %</th>
-              <td mat-cell *matCellDef="let row" class="text-right">
-                {{ formatPercent(row.tauxMarge) }}
-              </td>
-            </ng-container>
-
-            <ng-container matColumnDef="margeUnitaire">
-              <th mat-header-cell *matHeaderCellDef class="text-right">Marge unitaire</th>
-              <td mat-cell *matCellDef="let row" class="text-right">
-                {{ formatNumber(row.margeUnitaire) }}
-              </td>
-            </ng-container>
-
-            <ng-container matColumnDef="prixVenteUnitaire">
-              <th mat-header-cell *matHeaderCellDef class="text-right">PV unitaire</th>
-              <td mat-cell *matCellDef="let row" class="text-right">
-                {{ formatNumber(row.prixVenteUnitaire) }}
-              </td>
-            </ng-container>
-
-            <ng-container matColumnDef="margeTotaleStock">
-              <th mat-header-cell *matHeaderCellDef class="text-right">Marge stock</th>
-              <td mat-cell *matCellDef="let row" class="text-right value-cell">
-                {{ formatNumber(row.margeTotaleStock) }}
-              </td>
-            </ng-container>
-
-            <ng-container matColumnDef="valeur">
-              <th mat-header-cell *matHeaderCellDef class="text-right">Revient total stock</th>
-              <td mat-cell *matCellDef="let row" class="text-right value-cell">
-                {{ formatNumber(row.valeurStock) }}
+                <strong>{{ formatNumber(row.quantiteDisponible, 3) }}</strong>
+                <small class="d-block">
+                  Min : {{ formatNumber(row.stockMinimum) }} |
+                  Max : {{ formatNumber(row.stockMaximum) }}
+                </small>
               </td>
             </ng-container>
 
             <ng-container matColumnDef="statut">
-              <th mat-header-cell *matHeaderCellDef>Statut</th>
+              <th mat-header-cell *matHeaderCellDef>Situation</th>
               <td mat-cell *matCellDef="let row">
                 <span class="badge" [ngClass]="getBadgeClass(getResolvedStatut(row))">
                   {{ getStatutLabel(getResolvedStatut(row)) }}
@@ -269,12 +275,105 @@
               </td>
             </ng-container>
 
-            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <ng-container matColumnDef="tauxChangeUtilise">
+              <th mat-header-cell *matHeaderCellDef class="text-right">Taux</th>
+              <td mat-cell *matCellDef="let row" class="text-right">
+                <strong>1 USD</strong>
+                <small class="d-block">= {{ formatNumber(row.tauxChangeUtilise) }} FC</small>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="pmpFc">
+              <th mat-header-cell *matHeaderCellDef class="text-right">Coût unitaire</th>
+              <td mat-cell *matCellDef="let row" class="text-right">
+                <strong>{{ formatNumber(getPmpFc(row)) }} FC</strong>
+                <small class="d-block muted">
+                  ≈ {{ formatNumber(getPmpUsd(row), 4) }} USD
+                </small>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="valeurStockFc">
+              <th mat-header-cell *matHeaderCellDef class="text-right">Valeur stock</th>
+              <td mat-cell *matCellDef="let row" class="text-right value-cell">
+                <strong>{{ formatNumber(getValeurStockFc(row)) }} FC</strong>
+                <small class="d-block muted">
+                  ≈ {{ formatNumber(getValeurStockUsd(row), 4) }} USD
+                </small>
+                <small class="d-block">
+                  {{ formatNumber(row.quantiteDisponible, 3) }}
+                  × {{ formatNumber(getPmpFc(row)) }} FC
+                </small>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="tauxMarge">
+              <th mat-header-cell *matHeaderCellDef class="text-right">Marge</th>
+              <td mat-cell *matCellDef="let row" class="text-right">
+                <strong>{{ formatPercent(row.tauxMarge) }}</strong>
+
+                <small class="d-block">
+                  Unitaire : {{ formatNumber(getMargeUnitaireFc(row)) }} FC
+                </small>
+                <small class="d-block muted">
+                  ≈ {{ formatNumber(getMargeUnitaireUsd(row), 4) }} USD
+                </small>
+
+                <small class="d-block">
+                  Stock : {{ formatNumber(getMargeTotaleFc(row)) }} FC
+                </small>
+                <small class="d-block muted">
+                  ≈ {{ formatNumber(getMargeTotaleUsd(row), 4) }} USD
+                </small>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="prixVenteUnitaire">
+              <th mat-header-cell *matHeaderCellDef class="text-right">Prix de vente</th>
+              <td mat-cell *matCellDef="let row" class="text-right">
+                <strong>{{ formatNumber(getPrixVenteUnitaireFc(row)) }} FC</strong>
+                <small class="d-block muted">
+                  ≈ {{ formatNumber(getPrixVenteUnitaireUsd(row), 4) }} USD
+                </small>
+
+                <small class="d-block">
+                  Vente : {{ formatNumber(getValeurVentePotentielleFc(row)) }} FC
+                </small>
+                <small class="d-block muted">
+                  ≈ {{ formatNumber(getValeurVentePotentielleUsd(row), 4) }} USD
+                </small>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="[
+              'produit',
+              'depot',
+              'quantite',
+              'statut',
+              'tauxChangeUtilise',
+              'pmpFc',
+              'valeurStockFc',
+              'tauxMarge',
+              'prixVenteUnitaire'
+            ]"></tr>
+
             <tr
               mat-row
-              *matRowDef="let row; columns: displayedColumns; trackBy: trackByProduitDepot">
+              *matRowDef="let row; columns: [
+                'produit',
+                'depot',
+                'quantite',
+                'statut',
+                'tauxChangeUtilise',
+                'pmpFc',
+                'valeurStockFc',
+                'tauxMarge',
+                'prixVenteUnitaire'
+              ]; trackBy: trackByProduitDepot">
             </tr>
+
           </table>
+
         </div>
 
         @if (filteredStocks().length === 0) {

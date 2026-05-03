@@ -13,7 +13,7 @@ import {
 import {
   BarcodeFormat_default
 } from "./chunk-M34QWGN3.js";
-import "./chunk-KWSTWQNB.js";
+import "./chunk-7WUTQBRG.js";
 export {
   BarcodeFormat_default as BarcodeFormat,
   BrowserAztecCodeReader,

@@ -58,12 +58,26 @@
       </div>
 
       <div class="summary-card">
-        <label>Devise</label>
-        <span>{{ cmd.devise || 'USD' }}</span>
+        <label>Devise principale</label>
+        <span>FC</span>
+      </div>
+
+      <div class="summary-card">
+        <label>Taux utilisé</label>
+        <span>{{ formatFc(getTauxCommande()) }} FC</span>
+      </div>
+
+      <div class="summary-card">
+        <label>Montant total</label>
+        <span class="summary-money">
+          <strong>{{ formatFc(cmd.montantTotalFc || totalMontantFc()) }} FC</strong>
+          <small>
+            ≈ {{ formatUsd(cmd.montantTotalUsd || totalMontantUsd()) }} USD
+          </small>
+        </span>
       </div>
     </div>
 
-    <!-- KPI -->
     <div class="kpi-grid">
       <div class="kpi-card">
         <div class="kpi-icon">
@@ -109,6 +123,7 @@
         <div class="kpi-icon">
           <mat-icon>monitoring</mat-icon>
         </div>
+
         <div class="kpi-content">
           <span class="kpi-label">Taux de réception global</span>
           <strong>{{ tauxReceptionGlobal() }}%</strong>
@@ -116,6 +131,20 @@
           <div class="progress-shell">
             <div class="progress-bar" [style.width.%]="tauxReceptionGlobal()"></div>
           </div>
+        </div>
+      </div>
+
+      <div class="kpi-card kpi-card-wide">
+        <div class="kpi-icon">
+          <mat-icon>payments</mat-icon>
+        </div>
+
+        <div class="kpi-content">
+          <span class="kpi-label">Total lignes</span>
+          <strong>{{ formatFc(totalMontantFc()) }} FC</strong>
+          <small class="usd-line">
+            ≈ {{ formatUsd(totalMontantUsd()) }} USD
+          </small>
         </div>
       </div>
     </div>
@@ -136,11 +165,11 @@
             <div class="product-cell">
               <strong>{{ getProduitLabel(ligne) }}</strong>
               <small>ID: {{ ligne?.produitId || '-' }}</small>
+              <small *ngIf="ligne?.codeBarres">Code: {{ ligne.codeBarres }}</small>
             </div>
           </td>
         </ng-container>
 
-        <!-- SUIVI QUANTITE -->
         <ng-container matColumnDef="suiviQuantite">
           <th mat-header-cell *matHeaderCellDef>Suivi réception</th>
           <td mat-cell *matCellDef="let ligne">
@@ -191,21 +220,30 @@
         <ng-container matColumnDef="prixUnitaire">
           <th mat-header-cell *matHeaderCellDef>Prix unitaire</th>
           <td mat-cell *matCellDef="let ligne">
-            {{ getPrixUnitaire(ligne) | number:'1.2-2' }}
+            <div class="money-cell">
+              <strong>{{ formatFc(getPrixUnitaireFc(ligne)) }} FC</strong>
+              <small>≈ {{ formatUsd(getPrixUnitaireUsd(ligne)) }} USD</small>
+            </div>
           </td>
         </ng-container>
 
         <ng-container matColumnDef="remise">
           <th mat-header-cell *matHeaderCellDef>Remise</th>
           <td mat-cell *matCellDef="let ligne">
-            {{ getRemise(ligne) | number:'1.2-2' }}
+            <div class="money-cell">
+              <strong>{{ formatFc(getRemiseFc(ligne)) }} FC</strong>
+              <small>≈ {{ formatUsd(getRemiseUsd(ligne)) }} USD</small>
+            </div>
           </td>
         </ng-container>
 
         <ng-container matColumnDef="total">
           <th mat-header-cell *matHeaderCellDef>Total ligne</th>
           <td mat-cell *matCellDef="let ligne">
-            <strong>{{ getTotalLigne(ligne) | number:'1.2-2' }}</strong>
+            <div class="money-cell total-money">
+              <strong>{{ formatFc(getTotalLigneFc(ligne)) }} FC</strong>
+              <small>≈ {{ formatUsd(getTotalLigneUsd(ligne)) }} USD</small>
+            </div>
           </td>
         </ng-container>
 

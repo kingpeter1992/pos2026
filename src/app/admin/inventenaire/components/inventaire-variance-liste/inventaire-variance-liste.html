@@ -1,151 +1,264 @@
 <div class="variance-page">
-  <div class="page-header">
-    <div>
-      <div class="breadcrumb">Inventaires / Variances</div>
-      <h1>Liste des variances</h1>
-      <p>Suivi des écarts entre stock théorique et comptage physique.</p>
+
+  <section class="premium-hero">
+    <div class="hero-glow"></div>
+
+    <div class="hero-content">
+      <div>
+        <div class="breadcrumb">
+          <mat-icon>monitoring</mat-icon>
+          Inventaires / Variances
+        </div>
+
+        <h1>Dashboard des variances</h1>
+
+        <p>
+          Analyse premium des écarts entre stock théorique, comptage physique,
+          valeur financière et statut d’application.
+        </p>
+      </div>
+
+      <div class="hero-badge">
+        <mat-icon>analytics</mat-icon>
+        {{ groupesParInventaire().length }} inventaire(s)
+      </div>
     </div>
-  </div>
+  </section>
 
-  <div class="kpi-grid">
-    <mat-card class="kpi-card primary">
-      <span>Lignes</span>
-      <strong>{{ totalLignes() }}</strong>
+  <section class="kpi-grid">
+    <mat-card class="kpi-card blue">
+      <div class="kpi-icon">
+        <mat-icon>format_list_numbered</mat-icon>
+      </div>
+      <div>
+        <span>Lignes</span>
+        <strong>{{ totalLignes() }}</strong>
+      </div>
     </mat-card>
 
-    <mat-card class="kpi-card warn">
-      <span>Écart total</span>
-      <strong>{{ totalEcart() | number:'1.0-3' }}</strong>
+    <mat-card class="kpi-card orange">
+      <div class="kpi-icon">
+        <mat-icon>compare_arrows</mat-icon>
+      </div>
+      <div>
+        <span>Écart total</span>
+        <strong>{{ totalEcart() | number:'1.0-3':'fr-FR' }}</strong>
+      </div>
     </mat-card>
 
-    <mat-card class="kpi-card danger">
-      <span>Valeur écart</span>
-      <strong>{{ totalValeurEcart() | number:'1.2-2' }}</strong>
+    <mat-card class="kpi-card red">
+      <div class="kpi-icon">
+        <mat-icon>payments</mat-icon>
+      </div>
+      <div>
+        <span>Valeur écart</span>
+        <strong>{{ totalValeurEcart() | number:'1.2-2':'fr-FR' }}</strong>
+      </div>
     </mat-card>
 
-    <mat-card class="kpi-card success">
-      <span>Appliquées</span>
-      <strong>{{ totalAppliquees() }}</strong>
+    <mat-card class="kpi-card green">
+      <div class="kpi-icon">
+        <mat-icon>task_alt</mat-icon>
+      </div>
+      <div>
+        <span>Appliquées</span>
+        <strong>{{ totalAppliquees() }}</strong>
+      </div>
     </mat-card>
-  </div>
+  </section>
 
   <mat-card class="filter-card">
-    <mat-form-field appearance="outline">
-      <mat-label>Recherche</mat-label>
-      <input matInput placeholder="Produit, code, inventaire, bordereau..."
-        (input)="onSearch($any($event.target).value)" />
-      <mat-icon matSuffix>search</mat-icon>
-    </mat-form-field>
+    <div class="filter-title">
+      <div class="filter-icon">
+        <mat-icon>manage_search</mat-icon>
+      </div>
 
-    <mat-form-field appearance="outline">
-      <mat-label>Type variance</mat-label>
-      <mat-select [value]="typeFilter()" (selectionChange)="onTypeChange($event.value)">
-        <mat-option value="TOUS">Tous</mat-option>
-        <mat-option value="ENTREE">Entrée</mat-option>
-        <mat-option value="SORTIE">Sortie</mat-option>
-        <mat-option value="NEANT">Néant</mat-option>
-      </mat-select>
-    </mat-form-field>
+      <div>
+        <h2>Filtres avancés</h2>
+        <p>Recherche par produit, code-barres, inventaire, dépôt, locator ou valeur.</p>
+      </div>
+    </div>
+
+    <div class="filter-fields">
+      <mat-form-field appearance="outline">
+        <mat-label>Recherche</mat-label>
+        <input
+          matInput
+          placeholder="Produit, code, inventaire, dépôt, locator..."
+          (input)="onSearch($any($event.target).value)" />
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Type variance</mat-label>
+        <mat-select
+          [value]="typeFilter()"
+          (selectionChange)="onTypeChange($event.value)">
+          <mat-option value="TOUS">Tous</mat-option>
+          <mat-option value="ENTREE">Entrée</mat-option>
+          <mat-option value="SORTIE">Sortie</mat-option>
+          <mat-option value="NEANT">Néant</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
   </mat-card>
 
   @if (loading()) {
-  <div class="page-loader">
-    <mat-spinner diameter="42"></mat-spinner>
-    <p>Chargement des variances...</p>
-  </div>
+    <div class="page-loader">
+      <mat-spinner diameter="46"></mat-spinner>
+      <p>Chargement des variances...</p>
+    </div>
   } @else {
-  <mat-card class="table-card">
-<mat-card class="table-card">
+    <mat-card class="table-card">
+<div class="table-header">
+  <div>
+    <h2>Variances groupées par inventaire</h2>
+    <p>Vue consolidée avec export PDF, Excel et rapport détaillé par inventaire.</p>
+  </div>
 
-  <p-table
-    [value]="groupesParInventaire()"
-    [paginator]="true"
-    [rows]="10"
-    responsiveLayout="scroll"
-    styleClass="p-datatable-sm p-datatable-gridlines">
+  <div class="export-actions">
+    <button
+      mat-flat-button
+      class="excel-btn"
+      type="button"
+      (click)="exporterExcel()">
+      <mat-icon>table_view</mat-icon>
+      Export Excel
+    </button>
 
-    <ng-template pTemplate="header">
-      <tr>
-        <th>Inventaire</th>
-        <th>Dépôt</th>
-        <th>Lignes</th>
-        <th>Écart total</th>
-        <th>Valeur écart</th>
-        <th>Entrées</th>
-        <th>Sorties</th>
-        <th>Néant</th>
-        <th>Appliquées</th>
-        <th>Action</th>
-      </tr>
-    </ng-template>
+    <button
+      mat-flat-button
+      class="global-pdf-btn"
+      type="button"
+      (click)="exporterPdfGlobal()">
+      <mat-icon>picture_as_pdf</mat-icon>
+      Export PDF
+    </button>
 
-    <ng-template pTemplate="body" let-groupe>
-      <tr>
-        <td>
-          <strong>INV-{{ groupe.inventaireId }}</strong>
-        </td>
+    <span class="count-pill">
+      {{ groupesParInventaire().length }} groupe(s)
+    </span>
+  </div>
+</div>
 
-        <td>{{ groupe.depotNom }}</td>
+      <p-table
+        [value]="groupesParInventaire()"
+        [paginator]="true"
+        [rows]="10"
+        [rowsPerPageOptions]="[10, 20, 50]"
+        responsiveLayout="scroll"
+        styleClass="premium-table p-datatable-sm">
 
-        <td>{{ groupe.totalLignes }}</td>
+        <ng-template pTemplate="header">
+          <tr>
+            <th>Inventaire</th>
+            <th>Dépôt</th>
+            <th>Lignes</th>
+            <th>Écart total</th>
+            <th>Valeur écart</th>
+            <th>Entrées</th>
+            <th>Sorties</th>
+            <th>Néant</th>
+            <th>Appliquées</th>
+            <th class="text-right">Action</th>
+          </tr>
+        </ng-template>
 
-        <td
-          class="ecart"
-          [class.positive]="groupe.totalEcart > 0"
-          [class.negative]="groupe.totalEcart < 0">
-          {{ groupe.totalEcart | number:'1.0-3' }}
-        </td>
+        <ng-template pTemplate="body" let-groupe>
+          <tr>
+            <td>
+              <div class="ref-cell">
+                <div class="ref-icon">
+                  <mat-icon>inventory_2</mat-icon>
+                </div>
 
-        <td>
-          {{ groupe.totalValeurEcart | number:'1.2-2' }}
-        </td>
+                <div>
+                  <strong>INV-{{ groupe.inventaireId }}</strong>
+                  <span>Inventaire</span>
+                </div>
+              </div>
+            </td>
 
-        <td>
-          <span class="status-pill ENTREE">
-            {{ groupe.totalEntree }}
-          </span>
-        </td>
+            <td>
+              <div class="mini-info">
+                <mat-icon>warehouse</mat-icon>
+                <span>{{ groupe.depotNom }}</span>
+              </div>
+            </td>
 
-        <td>
-          <span class="status-pill SORTIE">
-            {{ groupe.totalSortie }}
-          </span>
-        </td>
+            <td>
+              <span class="soft-chip">{{ groupe.totalLignes }}</span>
+            </td>
 
-        <td>
-          <span class="status-pill NEANT">
-            {{ groupe.totalNeant }}
-          </span>
-        </td>
+            <td>
+              <strong
+                class="ecart"
+                [class.positive]="groupe.totalEcart > 0"
+                [class.negative]="groupe.totalEcart < 0">
+                {{ groupe.totalEcart | number:'1.0-3':'fr-FR' }}
+              </strong>
+            </td>
 
-        <td>
-          {{ groupe.appliquees }} / {{ groupe.totalLignes }}
-        </td>
+            <td>
+              <strong
+                class="ecart"
+                [class.positive]="groupe.totalValeurEcart > 0"
+                [class.negative]="groupe.totalValeurEcart < 0">
+                {{ groupe.totalValeurEcart | number:'1.2-2':'fr-FR' }}
+              </strong>
+            </td>
 
-        <td>
-          <button
-            mat-raised-button
-            color="primary"
-            type="button"
-            (click)="imprimerRapportVariancePdf(groupe.inventaireId)">
-            <mat-icon>picture_as_pdf</mat-icon>
-            Imprimer rapport
-          </button>
-        </td>
-      </tr>
-    </ng-template>
+            <td>
+              <span class="status-pill entree">
+                {{ groupe.totalEntree }}
+              </span>
+            </td>
 
-    <ng-template pTemplate="emptymessage">
-      <tr>
-        <td colspan="10" class="empty-row">
-          Aucune variance trouvée.
-        </td>
-      </tr>
-    </ng-template>
+            <td>
+              <span class="status-pill sortie">
+                {{ groupe.totalSortie }}
+              </span>
+            </td>
 
-  </p-table>
+            <td>
+              <span class="status-pill neant">
+                {{ groupe.totalNeant }}
+              </span>
+            </td>
 
-</mat-card>
-  </mat-card>
+            <td>
+              <span class="apply-pill">
+                {{ groupe.appliquees }} / {{ groupe.totalLignes }}
+              </span>
+            </td>
+
+            <td class="text-right">
+              <button
+                mat-flat-button
+                class="pdf-btn"
+                type="button"
+                (click)="imprimerRapportVariancePdf(groupe.inventaireId)">
+                <mat-icon>picture_as_pdf</mat-icon>
+                Rapport PDF
+              </button>
+            </td>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="10">
+              <div class="empty-state">
+                <mat-icon>analytics</mat-icon>
+                <h3>Aucune variance trouvée</h3>
+                <p>Modifie les filtres ou lance les variances depuis un inventaire.</p>
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+
+      </p-table>
+    </mat-card>
   }
+
 </div>

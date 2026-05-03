@@ -161,7 +161,19 @@
             </td>
 
             <td>
-              <div class="price-value">{{ produit.prixVente | number:'1.2-2' }}</div>
+              <div class="price-box">
+                <div class="price-fc">
+                  {{ formatFc(produit.prixVente) }} FC
+                </div>
+
+                <div class="price-usd" *ngIf="dernierTaux > 0">
+                  ≈ {{ formatUsd(convertirFcEnUsd(produit.prixVente)) }} USD
+                </div>
+
+                <div class="price-usd warning" *ngIf="!dernierTaux && !loadingTaux">
+                  Taux indisponible
+                </div>
+              </div>
             </td>
 
             <td>

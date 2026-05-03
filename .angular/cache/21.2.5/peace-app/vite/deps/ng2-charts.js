@@ -2,7 +2,7 @@ import {
   Chart,
   defaults,
   registerables
-} from "./chunk-5PLGESDR.js";
+} from "./chunk-HAGPDKU5.js";
 import {
   Directive,
   ElementRef,
@@ -15,20 +15,20 @@ import {
   ɵɵNgOnChangesFeature,
   ɵɵdefineDirective,
   ɵɵdirectiveInject
-} from "./chunk-BTZAHDHR.js";
+} from "./chunk-FKCUFCP6.js";
 import {
   EventEmitter,
   InjectionToken,
   NgZone,
   ɵɵdefineInjectable
-} from "./chunk-7KWL4VMN.js";
-import "./chunk-HWYXSU2G.js";
+} from "./chunk-KDX5GZJX.js";
 import "./chunk-JRFR6BLO.js";
+import "./chunk-HWYXSU2G.js";
 import {
   BehaviorSubject,
   distinctUntilChanged
 } from "./chunk-MARUHEWW.js";
-import "./chunk-KWSTWQNB.js";
+import "./chunk-7WUTQBRG.js";
 
 // node_modules/lodash-es/_freeGlobal.js
 var freeGlobal = typeof global == "object" && global && global.Object === Object && global;

@@ -38,6 +38,9 @@ import { InventaireDetail } from './inventenaire/components/inventaire-detail/in
 import { InventaireBordereauDetailComponent } from './inventenaire/components/inventaire-bordereau-detail-component/inventaire-bordereau-detail-component';
 import { InventaireVarianceResume } from './inventenaire/components/inventaire-variance-resume/inventaire-variance-resume';
 import { InventaireVarianceListe } from './inventenaire/components/inventaire-variance-liste/inventaire-variance-liste';
+import { CaisseDashboard } from './caisse/components/caisse-dashboard/caisse-dashboard';
+import { RepportComponent } from './caisse/components/repport-component/repport-component';
+import { TauxEchange } from './caisse/components/taux-echange/taux-echange';
 
 const routes: Routes = [
   {
@@ -105,7 +108,10 @@ const routes: Routes = [
       { path: 'inventaire/variances', component: InventaireVarianceListe },
 
 
-
+      // caisse
+      { path: 'caisse/CaisseDashboard', component: CaisseDashboard},
+      { path: 'caisse/repport', component: RepportComponent },
+      { path :'caisse/taux-echange', component: TauxEchange },
 
 
 

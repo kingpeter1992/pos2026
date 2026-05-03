@@ -1,46 +1,46 @@
 import {
   BaseInput,
   Overlay
-} from "./chunk-HOTFVSKD.js";
+} from "./chunk-DPWEWW3I.js";
 import {
   Scroller
-} from "./chunk-IZA7S7QG.js";
-import {
-  InputText
-} from "./chunk-WJYIKYDK.js";
-import "./chunk-KGGKRTM5.js";
-import "./chunk-F3PLYW4L.js";
+} from "./chunk-X5KEJD5J.js";
 import {
   AutoFocus
-} from "./chunk-TA4EKAYL.js";
-import "./chunk-FKXCHV6Q.js";
+} from "./chunk-7KGFEVWD.js";
+import {
+  Ripple
+} from "./chunk-F4MGEXMS.js";
+import "./chunk-7UCKY64M.js";
+import "./chunk-ZPJDKWWE.js";
+import "./chunk-JTVFCTJC.js";
 import {
   ChevronDownIcon,
   SpinnerIcon,
   TimesCircleIcon,
   TimesIcon
-} from "./chunk-ANNUHNKV.js";
-import "./chunk-K5RYI4MO.js";
+} from "./chunk-LBPOTBPX.js";
 import {
-  Ripple
-} from "./chunk-TMJB47F2.js";
+  InputText
+} from "./chunk-5YOBPFVG.js";
+import "./chunk-NWOLP3HB.js";
 import {
   BaseComponent,
   PARENT_INSTANCE
-} from "./chunk-QHHCEJQD.js";
-import {
-  Bind,
-  BindModule
-} from "./chunk-N2RGNCB4.js";
+} from "./chunk-NDIQFAFR.js";
 import {
   BaseStyle
-} from "./chunk-B4O47KEV.js";
+} from "./chunk-6G44MAVM.js";
 import {
   OverlayService,
   PrimeTemplate,
   SharedModule,
   TranslationKeys
-} from "./chunk-3RIOP4RR.js";
+} from "./chunk-BBHGKBG3.js";
+import {
+  Bind,
+  BindModule
+} from "./chunk-7B2URI3E.js";
 import {
   M,
   bt,
@@ -53,7 +53,7 @@ import {
 } from "./chunk-T6P3DOFE.js";
 import {
   NG_VALUE_ACCESSOR
-} from "./chunk-RVSOO4W3.js";
+} from "./chunk-465PQI47.js";
 import {
   CommonModule,
   NgClass,
@@ -61,8 +61,8 @@ import {
   NgIf,
   NgStyle,
   NgTemplateOutlet
-} from "./chunk-PWYZQKDD.js";
-import "./chunk-RB3D7EIV.js";
+} from "./chunk-NWGCBTQU.js";
+import "./chunk-DIYC4QG4.js";
 import {
   ChangeDetectionStrategy,
   Component,
@@ -121,7 +121,7 @@ import {
   ɵɵtwoWayListener,
   ɵɵtwoWayProperty,
   ɵɵviewQuery
-} from "./chunk-BTZAHDHR.js";
+} from "./chunk-FKCUFCP6.js";
 import {
   EventEmitter,
   InjectionToken,
@@ -135,11 +135,11 @@ import {
   ɵɵnamespaceSVG,
   ɵɵresetView,
   ɵɵrestoreView
-} from "./chunk-7KWL4VMN.js";
-import "./chunk-HWYXSU2G.js";
+} from "./chunk-KDX5GZJX.js";
 import "./chunk-JRFR6BLO.js";
+import "./chunk-HWYXSU2G.js";
 import "./chunk-MARUHEWW.js";
-import "./chunk-KWSTWQNB.js";
+import "./chunk-7WUTQBRG.js";
 
 // node_modules/@primeuix/styles/dist/chip/index.mjs
 var style = "\n    .p-chip {\n        display: inline-flex;\n        align-items: center;\n        background: dt('chip.background');\n        color: dt('chip.color');\n        border-radius: dt('chip.border.radius');\n        padding-block: dt('chip.padding.y');\n        padding-inline: dt('chip.padding.x');\n        gap: dt('chip.gap');\n    }\n\n    .p-chip-icon {\n        color: dt('chip.icon.color');\n        font-size: dt('chip.icon.size');\n        width: dt('chip.icon.size');\n        height: dt('chip.icon.size');\n    }\n\n    .p-chip-image {\n        border-radius: 50%;\n        width: dt('chip.image.width');\n        height: dt('chip.image.height');\n        margin-inline-start: calc(-1 * dt('chip.padding.y'));\n    }\n\n    .p-chip:has(.p-chip-remove-icon) {\n        padding-inline-end: dt('chip.padding.y');\n    }\n\n    .p-chip:has(.p-chip-image) {\n        padding-block-start: calc(dt('chip.padding.y') / 2);\n        padding-block-end: calc(dt('chip.padding.y') / 2);\n    }\n\n    .p-chip-remove-icon {\n        cursor: pointer;\n        font-size: dt('chip.remove.icon.size');\n        width: dt('chip.remove.icon.size');\n        height: dt('chip.remove.icon.size');\n        color: dt('chip.remove.icon.color');\n        border-radius: 50%;\n        transition:\n            outline-color dt('chip.transition.duration'),\n            box-shadow dt('chip.transition.duration');\n        outline-color: transparent;\n    }\n\n    .p-chip-remove-icon:focus-visible {\n        box-shadow: dt('chip.remove.icon.focus.ring.shadow');\n        outline: dt('chip.remove.icon.focus.ring.width') dt('chip.remove.icon.focus.ring.style') dt('chip.remove.icon.focus.ring.color');\n        outline-offset: dt('chip.remove.icon.focus.ring.offset');\n    }\n";

@@ -1,92 +1,168 @@
 <div class="inventory-dashboard">
-  <div class="page-header premium-header">
-    <div class="header-left">
-      <div class="breadcrumb">Stock / Inventaire</div>
-      <h1>Dashboard Inventaire</h1>
-      <p>Pilotage des inventaires, comptages physiques, variances et clôtures.</p>
 
-      <div class="selected-pill" [class.active]="inventaire()">
-        <mat-icon>{{ inventaire() ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
-        {{ selectedLabel() }}
+  <section class="hero-card">
+    <div class="hero-overlay"></div>
+
+    <div class="hero-left">
+      <div class="breadcrumb">
+        <mat-icon>inventory_2</mat-icon>
+        Stock / Inventaire
+      </div>
+
+      <h1>Dashboard Inventaire</h1>
+
+      <p>
+        Pilotage premium des inventaires, bordereaux, comptages physiques,
+        variances, mises à jour stock et clôtures.
+      </p>
+
+      <div class="selection-panel">
+        <div class="selection-icon" [class.active]="inventaire()">
+          <mat-icon>{{ inventaire() ? 'verified' : 'radio_button_unchecked' }}</mat-icon>
+        </div>
+
+        <div>
+          <span>Inventaire sélectionné</span>
+          <strong>{{ selectedLabel() }}</strong>
+        </div>
+
+        <div class="selection-meta">
+          <span>{{ selectedDepot() }}</span>
+          <b>{{ selectedStatus() }}</b>
+        </div>
       </div>
     </div>
 
-    <div class="header-actions">
-      <button mat-flat-button color="primary" (click)="createInventaire()">
-        <mat-icon>add</mat-icon>
+    <div class="hero-actions">
+      <button mat-flat-button class="btn-primary-premium" (click)="createInventaire()">
+        <mat-icon>add_circle</mat-icon>
         Nouvel inventaire
       </button>
 
-<button
-  mat-stroked-button
-  color="warn"
-  (click)="annulerInventaire()"
-  [disabled]="!canCancel()">
-  Annuler inventaire
-</button>
+      <button
+        mat-stroked-button
+        class="btn-danger-outline"
+        (click)="annulerInventaire()"
+        [disabled]="!canCancel()">
+        <mat-icon>cancel</mat-icon>
+        Annuler
+      </button>
 
-<button
-  mat-flat-button
-  color="warn"
-  (click)="cloturerInventaire()"
-  [disabled]="!canClose()">
-  Clôturer
-</button>
-
+      <button
+        mat-flat-button
+        class="btn-danger-premium"
+        (click)="cloturerInventaire()"
+        [disabled]="!canClose()">
+        <mat-icon>lock</mat-icon>
+        Clôturer
+      </button>
     </div>
-  </div>
+  </section>
 
-  <!-- tes KPI restent ici -->
-     <div class="kpi-grid">
-    <mat-card class="kpi-card primary">
-      <div class="kpi-label">Inventaires</div>
-      <div class="kpi-value">{{ store.kpis().totalInventaires }}</div>
-    </mat-card>
-
-    <mat-card class="kpi-card info">
-      <div class="kpi-label">Ouverts</div>
-      <div class="kpi-value">{{ store.kpis().ouverts }}</div>
-    </mat-card>
-
-    <mat-card class="kpi-card warn">
-      <div class="kpi-label">En comptage</div>
-      <div class="kpi-value">{{ store.kpis().enComptage }}</div>
-    </mat-card>
-
-    <mat-card class="kpi-card accent">
-      <div class="kpi-label">Variances lancées</div>
-      <div class="kpi-value">{{ store.kpis().varianceLancee }}</div>
-    </mat-card>
-
-    <mat-card class="kpi-card success">
-      <div class="kpi-label">Validés</div>
-      <div class="kpi-value">{{ store.kpis().valides }}</div>
-    </mat-card>
-
-    <mat-card class="kpi-card dark">
-      <div class="kpi-label">Clôturés</div>
-      <div class="kpi-value">{{ store.kpis().clotures }}</div>
-    </mat-card>
-  </div>
-
-  <div class="dashboard-panels">
-    <mat-card class="panel">
-      <div class="panel-title">Progression du comptage</div>
-      <p-progressBar [value]="store.progressionComptage()"></p-progressBar>
-      <div class="panel-caption">{{ store.progressionComptage() }} % des articles comptés</div>
-    </mat-card>
-
-    <mat-card class="panel">
-      <div class="panel-title">Valeur totale des écarts</div>
-      <div class="money-value">
-        {{ store.kpis().totalValeurEcart | number:'1.2-2' }}
+  <section class="kpi-grid">
+    <mat-card class="kpi-card kpi-blue">
+      <div class="kpi-icon">
+        <mat-icon>dashboard</mat-icon>
+      </div>
+      <div>
+        <span>Inventaires</span>
+        <strong>{{ store.kpis().totalInventaires }}</strong>
       </div>
     </mat-card>
-  </div>
 
+    <mat-card class="kpi-card kpi-cyan">
+      <div class="kpi-icon">
+        <mat-icon>folder_open</mat-icon>
+      </div>
+      <div>
+        <span>Ouverts</span>
+        <strong>{{ store.kpis().ouverts }}</strong>
+      </div>
+    </mat-card>
 
+    <mat-card class="kpi-card kpi-orange">
+      <div class="kpi-icon">
+        <mat-icon>edit_note</mat-icon>
+      </div>
+      <div>
+        <span>En comptage</span>
+        <strong>{{ store.kpis().enComptage }}</strong>
+      </div>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-purple">
+      <div class="kpi-icon">
+        <mat-icon>compare_arrows</mat-icon>
+      </div>
+      <div>
+        <span>Variances lancées</span>
+        <strong>{{ store.kpis().varianceLancee }}</strong>
+      </div>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-green">
+      <div class="kpi-icon">
+        <mat-icon>task_alt</mat-icon>
+      </div>
+      <div>
+        <span>Validés</span>
+        <strong>{{ store.kpis().valides }}</strong>
+      </div>
+    </mat-card>
+
+    <mat-card class="kpi-card kpi-dark">
+      <div class="kpi-icon">
+        <mat-icon>lock</mat-icon>
+      </div>
+      <div>
+        <span>Clôturés</span>
+        <strong>{{ store.kpis().clotures }}</strong>
+      </div>
+    </mat-card>
+  </section>
+
+  <section class="dashboard-panels">
+    <mat-card class="panel progress-panel">
+      <div class="panel-header">
+        <div>
+          <h3>Progression du comptage</h3>
+          <p>Suivi global des articles comptés</p>
+        </div>
+
+        <div class="progress-badge">
+          {{ store.progressionComptage() }} %
+        </div>
+      </div>
+
+      <p-progressBar [value]="store.progressionComptage()"></p-progressBar>
+
+      <div class="panel-caption">
+        {{ store.progressionComptage() }} % des articles ont été comptés.
+      </div>
+    </mat-card>
+
+    <mat-card class="panel money-panel">
+      <div class="panel-header">
+        <div>
+          <h3>Valeur totale des écarts</h3>
+          <p>Impact financier des variances</p>
+        </div>
+
+        <div class="money-icon">
+          <mat-icon>payments</mat-icon>
+        </div>
+      </div>
+
+      <div class="money-value">
+        {{ store.kpis().totalValeurEcart | number:'1.2-2':'fr-FR' }}
+      </div>
+
+      <span class="money-caption">Valeur calculée sur base du PMP</span>
+    </mat-card>
+  </section>
 
   <app-inventaire-list
     (selectedInventaire)="onSelectInventaire($event)">
   </app-inventaire-list>
+
 </div>

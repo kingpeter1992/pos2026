@@ -898,3 +898,89 @@
   padding-top: 14px;
   padding-bottom: 14px;
 }
+.taux-box {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border-radius: 18px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e3a8a;
+  margin-bottom: 1rem;
+}
+
+.taux-box mat-icon {
+  color: #2563eb;
+}
+
+.taux-box span {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #64748b;
+}
+
+.taux-box strong {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.95rem;
+  font-weight: 950;
+}
+
+.money-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  line-height: 1.15;
+}
+
+.money-block strong {
+  font-size: 14px;
+  font-weight: 800;
+  color: #064e3b;
+}
+
+.currency-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-end;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  color: #065f46;
+  background: #d1fae5;
+  border: 1px solid #a7f3d0;
+}
+
+.secondary-money {
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.rate-line {
+  font-size: 10px;
+  color: #94a3b8;
+}
+
+.total-money strong {
+  color: #b91c1c;
+  font-size: 15px;
+}
+
+.discount-money strong {
+  color: #b45309;
+}
+
+.result-money,
+.qp-money {
+  align-items: flex-end;
+}
+
+.primary-money strong {
+  color: #0f766e;
+}

@@ -7,14 +7,18 @@ import { MatDialog } from '@angular/material/dialog';
 import { ProduitPickerDialogComponent } from '../produit-picker-dialog-component/produit-picker-dialog-component';
 import { ServiceStockStore } from '../../../stock/service/stock-service/service-stock.store';
 import { VenteStore } from '../../service/VenteStore';
-import { Route, Router } from '@angular/router';
+import { Router } from '@angular/router';
 import { DepotStoreService } from '../../../stock/service/stock-service/DepotStoreService';
+import { CaisseStoreService } from '../../../caisse/services/CaisseServiceStore';
+import { VenteRequest, VenteResponse } from '../../../produits/models/vente.model';
+
 interface ProduitTarifie {
   id: number;
   codeBarres: string;
   reference?: string;
   nom: string;
   description?: string;
+
   categorieId: number;
   categorieNom?: string;
 
@@ -23,19 +27,42 @@ interface ProduitTarifie {
   tarifCode?: string | null;
 
   regleTarifId: number | null;
+
   tauxMarge: number;
   tauxRemiseMax: number;
   tauxRemiseApplique: number;
-  montantRemise: number;
   modeArrondi: string | null;
 
   baseTarification: number;
+  baseTarificationCDF: number;
+  baseTarificationUSD: number;
+
   prixBrut: number;
+  prixBrutCDF: number;
+  prixBrutUSD: number;
+
+  montantRemise: number;
+  montantRemiseCDF: number;
+  montantRemiseUSD: number;
+
   prixNetAvantArrondi: number;
+  prixNetAvantArrondiCDF: number;
+  prixNetAvantArrondiUSD: number;
+
   prixFinal: number;
+  prixFinalCDF: number;
+  prixFinalUSD: number;
+
   prixUnitaire: number;
+  prixUnitaireCDF: number;
+  prixUnitaireUSD: number;
+
+  tauxChangeUtilise: number;
 
   prixVenteOriginal?: number;
+  prixVenteFc?: number | null;
+  prixVenteUsd?: number | null;
+
   prixAchat?: number | null;
   pmp?: number | null;
 
@@ -57,16 +84,25 @@ interface LignePanier {
   codeBarres: string;
   reference?: string;
   produit: string;
+
   tarifId: number | null;
   tarifNom: string | null;
+
   prix: number;
+  prixCDF: number;
+  prixUSD: number;
+
   quantite: number;
+
   remise: number;
+  remiseCDF: number;
+  remiseUSD: number;
+
   stock: number;
   imagePrincipale?: string | null;
+
   produitTarifie: ProduitTarifie;
 }
-
 
 @Component({
   selector: 'app-nouvelle-vente.component',
@@ -75,7 +111,8 @@ interface LignePanier {
   standalone: false
 })
 export class NouvelleVenteComponent implements OnInit, OnDestroy {
- loading = signal<boolean>(false);
+
+  loading = signal<boolean>(false);
 
   produits = signal<any[]>([]);
   tarifs = signal<any[]>([]);
@@ -92,6 +129,11 @@ export class NouvelleVenteComponent implements OnInit, OnDestroy {
 
   recherche = '';
   produitSelectionId: number | null = null;
+
+  tauxChange = signal<number>(0);
+
+  devisePrincipale = 'CDF';
+  deviseSecondaire = 'USD';
 
   clientNom = '';
   ticketNumero = '';
@@ -137,11 +179,13 @@ export class NouvelleVenteComponent implements OnInit, OnDestroy {
     private toastr: Toast,
     private venteStore: VenteStore,
     private dialog: MatDialog,
-    private route: Router
+    private router: Router,
+    private caisseStore: CaisseStoreService
   ) {}
 
   ngOnInit(): void {
     this.initialiserTicket();
+    this.loadDernierTaux();
     this.initialiserVente();
 
     setTimeout(() => {
@@ -169,6 +213,19 @@ export class NouvelleVenteComponent implements OnInit, OnDestroy {
 
   private initialiserTicket(): void {
     this.ticketNumero = this.genererTicketNumero();
+  }
+
+  private loadDernierTaux(): void {
+    this.caisseStore.loadDernierTaux().subscribe({
+      next: (taux: number) => {
+        this.tauxChange.set(this.toNumber(taux));
+        this.genererProduitsTarifies();
+      },
+      error: () => {
+        this.tauxChange.set(0);
+        this.toastr.error('Impossible de charger le dernier taux actif');
+      }
+    });
   }
 
   nouveauTicket(): void {
@@ -224,10 +281,6 @@ export class NouvelleVenteComponent implements OnInit, OnDestroy {
 
           this.genererProduitsTarifies();
 
-          console.log('Produits:', this.produits());
-          console.log('Stocks:', this.stocks());
-          console.log('Produits tarifés:', this.produitsTarifies());
-
           this.toastr.success('Données de vente chargées');
         },
         error: (err) => {
@@ -239,16 +292,34 @@ export class NouvelleVenteComponent implements OnInit, OnDestroy {
 
   onDepotChange(depotId: number | null): void {
     this.selectedDepotId.set(depotId ? Number(depotId) : null);
+    this.genererProduitsTarifies();
   }
 
   getSelectedDepot(): any | null {
     const id = this.selectedDepotId();
     if (!id) return null;
+
     return this.depots().find((d: any) => Number(d?.id) === Number(id)) ?? null;
   }
 
   getSelectedDepotNom(): string {
     return this.getSelectedDepot()?.nom ?? '-';
+  }
+
+  getSelectedTarif(): any | null {
+    const id = this.selectedTarifId();
+    if (!id) return null;
+
+    return this.tarifs().find((t: any) => Number(t?.id) === Number(id)) ?? null;
+  }
+
+  getSelectedTarifNom(): string {
+    return this.getSelectedTarif()?.nom ?? '-';
+  }
+
+  onTarifChange(tarifId: number): void {
+    this.selectedTarifId.set(tarifId);
+    this.genererProduitsTarifies();
   }
 
   private genererProduitsTarifies(): void {
@@ -266,21 +337,6 @@ export class NouvelleVenteComponent implements OnInit, OnDestroy {
     );
 
     this.produitsTarifies.set(liste);
-  }
-
-  onTarifChange(tarifId: number): void {
-    this.selectedTarifId.set(tarifId);
-    this.genererProduitsTarifies();
-  }
-
-  getSelectedTarif(): any | null {
-    const id = this.selectedTarifId();
-    if (!id) return null;
-    return this.tarifs().find((t: any) => Number(t?.id) === Number(id)) ?? null;
-  }
-
-  getSelectedTarifNom(): string {
-    return this.getSelectedTarif()?.nom ?? '-';
   }
 
   openProduitDialog(): void {
@@ -332,10 +388,12 @@ export class NouvelleVenteComponent implements OnInit, OnDestroy {
 
   ajouterPremierResultatRecherche(): void {
     const premier = this.produitsFiltres()[0];
+
     if (!premier) {
       this.toastr.error('Aucun produit trouvé');
       return;
     }
+
     this.ajouterDepuisRecherche(premier);
   }
 
@@ -404,7 +462,9 @@ export class NouvelleVenteComponent implements OnInit, OnDestroy {
       current[existingIndex] = {
         ...existing,
         quantite: nouvelleQuantite,
-        remise: this.arrondir2(existing.produitTarifie.montantRemise * nouvelleQuantite)
+        remise: this.arrondir2(existing.produitTarifie.montantRemiseCDF * nouvelleQuantite),
+        remiseCDF: this.arrondir2(existing.produitTarifie.montantRemiseCDF * nouvelleQuantite),
+        remiseUSD: this.arrondir2(existing.produitTarifie.montantRemiseUSD * nouvelleQuantite)
       };
 
       this.lignes.set(current);
@@ -422,11 +482,20 @@ export class NouvelleVenteComponent implements OnInit, OnDestroy {
       codeBarres: produit.codeBarres,
       reference: produit.reference ?? '',
       produit: produit.nom,
+
       tarifId: produit.tarifId,
       tarifNom: produit.tarifNom,
-      prix: produit.prixFinal,
+
+      prix: produit.prixFinalCDF,
+      prixCDF: produit.prixFinalCDF,
+      prixUSD: produit.prixFinalUSD,
+
       quantite: qte,
-      remise: this.arrondir2(produit.montantRemise * qte),
+
+      remise: this.arrondir2(produit.montantRemiseCDF * qte),
+      remiseCDF: this.arrondir2(produit.montantRemiseCDF * qte),
+      remiseUSD: this.arrondir2(produit.montantRemiseUSD * qte),
+
       stock: this.toNumber(produit.stock),
       imagePrincipale: produit.imagePrincipale,
       produitTarifie: produit
@@ -442,6 +511,7 @@ export class NouvelleVenteComponent implements OnInit, OnDestroy {
 
   supprimerLigne(id: number): void {
     this.lignes.set(this.lignes().filter(l => Number(l.id) !== Number(id)));
+
     if (Number(this.selectedRowId()) === Number(id)) {
       this.selectedRowId.set(null);
     }
@@ -461,6 +531,7 @@ export class NouvelleVenteComponent implements OnInit, OnDestroy {
         if (Number(l.id) !== Number(id)) return l;
 
         const quantite = l.quantite + 1;
+
         if (quantite > this.toNumber(l.stock)) {
           this.toastr.error(`Stock insuffisant pour "${l.produit}"`);
           return l;
@@ -469,7 +540,9 @@ export class NouvelleVenteComponent implements OnInit, OnDestroy {
         return {
           ...l,
           quantite,
-          remise: this.arrondir2(l.produitTarifie.montantRemise * quantite)
+          remise: this.arrondir2(l.produitTarifie.montantRemiseCDF * quantite),
+          remiseCDF: this.arrondir2(l.produitTarifie.montantRemiseCDF * quantite),
+          remiseUSD: this.arrondir2(l.produitTarifie.montantRemiseUSD * quantite)
         };
       })
     );
@@ -481,10 +554,13 @@ export class NouvelleVenteComponent implements OnInit, OnDestroy {
         if (Number(l.id) !== Number(id)) return l;
 
         const quantite = Math.max(1, l.quantite - 1);
+
         return {
           ...l,
           quantite,
-          remise: this.arrondir2(l.produitTarifie.montantRemise * quantite)
+          remise: this.arrondir2(l.produitTarifie.montantRemiseCDF * quantite),
+          remiseCDF: this.arrondir2(l.produitTarifie.montantRemiseCDF * quantite),
+          remiseUSD: this.arrondir2(l.produitTarifie.montantRemiseUSD * quantite)
         };
       })
     );
@@ -492,7 +568,14 @@ export class NouvelleVenteComponent implements OnInit, OnDestroy {
 
   ligneTotal(row: LignePanier): number {
     return this.arrondir2(
-      (this.toNumber(row.prix) * this.toNumber(row.quantite)) - this.toNumber(row.remise)
+      this.toNumber(row.prixCDF) * this.toNumber(row.quantite) - this.toNumber(row.remiseCDF)
+    );
+  }
+
+  ligneTotalUSD(row: LignePanier): number {
+    return this.convertirCDFVersUSDByTaux(
+      this.ligneTotal(row),
+      row.produitTarifie.tauxChangeUtilise
     );
   }
 
@@ -506,13 +589,33 @@ export class NouvelleVenteComponent implements OnInit, OnDestroy {
 
   sousTotal(): number {
     return this.arrondir2(
-      this.lignes().reduce((sum, l) => sum + (this.toNumber(l.prix) * this.toNumber(l.quantite)), 0)
+      this.lignes().reduce((sum, l) => {
+        return sum + this.toNumber(l.prixCDF) * this.toNumber(l.quantite);
+      }, 0)
+    );
+  }
+
+  sousTotalUSD(): number {
+    return this.arrondir2(
+      this.lignes().reduce((sum, l) => {
+        const montantCDF = this.toNumber(l.prixCDF) * this.toNumber(l.quantite);
+        return sum + this.convertirCDFVersUSDByTaux(
+          montantCDF,
+          l.produitTarifie.tauxChangeUtilise
+        );
+      }, 0)
     );
   }
 
   totalRemise(): number {
     return this.arrondir2(
-      this.lignes().reduce((sum, l) => sum + this.toNumber(l.remise), 0)
+      this.lignes().reduce((sum, l) => sum + this.toNumber(l.remiseCDF), 0)
+    );
+  }
+
+  totalRemiseUSD(): number {
+    return this.arrondir2(
+      this.lignes().reduce((sum, l) => sum + this.toNumber(l.remiseUSD), 0)
     );
   }
 
@@ -520,8 +623,20 @@ export class NouvelleVenteComponent implements OnInit, OnDestroy {
     return this.arrondir2(this.sousTotal() - this.totalRemise());
   }
 
+  totalGeneralUSD(): number {
+    return this.arrondir2(this.sousTotalUSD() - this.totalRemiseUSD());
+  }
+
   monnaie(): number {
     return this.arrondir2(this.toNumber(this.montantRecu) - this.totalGeneral());
+  }
+
+  montantRecuUSD(): number {
+    return this.convertirCDFVersUSD(this.toNumber(this.montantRecu));
+  }
+
+  monnaieUSD(): number {
+    return this.convertirCDFVersUSD(this.monnaie());
   }
 
   alertesStock(): string[] {
@@ -530,8 +645,466 @@ export class NouvelleVenteComponent implements OnInit, OnDestroy {
       .map(l => `${l.produit} : quantité demandée supérieure au stock disponible (${l.stock})`);
   }
 
-  imprimerTicketPDF(): void {
+  private fusionnerProduitsAvecStock(produits: any[], stocks: any[]): any[] {
+    const stockMap = new Map<number, any>();
+
+    (stocks || []).forEach((s: any) => {
+      const produitId = Number(
+        s?.produitId ??
+        s?.idProduit ??
+        s?.produit?.id ??
+        0
+      );
+
+      if (!produitId) return;
+
+      const depotSelectionne = this.selectedDepotId();
+
+      if (depotSelectionne && Number(s?.depotId) !== Number(depotSelectionne)) {
+        return;
+      }
+
+      stockMap.set(produitId, {
+        stock: this.toNumber(s?.quantiteDisponible ?? 0),
+        pmp: this.toNumber(s?.pmp ?? 0),
+        pmpFc: this.toNumber(s?.pmpFc ?? s?.pmp ?? 0),
+        pmpUsd: this.toNumber(s?.pmpUsd ?? 0),
+        tauxChangeUtilise: this.toNumber(s?.tauxChangeUtilise ?? 0),
+        prixVenteUnitaire: this.toNumber(s?.prixVenteUnitaire ?? 0),
+        depotId: this.toNumber(s?.depotId ?? 0),
+        depotNom: s?.nomDepot ?? s?.depotNom ?? ''
+      });
+    });
+
+    return (produits || []).map((p: any) => {
+      const stockData = stockMap.get(Number(p?.id)) || {};
+      const tauxStock = this.toNumber(stockData?.tauxChangeUtilise);
+      const tauxGlobal = this.toNumber(this.tauxChange());
+
+      return {
+        ...p,
+
+        stock: this.toNumber(stockData?.stock ?? 0),
+        quantiteDisponible: this.toNumber(stockData?.stock ?? 0),
+
+        pmp: this.toNumber(stockData?.pmp ?? 0),
+        pmpFc: this.toNumber(stockData?.pmpFc ?? stockData?.pmp ?? 0),
+        pmpUsd: this.toNumber(stockData?.pmpUsd ?? 0),
+
+        tauxChangeUtilise: tauxStock > 0 ? tauxStock : tauxGlobal,
+
+        prixVenteUnitaire: this.toNumber(stockData?.prixVenteUnitaire ?? 0),
+        depotId: stockData?.depotId ?? null,
+        depotNom: stockData?.depotNom ?? ''
+      };
+    });
+  }
+
+  private tarifierProduits(
+    produits: any[],
+    regles: any[],
+    tarif: any | null
+  ): ProduitTarifie[] {
+    if (!tarif?.id) {
+      return (produits || []).map((produit: any) => this.buildProduitSansTarif(produit));
+    }
+
+    const reglesActivesDuTarif = (regles || []).filter((regle: any) =>
+      Number(regle?.tarifVenteId ?? regle?.tarifId) === Number(tarif.id) &&
+      regle?.actif === true
+    );
+
+    const reglesMap = new Map<number, any>();
+
+    reglesActivesDuTarif.forEach((regle: any) => {
+      reglesMap.set(Number(regle?.categorieId), regle);
+    });
+
+    return (produits || []).map((produit: any) => {
+      const regle = reglesMap.get(Number(produit?.categorieId)) || null;
+      const remiseAuto = this.toNumber(regle?.tauxRemiseMax);
+      return this.buildProduitTarifie(produit, tarif, regle, remiseAuto);
+    });
+  }
+
+  private buildProduitSansTarif(produit: any): ProduitTarifie {
+    const imagePrincipale = this.getImagePrincipale(produit);
+    const taux = this.getTauxProduit(produit);
+
+    const baseCDF = this.resolveBaseTarification(produit);
+    const baseUSD = this.convertirCDFVersUSDByTaux(baseCDF, taux);
+
+    return {
+      id: Number(produit?.id ?? 0),
+      codeBarres: produit?.codeBarres ?? produit?.codeBarre ?? '',
+      reference: produit?.reference ?? '',
+      nom: produit?.nom ?? produit?.nomProduit ?? '',
+      description: produit?.description ?? '',
+
+      categorieId: Number(produit?.categorieId ?? 0),
+      categorieNom: produit?.categorieNom ?? produit?.categorie ?? '',
+
+      tarifId: null,
+      tarifNom: null,
+      tarifCode: null,
+
+      regleTarifId: null,
+      tauxMarge: 0,
+      tauxRemiseMax: 0,
+      tauxRemiseApplique: 0,
+      modeArrondi: null,
+
+      baseTarification: baseCDF,
+      baseTarificationCDF: baseCDF,
+      baseTarificationUSD: baseUSD,
+
+      prixBrut: baseCDF,
+      prixBrutCDF: baseCDF,
+      prixBrutUSD: baseUSD,
+
+      montantRemise: 0,
+      montantRemiseCDF: 0,
+      montantRemiseUSD: 0,
+
+      prixNetAvantArrondi: baseCDF,
+      prixNetAvantArrondiCDF: baseCDF,
+      prixNetAvantArrondiUSD: baseUSD,
+
+      prixFinal: baseCDF,
+      prixFinalCDF: baseCDF,
+      prixFinalUSD: baseUSD,
+
+      prixUnitaire: baseCDF,
+      prixUnitaireCDF: baseCDF,
+      prixUnitaireUSD: baseUSD,
+
+      tauxChangeUtilise: taux,
+
+      prixVenteOriginal: this.toNumber(
+        produit?.prixVenteFc ??
+        produit?.prixVenteUnitaire ??
+        produit?.prixVente
+      ),
+
+      prixVenteFc: produit?.prixVenteFc ?? produit?.prixVente ?? null,
+      prixVenteUsd: produit?.prixVenteUsd ?? null,
+
+      prixAchat: produit?.prixAchat ?? null,
+      pmp: produit?.pmpFc ?? produit?.pmp ?? null,
+
+      stock: this.toNumber(produit?.stock ?? produit?.quantiteDisponible ?? 0),
+      stockMinimum: this.toNumber(produit?.stockMinimum),
+      stockMaximum: this.toNumber(produit?.stockMaximum),
+      actif: produit?.actif !== false,
+
+      imagePrincipale,
+      images: Array.isArray(produit?.images) ? produit.images : [],
+
+      produitSource: produit,
+      regleSource: null
+    };
+  }
+
+  private buildProduitTarifie(
+    produit: any,
+    tarif: any,
+    regle: any | null,
+    remiseDemandee: number = 0
+  ): ProduitTarifie {
+
+    const imagePrincipale = this.getImagePrincipale(produit);
+    const taux = this.getTauxProduit(produit);
+
+    const baseCDF = this.resolveBaseTarification(produit);
+    const baseUSD = this.convertirCDFVersUSDByTaux(baseCDF, taux);
+
+    const tauxMarge = this.toNumber(regle?.tauxMarge);
+    const tauxRemiseMax = this.toNumber(regle?.tauxRemiseMax);
+    const modeArrondi = regle?.modeArrondi ?? 'AUCUN';
+
+    const prixBrutCDF = this.arrondir2(baseCDF + (baseCDF * tauxMarge / 100));
+
+    const tauxRemiseApplique = Math.min(
+      Math.max(this.toNumber(remiseDemandee), 0),
+      tauxRemiseMax
+    );
+
+    const montantRemiseCDF = this.arrondir2(prixBrutCDF * tauxRemiseApplique / 100);
+    const prixNetAvantArrondiCDF = this.arrondir2(prixBrutCDF - montantRemiseCDF);
+    const prixFinalCDF = this.appliquerArrondi(prixNetAvantArrondiCDF, modeArrondi);
+
+    return {
+      id: Number(produit?.id ?? 0),
+      codeBarres: produit?.codeBarres ?? produit?.codeBarre ?? '',
+      reference: produit?.reference ?? '',
+      nom: produit?.nom ?? produit?.nomProduit ?? '',
+      description: produit?.description ?? '',
+
+      categorieId: Number(produit?.categorieId ?? 0),
+      categorieNom: produit?.categorieNom ?? produit?.categorie ?? '',
+
+      tarifId: Number(tarif?.id ?? 0),
+      tarifNom: tarif?.nom ?? '',
+      tarifCode: tarif?.code ?? '',
+
+      regleTarifId: regle ? Number(regle?.id ?? 0) : null,
+
+      tauxMarge,
+      tauxRemiseMax,
+      tauxRemiseApplique,
+      modeArrondi,
+
+      baseTarification: baseCDF,
+      baseTarificationCDF: baseCDF,
+      baseTarificationUSD: baseUSD,
+
+      prixBrut: prixBrutCDF,
+      prixBrutCDF,
+      prixBrutUSD: this.convertirCDFVersUSDByTaux(prixBrutCDF, taux),
+
+      montantRemise: montantRemiseCDF,
+      montantRemiseCDF,
+      montantRemiseUSD: this.convertirCDFVersUSDByTaux(montantRemiseCDF, taux),
+
+      prixNetAvantArrondi: prixNetAvantArrondiCDF,
+      prixNetAvantArrondiCDF,
+      prixNetAvantArrondiUSD: this.convertirCDFVersUSDByTaux(prixNetAvantArrondiCDF, taux),
+
+      prixFinal: prixFinalCDF,
+      prixFinalCDF,
+      prixFinalUSD: this.convertirCDFVersUSDByTaux(prixFinalCDF, taux),
+
+      prixUnitaire: prixFinalCDF,
+      prixUnitaireCDF: prixFinalCDF,
+      prixUnitaireUSD: this.convertirCDFVersUSDByTaux(prixFinalCDF, taux),
+
+      tauxChangeUtilise: taux,
+
+      prixVenteOriginal: this.toNumber(
+        produit?.prixVenteFc ??
+        produit?.prixVenteUnitaire ??
+        produit?.prixVente
+      ),
+
+      prixVenteFc: produit?.prixVenteFc ?? produit?.prixVente ?? null,
+      prixVenteUsd: produit?.prixVenteUsd ?? null,
+
+      prixAchat: produit?.prixAchat ?? null,
+      pmp: produit?.pmpFc ?? produit?.pmp ?? null,
+
+      stock: this.toNumber(produit?.stock ?? produit?.quantiteDisponible ?? 0),
+      stockMinimum: this.toNumber(produit?.stockMinimum),
+      stockMaximum: this.toNumber(produit?.stockMaximum),
+      actif: produit?.actif !== false,
+
+      imagePrincipale,
+      images: Array.isArray(produit?.images) ? produit.images : [],
+
+      produitSource: produit,
+      regleSource: regle
+    };
+  }
+
+  private resolveBaseTarification(produit: any): number {
+    const baseFc = this.toNumber(
+      produit?.pmpFc ??
+      produit?.pmp ??
+      produit?.prixAchatFc ??
+      produit?.prixAchat ??
+      produit?.prixVenteUnitaire ??
+      produit?.prixVente ??
+      0
+    );
+
+    if (baseFc <= 0) {
+      console.warn(`Produit sans PMP FC : ${produit?.nom ?? produit?.nomProduit}`);
+    }
+
+    return baseFc;
+  }
+
+  private getTauxProduit(produit: any): number {
+    const tauxStock = this.toNumber(produit?.tauxChangeUtilise);
+
+    if (tauxStock > 0) {
+      return tauxStock;
+    }
+
+    return this.toNumber(this.tauxChange());
+  }
+
+  convertirCDFVersUSD(montantCDF: number): number {
+    const taux = this.toNumber(this.tauxChange());
+
+    if (taux <= 0) return 0;
+
+    return this.arrondir2(this.toNumber(montantCDF) / taux);
+  }
+
+  convertirUSDVersCDF(montantUSD: number): number {
+    const taux = this.toNumber(this.tauxChange());
+
+    if (taux <= 0) return 0;
+
+    return this.arrondir2(this.toNumber(montantUSD) * taux);
+  }
+
+  convertirCDFVersUSDByTaux(montantCDF: number, taux: number): number {
+    const t = this.toNumber(taux);
+
+    if (t <= 0) return 0;
+
+    return this.arrondir2(this.toNumber(montantCDF) / t);
+  }
+
+  private appliquerArrondi(montant: number, mode: string): number {
+    const valeur = this.toNumber(montant);
+
+    switch ((mode || 'AUCUN').toUpperCase()) {
+      case 'ENTIER_SUP':
+        return Math.ceil(valeur);
+      case 'ENTIER_INF':
+        return Math.floor(valeur);
+      case 'MULTIPLE_10':
+        return Math.ceil(valeur / 10) * 10;
+      case 'MULTIPLE_50':
+        return Math.ceil(valeur / 50) * 50;
+      case 'MULTIPLE_100':
+        return Math.ceil(valeur / 100) * 100;
+      default:
+        return this.arrondir2(valeur);
+    }
+  }
+
+  private getImagePrincipale(produit: any): string | null {
+    if (!produit) return null;
+
+    if (Array.isArray(produit?.images) && produit.images.length > 0) {
+      const principale = produit.images.find((img: any) => img?.principale === true);
+      return principale?.url || produit.images[0]?.url || null;
+    }
+
+    if (produit?.imagePrincipale) {
+      return produit.imagePrincipale;
+    }
+
+    return null;
+  }
+
+  payer(): void {
     if (!this.lignes().length) {
+      this.toastr.error('Le panier est vide');
+      return;
+    }
+
+    if (!this.selectedDepotId()) {
+      this.toastr.error('Veuillez sélectionner un dépôt');
+      return;
+    }
+
+    if (this.toNumber(this.montantRecu) < this.totalGeneral()) {
+      this.toastr.error('Le montant reçu est insuffisant');
+      return;
+    }
+
+    const tauxGlobal = this.toNumber(this.tauxChange());
+
+    if (tauxGlobal <= 0) {
+      this.toastr.error('Aucun taux actif trouvé. Veuillez enregistrer un taux avant la vente.');
+      return;
+    }
+
+    const payloadVente: VenteRequest = {
+      ticketNumero: this.ticketNumero,
+      clientNom: this.clientNom || 'Comptoir',
+      caissier: 'CAISSIER POS',
+      depotId: this.selectedDepotId() as number,
+      modePaiement: this.modePaiement,
+
+      devise: 'CDF',
+      tauxChange: tauxGlobal,
+
+      montantRecu: this.toNumber(this.montantRecu),
+      monnaie: this.monnaie(),
+      sousTotal: this.sousTotal(),
+      totalRemise: this.totalRemise(),
+      totalGeneral: this.totalGeneral(),
+
+      sousTotalCDF: this.sousTotal(),
+      totalRemiseCDF: this.totalRemise(),
+      totalGeneralCDF: this.totalGeneral(),
+      montantRecuCDF: this.toNumber(this.montantRecu),
+      monnaieCDF: this.monnaie(),
+
+      sousTotalUSD: this.sousTotalUSD(),
+      totalRemiseUSD: this.totalRemiseUSD(),
+      totalGeneralUSD: this.totalGeneralUSD(),
+      montantRecuUSD: this.montantRecuUSD(),
+      monnaieUSD: this.monnaieUSD(),
+
+      tarifId: this.selectedTarifId(),
+
+      lignes: this.lignes().map(l => {
+        const totalLigneCDF = this.ligneTotal(l);
+        const totalLigneUSD = this.ligneTotalUSD(l);
+
+        return {
+          produitId: l.produitId,
+          quantite: l.quantite,
+
+          prix: l.prixCDF,
+          remise: l.remiseCDF,
+          total: totalLigneCDF,
+
+          prixCDF: l.prixCDF,
+          remiseCDF: l.remiseCDF,
+          totalCDF: totalLigneCDF,
+
+          prixUSD: l.prixUSD,
+          remiseUSD: l.remiseUSD,
+          totalUSD: totalLigneUSD,
+
+          tauxChangeUtilise: l.produitTarifie.tauxChangeUtilise
+        };
+      })
+    };
+
+    this.venteStore.save(payloadVente).subscribe({
+      next: (saved: VenteResponse) => {
+        this.toastr.success(`Paiement validé - Ticket ${saved.ticketNumero}`);
+
+        this.imprimerTicketPDF();
+
+        this.viderPanier();
+        this.clientNom = '';
+        this.modePaiement = 'CASH';
+        this.montantRecu = null;
+        this.initialiserTicket();
+
+        this.initialiserVente();
+      },
+      error: (err) => {
+        console.error(err);
+        this.toastr.error(
+          err?.error?.message || 'Erreur lors de l’enregistrement de la vente'
+        );
+      }
+    });
+  }
+
+  imprimerTicketPDF(): void {
+    const lignesTicket = [...this.lignes()];
+    const ticketNumero = this.ticketNumero;
+    const clientNom = this.clientNom || 'Comptoir';
+    const modePaiement = this.modePaiement || 'CASH';
+    const montantRecu = this.toNumber(this.montantRecu);
+
+    const sousTotal = this.sousTotal();
+    const totalRemise = this.totalRemise();
+    const totalGeneral = this.totalGeneral();
+    const monnaie = this.arrondir2(montantRecu - totalGeneral);
+
+    if (!lignesTicket.length) {
       this.toastr.error('Aucune ligne à imprimer');
       return;
     }
@@ -563,18 +1136,18 @@ export class NouvelleVenteComponent implements OnInit, OnDestroy {
       doc.text('PEACE POS', center, y, { align: 'center' });
 
       y += 4;
-      doc.setFontSize(8);
       doc.setFont('helvetica', 'normal');
-      doc.text(`Ticket : ${this.ticketNumero}`, center, y, { align: 'center' });
+      doc.setFontSize(8);
+      doc.text(`Ticket : ${ticketNumero}`, center, y, { align: 'center' });
 
       y += 4;
-      doc.text(`${new Date().toLocaleString()}`, center, y, { align: 'center' });
+      doc.text(new Date().toLocaleString('fr-FR'), center, y, { align: 'center' });
 
       y += 4;
-      doc.text(`Client : ${this.clientNom || 'Comptoir'}`, center, y, { align: 'center' });
+      doc.text(`Client : ${clientNom}`, center, y, { align: 'center' });
 
       y += 4;
-      doc.text(`Paiement : ${this.modePaiement || 'CASH'}`, center, y, { align: 'center' });
+      doc.text(`Paiement : ${modePaiement}`, center, y, { align: 'center' });
 
       y += 3;
       doc.line(left, y, right, y);
@@ -582,7 +1155,6 @@ export class NouvelleVenteComponent implements OnInit, OnDestroy {
       y += 5;
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(8);
-
       doc.text('Article', left, y);
       doc.text('Qté', 40, y, { align: 'right' });
       doc.text('PU', 56, y, { align: 'right' });
@@ -590,11 +1162,14 @@ export class NouvelleVenteComponent implements OnInit, OnDestroy {
 
       y += 2;
       doc.line(left, y, right, y);
-
       y += 4;
 
-      this.lignes().forEach(l => {
-        ensureSpace(10);
+      lignesTicket.forEach(l => {
+        ensureSpace(12);
+
+        const prix = this.toNumber(l.prixCDF);
+        const remise = this.toNumber(l.remiseCDF);
+        const totalLigne = this.ligneTotal(l);
 
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(8);
@@ -604,49 +1179,55 @@ export class NouvelleVenteComponent implements OnInit, OnDestroy {
 
         doc.setFont('helvetica', 'normal');
         doc.text(`${l.quantite}`, 40, y, { align: 'right' });
-        doc.text(this.formatMoney(l.prix), 56, y, { align: 'right' });
-        doc.text(this.formatMoney(this.ligneTotal(l)), right, y, { align: 'right' });
+        doc.text(this.formatFC(prix).replace(' FC', ''), 56, y, { align: 'right' });
+        doc.text(this.formatFC(totalLigne).replace(' FC', ''), right, y, { align: 'right' });
 
         y += 4;
 
-        if (this.toNumber(l.remise) > 0) {
+        if (remise > 0) {
           ensureSpace(4);
           doc.setFontSize(7);
-          doc.text(`Remise ligne : ${this.formatMoney(l.remise)}`, right, y, { align: 'right' });
+          doc.text(`Remise : ${this.formatFC(remise)}`, right, y, { align: 'right' });
           y += 3.5;
         }
       });
 
-      ensureSpace(24);
+      ensureSpace(30);
 
       y += 1;
       doc.line(left, y, right, y);
 
       y += 5;
-      doc.setFontSize(8);
       doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
       doc.text('Sous-total', left, y);
-      doc.text(this.formatMoney(this.sousTotal()), right, y, { align: 'right' });
+      doc.text(this.formatFC(sousTotal), right, y, { align: 'right' });
 
       y += 4;
       doc.text('Remise', left, y);
-      doc.text(this.formatMoney(this.totalRemise()), right, y, { align: 'right' });
+      doc.text(this.formatFC(totalRemise), right, y, { align: 'right' });
 
       y += 5;
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(9);
       doc.text('TOTAL', left, y);
-      doc.text(this.formatMoney(this.totalGeneral()), right, y, { align: 'right' });
+      doc.text(this.formatFC(totalGeneral), right, y, { align: 'right' });
+
+      y += 4;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      doc.text(`Equivalent : ${this.formatUSD(this.totalGeneralUSD())}`, right, y, {
+        align: 'right'
+      });
 
       y += 5;
-      doc.setFont('helvetica', 'normal');
       doc.setFontSize(8);
       doc.text('Reçu', left, y);
-      doc.text(this.formatMoney(this.montantRecu || 0), right, y, { align: 'right' });
+      doc.text(this.formatFC(montantRecu), right, y, { align: 'right' });
 
       y += 4;
       doc.text('Monnaie', left, y);
-      doc.text(this.formatMoney(this.monnaie()), right, y, { align: 'right' });
+      doc.text(this.formatFC(monnaie), right, y, { align: 'right' });
 
       y += 5;
       doc.line(left, y, right, y);
@@ -658,302 +1239,8 @@ export class NouvelleVenteComponent implements OnInit, OnDestroy {
       y += 4;
       doc.text('Powered by PEACE POS', center, y, { align: 'center' });
 
-      doc.save(`ticket-${this.ticketNumero}.pdf`);
+      doc.save(`ticket-${ticketNumero}.pdf`);
     });
-  }
-
-  private truncate(text: string, maxLength: number): string {
-    if (!text) return '';
-    return text.length > maxLength
-      ? `${text.substring(0, maxLength)}...`
-      : text;
-  }
-
-  formatMoney(value: number | null | undefined): string {
-    return this.arrondir2(this.toNumber(value)).toFixed(2);
-  }
-
-  private fusionnerProduitsAvecStock(produits: any[], stocks: any[]): any[] {
-    const stockMap = new Map<number, any>();
-
-    (stocks || []).forEach((s: any) => {
-      const produitId = Number(
-        s?.produitId ??
-        s?.idProduit ??
-        s?.produit?.id ??
-        0
-      );
-
-      if (!produitId) return;
-
-      const quantite = this.toNumber(
-        s?.quantiteDisponible ??
-        s?.stockDisponible ??
-        s?.quantite ??
-        s?.stock ??
-        0
-      );
-
-      const pmp = this.toNumber(
-        s?.pmp ??
-        s?.prixMoyen ??
-        s?.prixAchat ??
-        0
-      );
-
-      const prixVenteUnitaire = this.toNumber(
-        s?.prixVenteUnitaire ??
-        s?.prixVente ??
-        0
-      );
-
-      stockMap.set(produitId, {
-        stock: quantite,
-        pmp,
-        prixVenteUnitaire
-      });
-    });
-
-    return (produits || []).map((p: any) => {
-      const stockData = stockMap.get(Number(p?.id)) || {};
-
-      return {
-        ...p,
-        stock: this.toNumber(
-          stockData?.stock ??
-          p?.stock ??
-          p?.quantiteDisponible ??
-          0
-        ),
-        quantiteDisponible: this.toNumber(
-          stockData?.stock ??
-          p?.quantiteDisponible ??
-          0
-        ),
-        pmp: this.toNumber(
-          stockData?.pmp ??
-          p?.pmp ??
-          p?.prixAchat ??
-          0
-        ),
-        prixVenteUnitaire: this.toNumber(
-          stockData?.prixVenteUnitaire ??
-          p?.prixVenteUnitaire ??
-          p?.prixVente ??
-          0
-        )
-      };
-    });
-  }
-
-  private tarifierProduits(
-    produits: any[],
-    regles: any[],
-    tarif: any | null
-  ): ProduitTarifie[] {
-    if (!tarif?.id) {
-      return (produits || []).map((produit: any) => this.buildProduitSansTarif(produit));
-    }
-
-    const reglesActivesDuTarif = (regles || []).filter((regle: any) =>
-      Number(regle?.tarifVenteId ?? regle?.tarifId) === Number(tarif.id) &&
-      regle?.actif === true
-    );
-
-    const reglesMap = new Map<number, any>();
-    reglesActivesDuTarif.forEach((regle: any) => {
-      reglesMap.set(Number(regle?.categorieId), regle);
-    });
-
-    return (produits || []).map((produit: any) => {
-      const regle = reglesMap.get(Number(produit?.categorieId)) || null;
-      const remiseAuto = this.toNumber(regle?.tauxRemiseMax);
-      return this.buildProduitTarifie(produit, tarif, regle, remiseAuto);
-    });
-  }
-
-  private buildProduitSansTarif(produit: any): ProduitTarifie {
-    const imagePrincipale = this.getImagePrincipale(produit);
-    const base = this.resolveBaseTarification(produit);
-
-    return {
-      id: Number(produit?.id ?? 0),
-      codeBarres: produit?.codeBarres ?? '',
-      reference: produit?.reference ?? '',
-      nom: produit?.nom ?? '',
-      description: produit?.description ?? '',
-      categorieId: Number(produit?.categorieId ?? 0),
-      categorieNom: produit?.categorieNom ?? '',
-
-      tarifId: null,
-      tarifNom: null,
-      tarifCode: null,
-
-      regleTarifId: null,
-      tauxMarge: 0,
-      tauxRemiseMax: 0,
-      tauxRemiseApplique: 0,
-      montantRemise: 0,
-      modeArrondi: null,
-
-      baseTarification: base,
-      prixBrut: base,
-      prixNetAvantArrondi: base,
-      prixFinal: base,
-      prixUnitaire: base,
-
-      prixVenteOriginal: this.toNumber(
-        produit?.prixVenteUnitaire ??
-        produit?.prixVente
-      ),
-      prixAchat: produit?.prixAchat ?? null,
-      pmp: produit?.pmp ?? null,
-
-      stock: this.toNumber(
-        produit?.stock ??
-        produit?.stockDisponible ??
-        produit?.quantiteDisponible ??
-        0
-      ),
-      stockMinimum: this.toNumber(produit?.stockMinimum),
-      stockMaximum: this.toNumber(produit?.stockMaximum),
-      actif: produit?.actif !== false,
-
-      imagePrincipale,
-      images: Array.isArray(produit?.images) ? produit.images : [],
-
-      produitSource: produit,
-      regleSource: null
-    };
-  }
-
-  private buildProduitTarifie(
-    produit: any,
-    tarif: any,
-    regle: any | null,
-    remiseDemandee: number = 0
-  ): ProduitTarifie {
-    const imagePrincipale = this.getImagePrincipale(produit);
-
-    const base = this.resolveBaseTarification(produit);
-    const tauxMarge = this.toNumber(regle?.tauxMarge);
-    const tauxRemiseMax = this.toNumber(regle?.tauxRemiseMax);
-    const modeArrondi = regle?.modeArrondi ?? 'AUCUN';
-
-    const prixBrut = base + (base * tauxMarge / 100);
-
-    const tauxRemiseApplique = Math.min(
-      Math.max(this.toNumber(remiseDemandee), 0),
-      tauxRemiseMax
-    );
-
-    const montantRemise = this.arrondir2(prixBrut * tauxRemiseApplique / 100);
-    const prixNetAvantArrondi = this.arrondir2(prixBrut - montantRemise);
-    const prixFinal = this.appliquerArrondi(prixNetAvantArrondi, modeArrondi);
-
-    return {
-      id: Number(produit?.id ?? 0),
-      codeBarres: produit?.codeBarres ?? '',
-      reference: produit?.reference ?? '',
-      nom: produit?.nom ?? '',
-      description: produit?.description ?? '',
-      categorieId: Number(produit?.categorieId ?? 0),
-      categorieNom: produit?.categorieNom ?? '',
-
-      tarifId: Number(tarif?.id ?? 0),
-      tarifNom: tarif?.nom ?? '',
-      tarifCode: tarif?.code ?? '',
-
-      regleTarifId: regle ? Number(regle?.id ?? 0) : null,
-      tauxMarge,
-      tauxRemiseMax,
-      tauxRemiseApplique,
-      montantRemise,
-      modeArrondi,
-
-      baseTarification: base,
-      prixBrut: this.arrondir2(prixBrut),
-      prixNetAvantArrondi,
-      prixFinal,
-      prixUnitaire: prixFinal,
-
-      prixVenteOriginal: this.toNumber(
-        produit?.prixVenteUnitaire ??
-        produit?.prixVente
-      ),
-      prixAchat: produit?.prixAchat ?? null,
-      pmp: produit?.pmp ?? null,
-
-      stock: this.toNumber(
-        produit?.stock ??
-        produit?.stockDisponible ??
-        produit?.quantiteDisponible ??
-        0
-      ),
-      stockMinimum: this.toNumber(produit?.stockMinimum),
-      stockMaximum: this.toNumber(produit?.stockMaximum),
-      actif: produit?.actif !== false,
-
-      imagePrincipale,
-      images: Array.isArray(produit?.images) ? produit.images : [],
-
-      produitSource: produit,
-      regleSource: regle
-    };
-  }
-
-  private resolveBaseTarification(produit: any): number {
-    const pmp = this.toNumber(
-      produit?.pmp ??
-      produit?.prixAchat ??
-      produit?.prixVenteUnitaire ??
-      produit?.prixVente ??
-      0
-    );
-
-    if (pmp <= 0) {
-      console.warn(`⚠️ Produit sans PMP : ${produit?.nom}`);
-    }
-
-    return pmp;
-  }
-
-  private appliquerArrondi(montant: number, mode: string): number {
-    const valeur = this.toNumber(montant);
-
-    switch ((mode || 'AUCUN').toUpperCase()) {
-      case 'ENTIER_SUP':
-        return Math.ceil(valeur);
-      case 'ENTIER_INF':
-        return Math.floor(valeur);
-      default:
-        return this.arrondir2(valeur);
-    }
-  }
-
-  private getImagePrincipale(produit: any): string | null {
-    if (!produit) return null;
-
-    if (Array.isArray(produit?.images) && produit.images.length > 0) {
-      const principale = produit.images.find((img: any) => img?.principale === true);
-      return principale?.url || produit.images[0]?.url || null;
-    }
-
-    if (produit?.imagePrincipale) {
-      return produit.imagePrincipale;
-    }
-
-    return null;
-  }
-
-  private toNumber(value: any): number {
-    if (value === null || value === undefined || value === '') return 0;
-    const n = Number(value);
-    return Number.isNaN(n) ? 0 : n;
-  }
-
-  private arrondir2(value: number): number {
-    return Number(this.toNumber(value).toFixed(2));
   }
 
   async demarrerScanAutoSilencieux(): Promise<void> {
@@ -975,6 +1262,7 @@ export class NouvelleVenteComponent implements OnInit, OnDestroy {
       });
 
       const video = this.scannerVideoRef?.nativeElement;
+
       if (!video) {
         this.scanMessage = 'Zone vidéo non disponible';
         return;
@@ -1011,9 +1299,11 @@ export class NouvelleVenteComponent implements OnInit, OnDestroy {
       if (!this.scanAutoActif) return;
 
       const code = await this.lireCodeDepuisVideo();
+
       if (!code) return;
 
       const now = Date.now();
+
       if (this.lastScannedCode === code && now - this.lastScannedAt < 1800) {
         return;
       }
@@ -1028,9 +1318,11 @@ export class NouvelleVenteComponent implements OnInit, OnDestroy {
   private async lireCodeDepuisVideo(): Promise<string | null> {
     try {
       const video = this.scannerVideoRef?.nativeElement;
+
       if (!video || video.readyState < 2) return null;
 
       const DetectorCtor = (window as any).BarcodeDetector;
+
       if (!DetectorCtor) {
         this.scanMessage = 'BarcodeDetector non disponible dans ce navigateur';
         return null;
@@ -1041,9 +1333,11 @@ export class NouvelleVenteComponent implements OnInit, OnDestroy {
       });
 
       const barcodes = await detector.detect(video);
+
       if (!barcodes?.length) return null;
 
       const rawValue = barcodes[0]?.rawValue?.trim();
+
       return rawValue || null;
     } catch {
       return null;
@@ -1078,6 +1372,7 @@ export class NouvelleVenteComponent implements OnInit, OnDestroy {
     }
 
     const video = this.scannerVideoRef?.nativeElement;
+
     if (video) {
       video.pause();
       video.srcObject = null;
@@ -1086,62 +1381,50 @@ export class NouvelleVenteComponent implements OnInit, OnDestroy {
     this.scanMessage = 'Scan arrêté';
   }
 
-  payer(): void {
-    if (!this.lignes().length) {
-      this.toastr.error('Le panier est vide');
-      return;
-    }
+  formatTauxProduit(produit: ProduitTarifie | any): string {
+    const taux = this.toNumber(produit?.tauxChangeUtilise);
+    return taux > 0 ? `1 USD = ${this.formatFC(taux)}` : 'Taux non défini';
+  }
 
-    if (!this.selectedDepotId()) {
-      this.toastr.error('Veuillez sélectionner un dépôt');
-      return;
-    }
+  formatSecondaryUSD(value: number | null | undefined): string {
+    return `≈ ${this.formatUSD(value)}`;
+  }
 
-    if (this.toNumber(this.montantRecu) < this.totalGeneral()) {
-      this.toastr.error('Le montant reçu est insuffisant');
-      return;
-    }
+  formatFC(value: number | null | undefined): string {
+    return `${this.arrondir2(this.toNumber(value)).toLocaleString('fr-FR', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2
+    })} FC`;
+  }
 
-    const payloadVente = {
-      ticketNumero: this.ticketNumero,
-      clientNom: this.clientNom,
-      caissier: 'CAISSIER POS',
-      modePaiement: this.modePaiement,
-      montantRecu: this.toNumber(this.montantRecu),
-      monnaie: this.monnaie(),
-      sousTotal: this.sousTotal(),
-      totalRemise: this.totalRemise(),
-      totalGeneral: this.totalGeneral(),
-      tarifId: this.selectedTarifId(),
-      depotId: this.selectedDepotId(),
-      lignes: this.lignes().map(l => ({
-        produitId: l.produitId,
-        quantite: l.quantite,
-        prix: l.prix,
-        remise: l.remise,
-        total: this.ligneTotal(l)
-      }))
-    };
+  formatUSD(value: number | null | undefined): string {
+    return `${this.arrondir2(this.toNumber(value)).toLocaleString('fr-FR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    })} USD`;
+  }
 
-    this.venteStore.save(payloadVente).subscribe({
-      next: (saved: any) => {
-        console.log('Vente enregistrée :', saved);
-        this.toastr.success(`Paiement validé - Ticket ${this.ticketNumero}`);
-        this.imprimerTicketPDF();
-        this.viderPanier();
-        this.clientNom = '';
-        this.modePaiement = 'CASH';
-        this.montantRecu = null;
-        this.initialiserTicket();
-        this.route.navigateByUrl('/admin/pos/vente');
-        this.initialiserVente();
-      },
-      error: (err) => {
-        console.error(err);
-        this.toastr.error(
-          err?.error?.message || 'Erreur lors de l’enregistrement de la vente'
-        );
-      }
-    });
+  formatMoney(value: number | null | undefined): string {
+    return this.arrondir2(this.toNumber(value)).toFixed(2);
+  }
+
+  private truncate(text: string, maxLength: number): string {
+    if (!text) return '';
+
+    return text.length > maxLength
+      ? `${text.substring(0, maxLength)}...`
+      : text;
+  }
+
+  private toNumber(value: any): number {
+    if (value === null || value === undefined || value === '') return 0;
+
+    const n = Number(value);
+
+    return Number.isNaN(n) ? 0 : n;
+  }
+
+  private arrondir2(value: number): number {
+    return Number(this.toNumber(value).toFixed(2));
   }
 }

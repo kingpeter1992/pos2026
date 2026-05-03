@@ -134,7 +134,6 @@ export class InventaireBordereauStoreService {
     callbacks?: { next?: () => void; error?: (message: string) => void }
   ): void {
     this.submittingSubject.set(true);
-
     this.service.miseAJourStock(bordereauId, user)
       .pipe(finalize(() => this.submittingSubject.set(false)))
       .subscribe({

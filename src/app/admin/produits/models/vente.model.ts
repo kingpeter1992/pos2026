@@ -17,7 +17,7 @@ export interface LigneVenteRequest {
   quantite: number;
 }
 
-export interface VenteRequest {
+export interface VentePanierRequest {
   caissier: string;
   modePaiement: string;
   lignes: LigneVenteRequest[];
@@ -199,4 +199,109 @@ export interface TarificationResponse {
   prixNet: number;
   modeArrondi: string;
   stockDisponible: number;
+}
+
+
+export interface VenteRequest {
+  ticketNumero: string;
+  clientNom: string;
+  caissier: string;
+  modePaiement: string;
+  devise: string;
+  tauxChange: number;
+
+  montantRecu: number;
+  monnaie: number;
+  sousTotal: number;
+  totalRemise: number;
+  totalGeneral: number;
+
+  sousTotalCDF: number;
+  totalRemiseCDF: number;
+  totalGeneralCDF: number;
+  montantRecuCDF: number;
+  monnaieCDF: number;
+
+  sousTotalUSD: number;
+  totalRemiseUSD: number;
+  totalGeneralUSD: number;
+  montantRecuUSD: number;
+  monnaieUSD: number;
+
+  tarifId?: number | null;
+  depotId: number;
+  lignes: VenteLigneRequest[],
+}
+
+export interface VenteLigneRequest {
+  produitId: number;
+  quantite: number;
+
+  prix: number;
+  remise: number;
+  total: number;
+
+  prixCDF: number;
+  remiseCDF: number;
+  totalCDF: number;
+
+  prixUSD: number;
+  remiseUSD: number;
+  totalUSD: number;
+}
+
+export interface VenteResponse {
+  id: number;
+  ticketNumero: string;
+  dateVente: string;
+
+  clientNom: string;
+  caissier: string;
+  modePaiement: string;
+
+  devise: string;
+  tauxChange: number;
+
+  montantRecu: number;
+  monnaie: number;
+  sousTotal: number;
+  totalRemise: number;
+  totalGeneral: number;
+
+  sousTotalCDF: number;
+  totalRemiseCDF: number;
+  totalGeneralCDF: number;
+  montantRecuCDF: number;
+  monnaieCDF: number;
+
+  sousTotalUSD: number;
+  totalRemiseUSD: number;
+  totalGeneralUSD: number;
+  montantRecuUSD: number;
+  monnaieUSD: number;
+
+  tarifId?: number | null;
+  depotId?: number | null;
+  statut: string;
+
+  lignes: VenteLigneResponse[];
+}
+
+export interface VenteLigneResponse {
+  produitId: number | null;
+  produitNom: string;
+
+  quantite: number;
+
+  prixUnitaire: number;
+  remise: number;
+  totalLigne: number;
+
+  prixCDF: number;
+  remiseCDF: number;
+  totalCDF: number;
+
+  prixUSD: number;
+  remiseUSD: number;
+  totalUSD: number;
 }

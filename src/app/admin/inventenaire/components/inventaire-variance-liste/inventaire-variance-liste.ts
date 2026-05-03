@@ -4,6 +4,7 @@ import { InventaireStoreService } from '../../service/inventaire-service/inventa
 import { InventaireVariance } from '../../model/inventaire.models';
 import { autoTable } from 'jspdf-autotable';
 import jsPDF from 'jspdf';
+import * as XLSX from 'xlsx';
 import { ServiceInventaire } from '../../service/inventaire-service/service-inventaire';
 
 type InventaireVarianceGroupe = {
@@ -537,5 +538,233 @@ imprimerRapportVariancePdf(inventaireId: number): void {
       console.error('Erreur génération rapport variance PDF', err);
     }
   });
+}
+exporterExcel(): void {
+  const rows = this.groupesParInventaire().map(g => ({
+    Inventaire: `INV-${g.inventaireId}`,
+    Dépôt: g.depotNom,
+    Lignes: g.totalLignes,
+    'Écart total': this.formatNumberSafe(g.totalEcart, 3),
+    'Valeur écart': this.formatNumberSafe(g.totalValeurEcart, 2),
+    Entrées: g.totalEntree,
+    Sorties: g.totalSortie,
+    Néant: g.totalNeant,
+    Appliquées: `${g.appliquees} / ${g.totalLignes}`
+  }));
+
+  const worksheet = XLSX.utils.json_to_sheet(rows);
+  const workbook = XLSX.utils.book_new();
+
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Variances');
+
+  worksheet['!cols'] = [
+    { wch: 18 },
+    { wch: 25 },
+    { wch: 12 },
+    { wch: 18 },
+    { wch: 20 },
+    { wch: 12 },
+    { wch: 12 },
+    { wch: 12 },
+    { wch: 16 }
+  ];
+
+  XLSX.writeFile(
+    workbook,
+    `variances-inventaires-${new Date().toISOString().slice(0, 10)}.xlsx`
+  );
+}
+
+exporterPdfGlobal(): void {
+  const doc = new jsPDF('l', 'mm', 'a4');
+
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+
+  const margin = 10;
+  const darkBlue: [number, number, number] = [15, 23, 42];
+  const blue: [number, number, number] = [37, 99, 235];
+  const green: [number, number, number] = [22, 163, 74];
+  const red: [number, number, number] = [220, 38, 38];
+  const orange: [number, number, number] = [249, 115, 22];
+  const gray: [number, number, number] = [100, 116, 139];
+
+  let y = 12;
+
+  doc.setFillColor(...darkBlue);
+  doc.roundedRect(margin, y, pageWidth - margin * 2, 28, 3, 3, 'F');
+
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(16);
+  doc.text('RAPPORT GLOBAL DES VARIANCES', margin + 6, y + 11);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.text('Inventaires • Écarts • Valeurs • Application stock', margin + 6, y + 18);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.text(
+    new Date().toLocaleString('fr-FR'),
+    pageWidth - margin - 6,
+    y + 14,
+    { align: 'right' }
+  );
+
+  y += 38;
+
+  const cards = [
+    {
+      label: 'LIGNES',
+      value: String(this.totalLignes()),
+      color: blue
+    },
+    {
+      label: 'ÉCART TOTAL',
+      value: this.formatNumberSafe(this.totalEcart(), 3),
+      color: orange
+    },
+    {
+      label: 'VALEUR ÉCART',
+      value: this.formatNumberSafe(this.totalValeurEcart(), 2),
+      color: this.totalValeurEcart() < 0 ? red : green
+    },
+    {
+      label: 'APPLIQUÉES',
+      value: String(this.totalAppliquees()),
+      color: green
+    }
+  ];
+
+  const cardGap = 5;
+  const cardWidth = (pageWidth - margin * 2 - cardGap * 3) / 4;
+  const cardHeight = 22;
+
+  cards.forEach((card, index) => {
+    const x = margin + index * (cardWidth + cardGap);
+
+    doc.setFillColor(255, 255, 255);
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(x, y, cardWidth, cardHeight, 3, 3, 'FD');
+
+    doc.setFillColor(...card.color);
+    doc.roundedRect(x, y, 3, cardHeight, 1, 1, 'F');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.setTextColor(...gray);
+    doc.text(card.label, x + 7, y + 8);
+
+    doc.setFontSize(12);
+    doc.setTextColor(...card.color);
+    doc.text(card.value, x + 7, y + 16);
+  });
+
+  y += 32;
+
+  autoTable(doc, {
+    startY: y,
+    margin: { left: margin, right: margin },
+    tableWidth: pageWidth - margin * 2,
+    theme: 'grid',
+    head: [[
+      'Inventaire',
+      'Dépôt',
+      'Lignes',
+      'Écart total',
+      'Valeur écart',
+      'Entrées',
+      'Sorties',
+      'Néant',
+      'Appliquées'
+    ]],
+    body: this.groupesParInventaire().map(g => [
+      `INV-${g.inventaireId}`,
+      g.depotNom,
+      String(g.totalLignes),
+      this.formatNumberSafe(g.totalEcart, 3),
+      this.formatNumberSafe(g.totalValeurEcart, 2),
+      String(g.totalEntree),
+      String(g.totalSortie),
+      String(g.totalNeant),
+      `${g.appliquees} / ${g.totalLignes}`
+    ]),
+    styles: {
+      font: 'helvetica',
+      fontSize: 8,
+      cellPadding: 2.2,
+      valign: 'middle',
+      lineColor: [226, 232, 240],
+      lineWidth: 0.1,
+      textColor: [30, 41, 59]
+    },
+    headStyles: {
+      fillColor: darkBlue,
+      textColor: 255,
+      fontStyle: 'bold',
+      halign: 'center'
+    },
+    alternateRowStyles: {
+      fillColor: [248, 250, 252]
+    },
+    columnStyles: {
+      0: { cellWidth: 26, halign: 'center' },
+      1: { cellWidth: 48 },
+      2: { cellWidth: 20, halign: 'center' },
+      3: { cellWidth: 28, halign: 'right' },
+      4: { cellWidth: 32, halign: 'right' },
+      5: { cellWidth: 22, halign: 'center' },
+      6: { cellWidth: 22, halign: 'center' },
+      7: { cellWidth: 22, halign: 'center' },
+      8: { cellWidth: 28, halign: 'center' }
+    },
+    didParseCell: (data: any) => {
+      if (data.section !== 'body') return;
+
+      const groupe = this.groupesParInventaire()[data.row.index];
+      if (!groupe) return;
+
+      if (data.column.index === 3) {
+        data.cell.styles.textColor =
+          groupe.totalEcart < 0 ? red : groupe.totalEcart > 0 ? green : gray;
+        data.cell.styles.fontStyle = 'bold';
+      }
+
+      if (data.column.index === 4) {
+        data.cell.styles.textColor =
+          groupe.totalValeurEcart < 0 ? red : groupe.totalValeurEcart > 0 ? green : gray;
+        data.cell.styles.fontStyle = 'bold';
+      }
+    }
+  });
+
+  const pageCount = doc.getNumberOfPages();
+
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+
+    doc.setDrawColor(...darkBlue);
+    doc.line(margin, pageHeight - 12, pageWidth - margin, pageHeight - 12);
+
+    doc.setFontSize(7);
+    doc.setTextColor(...gray);
+    doc.text(
+      `Rapport généré automatiquement le ${new Date().toLocaleDateString('fr-FR')}`,
+      margin,
+      pageHeight - 6
+    );
+
+    doc.setFillColor(...darkBlue);
+    doc.roundedRect(pageWidth - margin - 25, pageHeight - 10, 25, 6, 2, 2, 'F');
+
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`${i} / ${pageCount}`, pageWidth - margin - 12.5, pageHeight - 6, {
+      align: 'center'
+    });
+  }
+
+  doc.save(`rapport-global-variances-${new Date().toISOString().slice(0, 10)}.pdf`);
 }
 }

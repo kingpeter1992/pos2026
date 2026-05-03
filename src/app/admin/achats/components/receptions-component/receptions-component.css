@@ -631,3 +631,29 @@
   color: #dc2626;
   font-weight: 600;
 }
+
+.usd-preview {
+  margin-top: -8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #0369a1;
+}
+
+.total-line-cell {
+  white-space: nowrap;
+}
+
+.total-line-cell strong {
+  display: block;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.total-line-cell small,
+.charges-item small {
+  display: block;
+  margin-top: 3px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #0369a1;
+}

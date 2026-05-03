@@ -56,7 +56,8 @@
 
         <div class="summary-card strong">
           <span>Total</span>
-          <strong>{{ totalMontant() | number:'1.2-2' }} USD</strong>
+          <strong>{{ formatFC(totalMontantFC()) }}</strong>
+          <small class="secondary-money">{{ formatUSD(totalMontantUSD()) }}</small>
         </div>
       </div>
     </div>
@@ -111,8 +112,19 @@
               </div>
 
               <div class="price-row">
-                <div class="price-main">
-                  {{ getPrix(p) | number:'1.2-2' }} USD
+                <div class="price-row">
+                  <div class="money-block primary-money">
+                    <span class="currency-label">FC</span>
+                    <strong>{{ formatFC(getPrixFC(p)) }}</strong>
+                    <small class="secondary-money">{{ formatUSD(getPrixUSD(p)) }}</small>
+                    <small class="rate-line">{{ formatTauxProduit(p) }}</small>
+                  </div>
+
+                  <div class="price-extra" *ngIf="getRemiseFC(p) > 0">
+                    Remise :
+                    <strong>{{ formatFC(getRemiseFC(p)) }}</strong>
+                    <small>{{ formatUSD(getRemiseUSD(p)) }}</small>
+                  </div>
                 </div>
 
                 <div class="price-extra" *ngIf="p.montantRemise">
@@ -183,7 +195,8 @@
             <div class="selection-info">
               <strong>{{ item.produit.nom }}</strong>
               <small>{{ item.produit.codeBarres || '-' }}</small>
-              <small>PU: {{ getPrix(item.produit) | number:'1.2-2' }} USD</small>
+              <small>PU FC : {{ formatFC(getPrixFC(item.produit)) }}</small>
+              <small>PU USD : {{ formatUSD(getPrixUSD(item.produit)) }}</small>
             </div>
 
             <div class="selection-qty">
@@ -198,8 +211,10 @@
               </button>
             </div>
 
-            <div class="selection-total">
-              {{ getSousTotalSelection(item.produit.id) | number:'1.2-2' }} USD
+            <div class="selection-total money-block total-money">
+              <span class="currency-label">FC</span>
+              <strong>{{ formatFC(getSousTotalSelectionFC(item.produit.id)) }}</strong>
+              <small class="secondary-money">{{ formatUSD(getSousTotalSelectionUSD(item.produit.id)) }}</small>
             </div>
 
             <button mat-icon-button color="warn" type="button" (click)="retirerProduit(item.produit.id)">

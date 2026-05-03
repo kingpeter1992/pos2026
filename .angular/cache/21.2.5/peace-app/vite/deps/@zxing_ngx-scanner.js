@@ -11,11 +11,11 @@ import {
 } from "./chunk-M34QWGN3.js";
 import {
   FormsModule
-} from "./chunk-RVSOO4W3.js";
+} from "./chunk-465PQI47.js";
 import {
   CommonModule
-} from "./chunk-PWYZQKDD.js";
-import "./chunk-RB3D7EIV.js";
+} from "./chunk-NWGCBTQU.js";
+import "./chunk-DIYC4QG4.js";
 import {
   ChangeDetectionStrategy,
   Component,
@@ -34,20 +34,20 @@ import {
   ɵɵstyleProp,
   ɵɵtext,
   ɵɵviewQuery
-} from "./chunk-BTZAHDHR.js";
+} from "./chunk-FKCUFCP6.js";
 import {
   EventEmitter,
   ɵɵdefineInjector
-} from "./chunk-7KWL4VMN.js";
-import "./chunk-HWYXSU2G.js";
+} from "./chunk-KDX5GZJX.js";
 import "./chunk-JRFR6BLO.js";
+import "./chunk-HWYXSU2G.js";
 import {
   BehaviorSubject
 } from "./chunk-MARUHEWW.js";
 import {
   __spreadProps,
   __spreadValues
-} from "./chunk-KWSTWQNB.js";
+} from "./chunk-7WUTQBRG.js";
 
 // node_modules/@zxing/ngx-scanner/fesm2022/zxing-ngx-scanner.mjs
 var _c0 = ["preview"];

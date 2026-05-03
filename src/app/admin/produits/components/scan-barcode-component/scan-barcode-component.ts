@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { ProduitStoreService } from '../../core/produit-store.service';
 import { ProduitResponse, FlatProductLabel } from '../../models/produit.model';
 import { ProduitService } from '../../service/produit-service/produit-service';
+import { CaisseStoreService } from '../../../caisse/services/CaisseServiceStore';
 
 @Component({
   selector: 'app-scan-barcode-component',
@@ -9,11 +10,15 @@ import { ProduitService } from '../../service/produit-service/produit-service';
   styleUrl: './scan-barcode-component.css',
   standalone: false
 })
+
 export class ScanBarcodeComponent implements OnInit {
   produits: ProduitResponse[] = [];
   filteredProduits: ProduitResponse[] = [];
   loading = false;
   searchTerm = '';
+
+  dernierTaux = 0;
+  loadingTaux = false;
 
   selectedMap: Record<number, boolean> = {};
   quantityMap: Record<number, number> = {};
@@ -23,10 +28,13 @@ export class ScanBarcodeComponent implements OnInit {
 
   constructor(
     private produitStore: ProduitStoreService,
-    private produitService: ProduitService
+    private produitService: ProduitService,
+    private caisseStore: CaisseStoreService
   ) {}
 
   ngOnInit(): void {
+    this.chargerDernierTauxActif();
+
     this.produitStore.produits$.subscribe(data => {
       this.produits = data;
       this.filteredProduits = [...data];
@@ -43,6 +51,45 @@ export class ScanBarcodeComponent implements OnInit {
     });
 
     this.produitStore.loadIfNeeded().subscribe();
+  }
+
+  private chargerDernierTauxActif(): void {
+    this.loadingTaux = true;
+
+    this.caisseStore.loadTauxActif().subscribe({
+      next: (taux) => {
+        this.dernierTaux = Number(taux?.taux ?? 0);
+        this.loadingTaux = false;
+      },
+      error: (err) => {
+        console.error(err);
+        this.dernierTaux = 0;
+        this.loadingTaux = false;
+      }
+    });
+  }
+
+  convertirFcEnUsd(montantFc: number): number {
+    if (!montantFc || !this.dernierTaux || this.dernierTaux <= 0) {
+      return 0;
+    }
+
+    return +(Number(montantFc) / this.dernierTaux).toFixed(2);
+  }
+
+  formatFc(value: number): string {
+    return new Intl.NumberFormat('fr-FR', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(Number(value || 0));
+  }
+
+
+  formatUsd(value: number): string {
+    return new Intl.NumberFormat('fr-FR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(Number(value || 0));
   }
 
   applyFilter(): void {

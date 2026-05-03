@@ -13,7 +13,7 @@ import { InventaireResponse } from '../../model/inventaire.models';
 
 })
 export class InventaireComponent implements OnInit {
-  readonly store = inject(InventaireStoreService);
+   readonly store = inject(InventaireStoreService);
   private readonly dialog = inject(MatDialog);
 
   readonly inventaire = signal<InventaireResponse | null>(null);
@@ -22,21 +22,29 @@ export class InventaireComponent implements OnInit {
     this.inventaire()?.reference || 'Aucun inventaire sélectionné'
   );
 
-readonly canClose = computed(() => {
-  const inv = this.inventaire();
+  readonly selectedDepot = computed(() =>
+    this.inventaire()?.depotNom || 'Tous dépôts'
+  );
 
-  return !!inv
-    && inv.cloture !== true
-    && inv.tousBordereauxStockMisAJour === true;
-});
+  readonly selectedStatus = computed(() =>
+    this.inventaire()?.statut || 'NON SÉLECTIONNÉ'
+  );
 
-readonly canCancel = computed(() => {
-  const inv = this.inventaire();
+  readonly canClose = computed(() => {
+    const inv = this.inventaire();
 
-  return !!inv
-    && inv.statut === 'CLOTURE'
-    && this.isAdmin();
-});
+    return !!inv
+      && inv.cloture !== true
+      && inv.tousBordereauxStockMisAJour === true;
+  });
+
+  readonly canCancel = computed(() => {
+    const inv = this.inventaire();
+
+    return !!inv
+      && inv.statut === 'CLOTURE'
+      && this.isAdmin();
+  });
 
   ngOnInit(): void {
     this.store.loadInventaires();
@@ -44,9 +52,10 @@ readonly canCancel = computed(() => {
 
   createInventaire(): void {
     const dialogRef = this.dialog.open(InventaireCreateDialogComponent, {
-      width: '720px',
-      maxWidth: '95vw',
-      disableClose: true
+      width: '760px',
+      maxWidth: '96vw',
+      disableClose: true,
+      panelClass: 'premium-dialog'
     });
 
     dialogRef.afterClosed().subscribe((created) => {
@@ -56,11 +65,9 @@ readonly canCancel = computed(() => {
     });
   }
 
-onSelectInventaire(inv: InventaireResponse | null): void {
-  this.inventaire.set(
-    inv ? { ...inv } : null
-  );
-}
+  onSelectInventaire(inv: InventaireResponse | null): void {
+    this.inventaire.set(inv ? { ...inv } : null);
+  }
 
   cloturerInventaire(): void {
     const inv = this.inventaire();

@@ -1,100 +1,177 @@
-<div class="page">
-  <div class="header">
-    <div>
-      <h2>Gestion des utilisateurs</h2>
-      <p class="muted">Bloquer / débloquer et gérer les rôles</p>
+<div class="users-page">
+
+  <section class="premium-hero">
+    <div class="hero-glow"></div>
+
+    <div class="hero-content">
+      <div>
+        <div class="breadcrumb">
+          <mat-icon>admin_panel_settings</mat-icon>
+          Administration / Utilisateurs
+        </div>
+
+        <h1>Gestion des utilisateurs</h1>
+
+        <p>
+          Administration des comptes, blocage/déblocage et attribution des rôles système.
+        </p>
+      </div>
+
+      <button mat-flat-button class="refresh-btn" (click)="loadUsers()">
+        <mat-icon>refresh</mat-icon>
+        Rafraîchir
+      </button>
+    </div>
+  </section>
+
+  <section class="kpi-grid">
+    <mat-card class="kpi-card blue">
+      <div class="kpi-icon">
+        <mat-icon>group</mat-icon>
+      </div>
+      <div>
+        <span>Utilisateurs</span>
+        <strong>{{ totalUsers }}</strong>
+      </div>
+    </mat-card>
+
+    <mat-card class="kpi-card green">
+      <div class="kpi-icon">
+        <mat-icon>verified_user</mat-icon>
+      </div>
+      <div>
+        <span>Actifs</span>
+        <strong>{{ activeUsers }}</strong>
+      </div>
+    </mat-card>
+
+    <mat-card class="kpi-card red">
+      <div class="kpi-icon">
+        <mat-icon>block</mat-icon>
+      </div>
+      <div>
+        <span>Bloqués</span>
+        <strong>{{ blockedUsers }}</strong>
+      </div>
+    </mat-card>
+
+    <mat-card class="kpi-card purple">
+      <div class="kpi-icon">
+        <mat-icon>security</mat-icon>
+      </div>
+      <div>
+        <span>Rôles disponibles</span>
+        <strong>{{ rolesList.length }}</strong>
+      </div>
+    </mat-card>
+  </section>
+
+  <mat-card class="table-card">
+    <div class="table-header">
+      <div>
+        <h2>Liste des utilisateurs</h2>
+        <p>Modifie les accès et sauvegarde uniquement les lignes concernées.</p>
+      </div>
+
+      <span class="count-pill">
+        {{ totalUsers }} compte(s)
+      </span>
     </div>
 
-    <button mat-stroked-button (click)="loadUsers()">
-      <mat-icon>refresh</mat-icon>
-      Rafraîchir
-    </button>
-  </div>
-
-  <mat-card class="card">
     <div class="table-wrap">
-      <table mat-table [dataSource]="users" class="mat-elevation-z0">
+      <table mat-table [dataSource]="users" class="premium-table">
 
-        <!-- Username -->
         <ng-container matColumnDef="username">
           <th mat-header-cell *matHeaderCellDef>Utilisateur</th>
           <td mat-cell *matCellDef="let user">
-            <div class="u">
-              <div class="u-name">{{ user.username }}</div>
-              <div class="u-email">{{ user.email }}</div>
+            <div class="user-cell">
+              <div class="avatar">
+                {{ (user.username || 'U').charAt(0).toUpperCase() }}
+              </div>
+
+              <div>
+                <strong>{{ user.username }}</strong>
+                <span>{{ user.email || 'Aucun email' }}</span>
+              </div>
             </div>
           </td>
         </ng-container>
 
-        <!-- Status -->
         <ng-container matColumnDef="status">
           <th mat-header-cell *matHeaderCellDef>Statut</th>
           <td mat-cell *matCellDef="let user">
-            <span class="status" [class.blocked]="!user.active">
-              <mat-icon class="status-ico">{{ user.active ? 'check_circle' : 'block' }}</mat-icon>
+            <span class="status-pill" [class.blocked]="!user.active">
+              <mat-icon>{{ user.active ? 'check_circle' : 'block' }}</mat-icon>
               {{ user.active ? 'Actif' : 'Bloqué' }}
             </span>
           </td>
         </ng-container>
 
-        <!-- Roles -->
         <ng-container matColumnDef="roles">
           <th mat-header-cell *matHeaderCellDef>Rôles</th>
           <td mat-cell *matCellDef="let user">
             <div class="roles-grid">
-           <mat-checkbox
-  *ngFor="let role of rolesList"
-  [checked]="user.selectedRoles.includes(role)"
-  (change)="onRoleChange(user, role, $event.checked)">
-  {{ role }}
-</mat-checkbox>
+              <mat-checkbox
+                *ngFor="let role of rolesList"
+                [checked]="user.selectedRoles.includes(role)"
+                (change)="onRoleChange(user, role, $event.checked)">
+                {{ role.replace('ROLE_', '') }}
+              </mat-checkbox>
             </div>
 
-            <mat-chip-listbox class="chips" *ngIf="user.selectedRoles?.length">
-              <mat-chip *ngFor="let r of user.selectedRoles" [disabled]="true">{{ r }}</mat-chip>
-            </mat-chip-listbox>
+            <div class="chips" *ngIf="user.selectedRoles?.length">
+              <span class="role-chip" *ngFor="let r of user.selectedRoles">
+                {{ r.replace('ROLE_', '') }}
+              </span>
+            </div>
           </td>
         </ng-container>
 
-        <!-- Actions -->
         <ng-container matColumnDef="actions">
-          <th mat-header-cell *matHeaderCellDef>Actions</th>
-          <td mat-cell *matCellDef="let user">
+          <th mat-header-cell *matHeaderCellDef class="text-right">Actions</th>
+          <td mat-cell *matCellDef="let user" class="text-right">
             <div class="actions">
               <button
-                mat-raised-button
-                [color]="user.active ? 'warn' : 'primary'"
+                mat-flat-button
+                class="block-btn"
+                [class.unlock]="!user.active"
                 (click)="toggleBlock(user)"
                 [disabled]="loadingRow[user.id]">
+
                 <mat-progress-spinner
                   *ngIf="loadingRow[user.id]"
                   diameter="18"
                   mode="indeterminate"
                   class="btn-spinner">
                 </mat-progress-spinner>
+
                 <mat-icon *ngIf="!loadingRow[user.id]">
                   {{ user.active ? 'lock' : 'lock_open' }}
                 </mat-icon>
+
                 {{ user.active ? 'Bloquer' : 'Débloquer' }}
               </button>
 
               <button
-                mat-stroked-button
-                color="primary"
+                mat-flat-button
+                class="save-btn"
                 (click)="saveRoles(user)"
                 [disabled]="savingRolesRow[user.id] || !isRolesDirty(user)">
+
                 <mat-progress-spinner
                   *ngIf="savingRolesRow[user.id]"
                   diameter="18"
                   mode="indeterminate"
                   class="btn-spinner">
                 </mat-progress-spinner>
+
                 <mat-icon *ngIf="!savingRolesRow[user.id]">save</mat-icon>
                 Sauvegarder
               </button>
 
               <div class="hint" *ngIf="isRolesDirty(user)">
-                <mat-icon>info</mat-icon> Modifications non enregistrées
+                <mat-icon>info</mat-icon>
+                Non enregistré
               </div>
             </div>
           </td>
@@ -105,4 +182,5 @@
       </table>
     </div>
   </mat-card>
+
 </div>

@@ -19,7 +19,7 @@ export class ImagesProduitsComponent implements OnInit {
   constructor(
     private produitStore: ProduitStoreService,
     private router: Router,
-      private produitService: ProduitService, // 🔥 AJOUTER
+    private produitService: ProduitService, // 🔥 AJOUTER
 
   ) {}
 

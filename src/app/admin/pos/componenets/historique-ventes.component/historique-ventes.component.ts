@@ -447,4 +447,83 @@ setAnnulationLoading(id: number, loading: boolean): void {
 }
 
 
+formatFC(value: number | null | undefined): string {
+  return `${this.toNumber(value).toLocaleString('fr-FR', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2
+  })} FC`;
+}
+
+formatUSD(value: number | null | undefined): string {
+  return `${this.toNumber(value).toLocaleString('fr-FR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })} USD`;
+}
+
+toNumber(value: any): number {
+  if (value === null || value === undefined || value === '') return 0;
+  const n = Number(value);
+  return Number.isNaN(n) ? 0 : n;
+}
+
+getVenteFC(v: any, field: string): number {
+  return this.toNumber(
+    v?.[`${field}CDF`] ??
+    v?.[`${field}Fc`] ??
+    v?.[field] ??
+    0
+  );
+}
+
+getVenteUSD(v: any, field: string): number {
+  return this.toNumber(
+    v?.[`${field}USD`] ??
+    v?.[`${field}Usd`] ??
+    0
+  );
+}
+
+getLigneFC(ligne: any, field: string): number {
+  if (field === 'prix') {
+    return this.toNumber(ligne?.prixCDF ?? ligne?.prixUnitaireCDF ?? ligne?.prixUnitaire ?? ligne?.prix ?? 0);
+  }
+
+  if (field === 'remise') {
+    return this.toNumber(ligne?.remiseCDF ?? ligne?.remise ?? 0);
+  }
+
+  if (field === 'total') {
+    return this.toNumber(ligne?.totalCDF ?? ligne?.totalLigneCDF ?? ligne?.totalLigne ?? ligne?.total ?? 0);
+  }
+
+  return 0;
+}
+
+getLigneUSD(ligne: any, field: string): number {
+  if (field === 'prix') {
+    return this.toNumber(ligne?.prixUSD ?? ligne?.prixUnitaireUSD ?? 0);
+  }
+
+  if (field === 'remise') {
+    return this.toNumber(ligne?.remiseUSD ?? 0);
+  }
+
+  if (field === 'total') {
+    return this.toNumber(ligne?.totalUSD ?? ligne?.totalLigneUSD ?? 0);
+  }
+
+  return 0;
+}
+
+totalMontantUSD(): number {
+  return this.ventesFiltrees()
+    .reduce((sum: number, v: any) => sum + this.getVenteUSD(v, 'totalGeneral'), 0);
+}
+
+panierMoyenUSD(): number {
+  const total = this.totalVentes();
+  if (!total) return 0;
+  return this.totalMontantUSD() / total;
+}
 }

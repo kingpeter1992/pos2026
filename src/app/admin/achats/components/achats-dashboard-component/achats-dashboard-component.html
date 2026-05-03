@@ -1,11 +1,11 @@
 <div class="dashboard-page">
 
-  <!-- HEADER -->
   <div class="dashboard-header">
     <div class="header-left">
       <div class="header-icon">
         <mat-icon>monitoring</mat-icon>
       </div>
+
       <div>
         <div class="breadcrumb">Achats / Commandes</div>
         <h1>Tableau de bord des commandes</h1>
@@ -14,34 +14,24 @@
     </div>
 
     <div class="header-actions">
-      <button class="btn secondary" (click)="refresh()">
+      <button class="btn secondary" type="button" (click)="refresh()">
         <mat-icon>refresh</mat-icon>
         Actualiser
       </button>
-<!--
-      <button class="btn secondary" (click)="exportExcel()">
-        <mat-icon>table_view</mat-icon>
-        Excel
-      </button>
 
-      <button class="btn secondary" (click)="exportPdf()">
-        <mat-icon>picture_as_pdf</mat-icon>
-        PDF
-      </button> -->
-
-      <button class="btn primary" (click)="createCommande()">
+      <button class="btn primary" type="button" (click)="createCommande()">
         <mat-icon>add_shopping_cart</mat-icon>
         Nouvelle commande
       </button>
     </div>
   </div>
 
-  <!-- FILTER -->
   <div class="filter-card">
     <div class="filter-title">
       <div class="filter-icon">
         <mat-icon>manage_search</mat-icon>
       </div>
+
       <div>
         <h3>Centre de recherche</h3>
         <span>Recherche rapide et filtrage des commandes</span>
@@ -60,6 +50,7 @@
         class="erp-select"
         [value]="statutFilter()"
         (change)="onChangeStatut($any($event.target).value)">
+
         <option value="TOUS">Tous les statuts</option>
         <option value="BROUILLON">Brouillon</option>
         <option value="EN_COURS">En cours</option>
@@ -70,26 +61,26 @@
         <option value="ANNULEE">Annulée</option>
       </select>
 
-      <button class="btn secondary" (click)="clearFilters()">
+
+      <button class="btn secondary" type="button" (click)="clearFilters()">
         <mat-icon>restart_alt</mat-icon>
         Réinitialiser
       </button>
     </div>
   </div>
 
-  <!-- LOADING -->
   <div class="loading-box" *ngIf="loading()">
     <mat-icon class="spin">progress_activity</mat-icon>
     <span>Chargement des commandes...</span>
   </div>
 
-  <!-- KPI -->
   <div class="kpi-grid">
     <div class="kpi-card blue">
       <div class="kpi-top">
         <span>Total commandes</span>
         <mat-icon>shopping_cart</mat-icon>
       </div>
+
       <div class="kpi-value">{{ formatNumber(totalCommandes()) }}</div>
       <div class="kpi-footer">Nombre total après filtres</div>
     </div>
@@ -99,7 +90,15 @@
         <span>Montant total</span>
         <mat-icon>payments</mat-icon>
       </div>
-      <div class="kpi-value">{{ formatMoney(montantTotal(), 'USD') }}</div>
+
+      <div class="kpi-value">
+        {{ formatMoney(montantTotal(), 'FC') }}
+      </div>
+
+      <div class="kpi-sub" *ngIf="montantTotalUsd() > 0">
+        ≈ {{ formatMoney(montantTotalUsd(), 'USD') }}
+      </div>
+
       <div class="kpi-footer">Montant cumulé des commandes</div>
     </div>
 
@@ -108,6 +107,7 @@
         <span>En cours</span>
         <mat-icon>pending_actions</mat-icon>
       </div>
+
       <div class="kpi-value">{{ formatNumber(totalEnCours()) }}</div>
       <div class="kpi-footer">Commandes non finalisées</div>
     </div>
@@ -117,6 +117,7 @@
         <span>Partiellement livrées</span>
         <mat-icon>local_shipping</mat-icon>
       </div>
+
       <div class="kpi-value">{{ formatNumber(totalPartielLivre()) }}</div>
       <div class="kpi-footer">Réception incomplète</div>
     </div>
@@ -126,6 +127,7 @@
         <span>Livrées / Clôturées</span>
         <mat-icon>task_alt</mat-icon>
       </div>
+
       <div class="kpi-value">{{ formatNumber(totalLivre()) }}</div>
       <div class="kpi-footer">Commandes terminées</div>
     </div>
@@ -135,15 +137,14 @@
         <span>En retard</span>
         <mat-icon>warning</mat-icon>
       </div>
+
       <div class="kpi-value">{{ formatNumber(totalRetard()) }}</div>
       <div class="kpi-footer">Date prévue dépassée</div>
     </div>
   </div>
 
-  <!-- CONTENT -->
   <div class="content-grid">
 
-    <!-- LEFT -->
     <div class="main-column">
 
       <div class="card-panel">
@@ -173,21 +174,34 @@
                 *ngFor="let item of commandesRecentes(); trackBy: trackByCommande"
                 class="selectable-row"
                 (click)="openCommande(item)">
+
                 <td class="strong">{{ getCommandeRef(item) }}</td>
                 <td>{{ item.fournisseurNom || '-' }}</td>
                 <td>{{ item.dateCommande || '-' }}</td>
                 <td>{{ item.datePrevue || '-' }}</td>
+
                 <td>
                   <span [class]="getStatutClass(item.statut)">
                     {{ getStatutLabel(item.statut) }}
                   </span>
                 </td>
-                <td>{{ formatMoney(item.montantTotal || 0, item.devise || 'USD') }}</td>
+
+                <td>
+                  <div class="money-cell">
+                    <strong>{{ formatMoney(getMontantFcCommande(item), 'FC') }}</strong>
+
+                    <small *ngIf="getMontantUsdCommande(item) > 0">
+                      ≈ {{ formatMoney(getMontantUsdCommande(item), 'USD') }}
+                    </small>
+                  </div>
+                </td>
+
                 <td>
                   <div class="progress-wrap">
                     <div class="progress-bar">
                       <div class="progress-fill" [style.width.%]="getProgress(item)"></div>
                     </div>
+
                     <span>{{ formatNumber(getProgress(item), 0) }}%</span>
                   </div>
                 </td>
@@ -218,8 +232,12 @@
               <div class="supplier-meta">{{ f.totalCommandes }} commande(s)</div>
             </div>
 
-            <div class="supplier-amount">
-              {{ formatMoney(f.montantTotal, 'USD') }}
+            <div class="money-cell">
+              <strong>{{ formatMoney(getMontantFcFournisseur(f), 'FC') }}</strong>
+
+              <small *ngIf="getMontantUsdFournisseur(f) > 0">
+                ≈ {{ formatMoney(getMontantUsdFournisseur(f), 'USD') }}
+              </small>
             </div>
           </div>
 
@@ -231,7 +249,6 @@
       </div>
     </div>
 
-    <!-- RIGHT -->
     <div class="side-column">
 
       <div class="card-panel small">
@@ -244,11 +261,14 @@
 
         <div class="big-progress-card">
           <div class="big-progress-value">{{ formatNumber(tauxReceptionGlobal(), 1) }}%</div>
+
           <div class="big-progress-bar">
             <div class="big-progress-fill" [style.width.%]="tauxReceptionGlobal()"></div>
           </div>
+
           <div class="big-progress-label">
-            Reçu {{ formatNumber(quantiteTotaleRecue(), 0) }} / {{ formatNumber(quantiteTotaleCommandee(), 0) }}
+            Reçu {{ formatNumber(quantiteTotaleRecue(), 0) }} /
+            {{ formatNumber(quantiteTotaleCommandee(), 0) }}
           </div>
         </div>
       </div>
@@ -266,12 +286,14 @@
             class="late-item"
             *ngFor="let item of commandesEnRetard(); trackBy: trackByCommande"
             (click)="openCommande(item)">
+
             <div class="late-top">
               <div class="late-ref">{{ getCommandeRef(item) }}</div>
               <div class="late-days">{{ daysLate(item) }} j</div>
             </div>
 
             <div class="late-supplier">{{ item.fournisseurNom || '-' }}</div>
+
             <div class="late-meta">
               Prévue : {{ item.datePrevue || '-' }} · {{ getStatutLabel(item.statut) }}
             </div>
@@ -315,21 +337,32 @@
             <span>Brouillon</span>
             <strong>{{ totalBrouillon() }}</strong>
           </div>
+
           <div class="mini-stat">
             <span>En cours</span>
             <strong>{{ totalEnCours() }}</strong>
           </div>
+
           <div class="mini-stat">
             <span>Partiel</span>
             <strong>{{ totalPartielLivre() }}</strong>
           </div>
+
           <div class="mini-stat">
             <span>Annulé</span>
             <strong>{{ totalAnnule() }}</strong>
           </div>
+
           <div class="mini-stat">
             <span>Montant moyen</span>
-            <strong>{{ formatMoney(montantMoyenCommande(), 'USD') }}</strong>
+
+            <div class="money-cell">
+              <strong>{{ formatMoney(montantMoyenCommande(), 'FC') }}</strong>
+
+              <small *ngIf="montantMoyenCommandeUsd() > 0">
+                ≈ {{ formatMoney(montantMoyenCommandeUsd(), 'USD') }}
+              </small>
+            </div>
           </div>
         </div>
       </div>

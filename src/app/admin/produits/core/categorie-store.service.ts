@@ -37,7 +37,6 @@ export class CategorieStoreService {
     this.currentRequest$ = this.categorieService.findAllActives().pipe(
       tap((data) => {
         this.categoriesSubject.next(data)
-        console.log('Categorie chargé depuis la con', data)
         this.loaded = true;
       }),
       finalize(() => {

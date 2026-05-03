@@ -740,3 +740,39 @@
     min-width: 960px;
   }
 }
+.money-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.money-cell strong {
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.money-cell small {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.money-cell.value strong {
+  color: #047857;
+}
+
+.rate-chip {
+  display: inline-flex;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #3730a3;
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.kpi-card small {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 700;
+}
