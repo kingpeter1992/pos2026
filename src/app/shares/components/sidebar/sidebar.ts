@@ -320,7 +320,7 @@ get canViewPos(): boolean {
 }
 
 get canViewProduits(): boolean {
-  return this.showAdminBoard || this.showfinanceBoard;
+  return this.showAdminBoard || this.showfinanceBoard || this.showoperatorBoard;
 }
 
 get canViewFournisseurs(): boolean {
