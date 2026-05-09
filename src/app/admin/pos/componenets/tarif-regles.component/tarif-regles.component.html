@@ -21,11 +21,12 @@
           <mat-icon>refresh</mat-icon>
           Actualiser
         </button>
-
+   @if (showAdminBoard) {
         <button mat-raised-button color="primary" type="button" class="toolbar-btn primary" (click)="openCreateDialog()">
           <mat-icon>add_circle</mat-icon>
           Nouvelle règle
         </button>
+      }
       </div>
     </div>
   </mat-card>
@@ -113,6 +114,7 @@
           <th mat-header-cell *matHeaderCellDef class="actions-header">Actions</th>
           <td mat-cell *matCellDef="let row" class="actions-cell">
             <div class="action-buttons">
+                 @if (showAdminBoard) {
               <button
                 mat-icon-button
                 type="button"
@@ -121,6 +123,7 @@
                 (click)="openEditDialog(row)">
                 <mat-icon>edit</mat-icon>
               </button>
+            }
             </div>
           </td>
         </ng-container>

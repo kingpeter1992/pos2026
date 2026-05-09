@@ -16,6 +16,7 @@ export class Sidebar implements OnInit {
   showAdminBoard = false;
   showuserBoard = false;
   showfinanceBoard = false;
+  showoperatorBoard = false;
   showRhBoard = false;
   username?: string;
   isSidebarOpen = true;
@@ -36,7 +37,8 @@ export class Sidebar implements OnInit {
   // State pour les menus ouverts
   openMenus: { [key: string]: boolean } = {};
 
-  constructor(private route: Router, private storageService: StorageService) { }
+  constructor(private route: Router,
+     private storageService: StorageService) { }
 
   ngOnInit(): void {
     this.isLoggedIn = this.storageService.isLoggedIn();
@@ -46,6 +48,7 @@ export class Sidebar implements OnInit {
       this.showAdminBoard = this.roles.includes('ROLE_ADMIN');
       this.showuserBoard = this.roles.includes('ROLE_USER');
       this.showfinanceBoard = this.roles.includes('ROLE_CAISSIER');
+      this.showoperatorBoard = this.roles.includes('ROLE_OPERATOR');
       this.showRhBoard = this.roles.includes('ROLE_RESPONSABLE_PERSONNEL');
       this.username = user.username;
     }
@@ -235,7 +238,7 @@ public menuPropertisGestionAchats: Array<Menu> = [
       { id: '4-2', titre: 'Commandes fournisseurs', icon: 'pi pi-file', url: '/admin/achats/commandes' },
       { id: '4-3', titre: 'Réceptions', icon: 'pi pi-download', url: '/admin/achats/receptionslist' },
       { id: '4-5', titre: 'Suggestions de réapprovisionnement', icon: 'pi pi-lightbulb', url: '/admin/achats/suggestions' },
-  //    { id: '4-6', titre: 'Analyse achats', icon: 'pi pi-chart-bar', url: '/admin/achats/analyse' },
+      { id: '4-6', titre: 'Analyse Produit', icon: 'pi pi-chart-bar', url: '/admin/achats/requisition' },
     ]
   }
 ];
@@ -253,6 +256,8 @@ public menuPropertisGestionInventaire: Array<Menu> = [
   //    { id: '5-3', titre: 'Détails inventaire', icon: 'pi pi-info-circle', url: '/admin/inventaire/details' },
     //  { id: '5-5', titre: 'Bordereaux de comptage', icon: 'pi pi-list', url: '/admin/inventaire/bordereaux' },
       { id: '5-6', titre: 'Variances inventaire', icon: 'pi pi-exclamation-triangle', url: '/admin/inventaire/variances' }
+     , { id: '5-7', titre: 'Resultat', icon: 'pi pi-list', url: '/admin/inventaire/resultat' },
+
     ]
   }
 ];
@@ -290,10 +295,6 @@ public menuPropertisGestionCaisse: Array<Menu> = [
   },
 ];
 
-
-
-
-
 public menuPropertisGestionAdmin: Array<Menu> = [
   {
     id: '6',
@@ -307,8 +308,6 @@ public menuPropertisGestionAdmin: Array<Menu> = [
     ]
   }
 ];
-
-
   navigate(url?: string): void {
     if (!url) return;
     // URL absolue pour éviter les problèmes de route relative
@@ -325,19 +324,19 @@ get canViewProduits(): boolean {
 }
 
 get canViewFournisseurs(): boolean {
-  return this.showAdminBoard || this.showfinanceBoard;
+  return this.showAdminBoard || this.showoperatorBoard;
 }
 
 get canViewAchats(): boolean {
-  return this.showAdminBoard || this.showfinanceBoard;
+  return this.showAdminBoard || this.showoperatorBoard;
 }
 
 get canViewStock(): boolean {
-  return this.showAdminBoard || this.showfinanceBoard;
+  return this.showAdminBoard || this.showoperatorBoard;
 }
 
 get canViewInventaire(): boolean {
-  return this.showAdminBoard || this.showfinanceBoard;
+  return this.showAdminBoard
 }
 
 get canViewAdmin(): boolean {
@@ -345,7 +344,7 @@ get canViewAdmin(): boolean {
 }
 
 get canViewCaisse(): boolean {
-  return this.showAdminBoard || this.showfinanceBoard;
+  return this.showAdminBoard;
 }
 
 

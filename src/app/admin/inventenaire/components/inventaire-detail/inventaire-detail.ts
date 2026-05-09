@@ -89,7 +89,7 @@ export class InventaireDetail implements OnInit {
     const id = this.inventaire()?.id;
     if (!id) return;
 
-    this.store.validerInventaire(id, 'ADMIN POS');
+    this.store.validerInventaire(id, 'ADMIN');
   }
 
   cloturerInventaire(): void {
@@ -103,7 +103,7 @@ export class InventaireDetail implements OnInit {
     const id = this.inventaire()?.id;
     if (!id) return;
 
-    this.store.annulerInventaire(id, 'ADMIN POS', 'Annulation inventaire');
+    this.store.annulerInventaire(id, 'ADMIN', 'Annulation inventaire');
   }
 
   hasBordereaux(): boolean {
@@ -173,6 +173,6 @@ export class InventaireDetail implements OnInit {
 
     return user?.roles?.includes('ADMIN')
       || user?.role === 'ADMIN'
-      || user?.username === 'ADMIN POS';
+      || user?.username === 'ADMIN';
   }
 }

@@ -292,3 +292,51 @@ mat-paginator {
     width: 100%;
   }
 }
+
+.fc-value {
+  font-weight: 900;
+  color: #111827;
+}
+
+.usd-value {
+  font-weight: 800;
+  color: #1d4ed8;
+}
+
+.currency-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 900;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.marge {
+  font-weight: 900;
+  color: #047857;
+}
+
+.marge-negative {
+  font-weight: 900;
+  color: #dc2626;
+}
+
+.marge-pct {
+  font-weight: 900;
+  color: #7c3aed;
+}
+
+.details-table {
+  min-width: 4300px;
+  width: 100%;
+}
+
+.summary-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 1300px;
+}

@@ -1,9 +1,11 @@
-import { ChangeDetectorRef, Component, Inject, OnInit, PLATFORM_ID } from '@angular/core';
-import { Router } from '@angular/router';
-import { Toast } from '../../../shares/services/toast/toast';
-import {  ViewChild, ElementRef } from '@angular/core';
-import { Chart } from 'chart.js/auto';
+import {  Component, OnInit, signal } from '@angular/core'
 import { VenteStore } from '../../pos/service/VenteStore';
+import { forkJoin } from 'rxjs';
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { ProduitService } from '../../produits/service/produit-service/produit-service';
+
 @Component({
   selector: 'app-dashboard',
   templateUrl: './dashboard.html',
@@ -11,6 +13,15 @@ import { VenteStore } from '../../pos/service/VenteStore';
   standalone: false,
 })
 export class Dashboard implements   OnInit {
+
+  dateFrom = '';
+  dateTo = '';
+
+  rapport: any;
+  details: any[] = [];
+  stocks: any[] = [];
+
+  kpis: any[] = [];
 
   customersChartData: any;
   customersChartOptions: any;
@@ -24,451 +35,404 @@ export class Dashboard implements   OnInit {
   topArticlesChartData: any;
   topArticlesChartOptions: any;
 
-  cityChartData: any;
-  cityChartOptions: any;
-
   stockChartData: any;
   stockChartOptions: any;
 
-  kpis: any[] = [];
+  constructor(
 
-  ventes: any[] = [];
 
-    constructor(private venteStore: VenteStore) {}
-
+  private venteStore: VenteStore,
+  private produitService: ProduitService,
+    private dashboardService: VenteStore) {}
 
   ngOnInit(): void {
-        this.loadData();
+    this.initCurrentMonth();
+    this.loadDashboard();
   }
 
+  initCurrentMonth(): void {
+    const now = new Date();
+    const first = new Date(now.getFullYear(), now.getMonth(), 1);
+    const last = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
-   private loadData(): void {
-    this.venteStore.loadIfNeeded().subscribe({
-      next: (data) => {
-        this.ventes = data || [];
-        this.initCharts(); // 🔥 recalcul dynamique
+    this.dateFrom = this.toDateInput(first);
+    this.dateTo = this.toDateInput(last);
+  }
+
+  loadDashboard(): void {
+    forkJoin({
+      rapport: this.venteStore.getRapportVentes(this.dateFrom, this.dateTo),
+      stocks: this.produitService.getProduitsPos()
+    }).subscribe({
+      next: ({ rapport, stocks }) => {
+        this.rapport = rapport;
+        this.details = rapport?.details || [];
+        this.stocks = stocks || [];
+        this.buildKpis();
+        this.buildCustomersChart();
+        this.buildDivisionChart();
+        this.buildAverageChart();
+        this.buildTopArticlesChart();
+        this.buildStockChart();
       },
-      error: () => {
-        this.ventes = [];
-        this.initCharts();
-      }
+      error: err => console.error('Erreur dashboard', err)
     });
   }
 
-  initCharts(): void {
-    const textColor = '#4b5563';
-    const textMuted = '#6b7280';
-    const gridColor = '#e5e7eb';
+  buildKpis(): void {
+    const totalCAFC = this.sum(this.details, 'totalNetCDF');
+    const totalMargeFC = this.sum(this.details, 'margeCDF');
+    const totalPmpFC = this.sum(this.details, 'totalPmpCDF');
 
-    const palette = {
-      primary: '#0f4c81',
-      secondary: '#14b8a6',
-      accent: '#3b82f6',
-      dark: '#334155',
-      soft: '#94a3b8',
-      warn: '#f59e0b',
-      danger: '#ef4444',
-      success: '#10b981'
-    };
+    const tickets = new Set(this.details.map(x => x.numeroCC)).size;
 
-    const tickets = [...this.ventes].sort(
-      (a, b) =>
-        new Date(a.dateVente).getTime() - new Date(b.dateVente).getTime()
-    );
-
-    const safeTotal = (vente: any): number => {
-      const totalGeneral = Number(vente?.totalGeneral || 0);
-      if (totalGeneral > 0) return totalGeneral;
-
-      const lignesTotal = (vente?.lignes || []).reduce(
-        (sum: number, l: any) => sum + Number(l?.totalLigne || 0),
-        0
-      );
-
-      if (lignesTotal > 0) return lignesTotal;
-
-      return Number(vente?.sousTotal || 0);
-    };
-
-    const safeUnits = (vente: any): number =>
-      (vente?.lignes || []).reduce(
-        (sum: number, l: any) => sum + Number(l?.quantite || 0),
-        0
-      );
-
-    const labelsTickets = tickets.map((v) => `#${v.id}`);
-
-    const totalsParTicket = tickets.map((v) => safeTotal(v));
-    const unitesParTicket = tickets.map((v) => safeUnits(v));
-    const lignesParTicket = tickets.map((v) => (v?.lignes || []).length);
-
-    const totalVentes = totalsParTicket.reduce((a, b) => a + b, 0);
-    const totalUnites = unitesParTicket.reduce((a, b) => a + b, 0);
-    const nbTickets = tickets.length;
-    const panierMoyen = nbTickets ? totalVentes / nbTickets : 0;
-    const unitesMoyennes = nbTickets ? totalUnites / nbTickets : 0;
-
-    const totalRemises = tickets.reduce(
-      (sum, v) => sum + Number(v?.totalRemise || 0),
+    const totalArticles = this.details.reduce(
+      (acc, x) => acc + this.num(x.quantiteFacturee),
       0
     );
 
-    const anomalies = tickets.filter((v) => {
-      const totalGeneral = Number(v?.totalGeneral || 0);
-      const lignesTotal = (v?.lignes || []).reduce(
-        (sum: number, l: any) => sum + Number(l?.totalLigne || 0),
-        0
-      );
-      return totalGeneral === 0 && lignesTotal > 0;
-    });
-
-    const byModePaiement = tickets.reduce((acc: any, v: any) => {
-      const key = v.modePaiement || 'NON DEFINI';
-      acc[key] = (acc[key] || 0) + safeTotal(v);
-      return acc;
-    }, {});
-
-    const articleMap = new Map<
-      string,
-      { quantite: number; montant: number }
-    >();
-
-    tickets.forEach((vente) => {
-      (vente.lignes || []).forEach((ligne: any) => {
-        const key = ligne.produitNom || `Produit ${ligne.produitId}`;
-        const existing = articleMap.get(key) || { quantite: 0, montant: 0 };
-        existing.quantite += Number(ligne.quantite || 0);
-        existing.montant += Number(ligne.totalLigne || 0);
-        articleMap.set(key, existing);
-      });
-    });
-
-    const topArticles = Array.from(articleMap.entries())
-      .sort((a, b) => b[1].quantite - a[1].quantite)
-      .slice(0, 7);
-
-    const heuresMap = tickets.reduce((acc: any, v: any) => {
-      const hour = new Date(v.dateVente).getHours();
-      const label = `${hour.toString().padStart(2, '0')}h`;
-      acc[label] = (acc[label] || 0) + 1;
-      return acc;
-    }, {});
-
-    const encaissementTotal = tickets.reduce(
-      (sum, v) => sum + Number(v?.montantRecu || 0),
-      0
-    );
+    const taux = this.getTauxActif();
 
     this.kpis = [
       {
-        label: 'Chiffre d’affaires total',
-        value: `${this.formatMoney(totalVentes)} USD`,
+        label: 'Chiffre d’affaires',
+        valueFc: this.formatFc(totalCAFC),
+        valueUsd: this.formatUsd(this.toUsd(totalCAFC, taux)),
+        monetary: true,
+        icon: 'pi pi-wallet',
+        trend: 'FC',
+        severity: 'success',
+        progress: 90
+      },
+      {
+        label: 'Marge brute',
+        valueFc: this.formatFc(totalMargeFC),
+        valueUsd: this.formatUsd(this.toUsd(totalMargeFC, taux)),
+        monetary: true,
+        icon: 'pi pi-chart-line',
+        trend: 'FC',
+        severity: 'success',
+        progress: 75
+      },
+      {
+        label: 'Valeur PMP',
+        valueFc: this.formatFc(totalPmpFC),
+        valueUsd: this.formatUsd(this.toUsd(totalPmpFC, taux)),
+        monetary: true,
         icon: 'pi pi-dollar',
-        trend: `${nbTickets} tickets`
+        trend: 'FC',
+        severity: 'info',
+        progress: 65
       },
       {
-        label: 'Panier moyen',
-        value: `${this.formatMoney(panierMoyen)} USD`,
+        label: 'Tickets / ventes',
+        value: tickets,
+        monetary: false,
         icon: 'pi pi-shopping-cart',
-        trend: `${this.formatNumber(unitesMoyennes)} u./ticket`
+        trend: '+',
+        severity: 'warning',
+        progress: 60
       },
       {
-        label: 'Quantité totale vendue',
-        value: `${this.formatNumber(totalUnites)}`,
+        label: 'Articles vendus',
+        value: totalArticles,
+        monetary: false,
         icon: 'pi pi-box',
-        trend: `${topArticles.length} article(s)`
-      },
-      {
-        label: 'Tickets incohérents',
-        value: `${anomalies.length}`,
-        icon: 'pi pi-exclamation-triangle',
-        trend: anomalies.length > 0 ? 'À corriger' : 'OK'
+        trend: 'Qté',
+        severity: 'info',
+        progress: 70
       }
     ];
+  }
 
-    // 1) Ancien bloc "Total Clients & Visiteurs"
-    // => adapté en "Transactions & lignes"
+  buildCustomersChart(): void {
+    const grouped = this.groupByDateTicket();
+
     this.customersChartData = {
-      labels: labelsTickets,
+      labels: Object.keys(grouped),
       datasets: [
         {
-          label: 'Quantités vendues',
-          backgroundColor: palette.accent,
-          borderRadius: 4,
-          data: unitesParTicket
-        },
-        {
-          label: 'Lignes par ticket',
-          backgroundColor: palette.secondary,
-          borderRadius: 4,
-          data: lignesParTicket
+          label: 'Clients / tickets',
+          data: Object.values(grouped),
+          backgroundColor: '#2563eb',
+          borderRadius: 10
         }
       ]
     };
 
-    this.customersChartOptions = this.buildBarOptions(textColor, gridColor);
+    this.customersChartOptions = this.defaultChartOptions();
+  }
 
-    // 2) Ancien bloc "Ventes par division"
-    // => adapté en "Ventes par mode de paiement"
+  buildDivisionChart(): void {
+    const grouped: Record<string, number> = {};
+
+    this.details.forEach(x => {
+      const key = x.cst || 'N/A';
+      grouped[key] = (grouped[key] || 0) + this.num(x.totalNetCDF);
+    });
+
     this.divisionChartData = {
-      labels: Object.keys(byModePaiement),
+      labels: Object.keys(grouped),
       datasets: [
         {
-          label: 'Montant',
-          backgroundColor: [palette.secondary, palette.accent, palette.warn],
-          borderRadius: 6,
-          data: Object.values(byModePaiement)
+          label: 'Montant FC',
+          data: Object.values(grouped),
+          backgroundColor: '#14b8a6',
+          borderRadius: 10
         }
       ]
     };
 
-    this.divisionChartOptions = this.buildSimpleBarOptions(
-      textColor,
-      gridColor
-    );
+    this.divisionChartOptions = this.defaultChartOptions();
+  }
 
-    // 3) Ancien bloc "Prix moyen & unités par transaction"
-    // => adapté en "Montant & unités par ticket"
+  buildAverageChart(): void {
+    const byTicket: Record<string, number> = {};
+
+    this.details.forEach(x => {
+      const ticket = x.numeroCC || 'N/A';
+      byTicket[ticket] = (byTicket[ticket] || 0) + this.num(x.totalNetCDF);
+    });
+
+    const labels = Object.keys(byTicket);
+    const values = Object.values(byTicket);
+
     this.avgChartData = {
-      labels: labelsTickets,
+      labels,
       datasets: [
         {
-          type: 'line',
-          label: 'Montant ticket (USD)',
-          borderColor: palette.accent,
-          backgroundColor: palette.accent,
-          tension: 0.35,
-          fill: false,
-          data: totalsParTicket
-        },
-        {
-          type: 'line',
-          label: 'Unités / ticket',
-          borderColor: palette.secondary,
-          backgroundColor: palette.secondary,
-          tension: 0.35,
-          fill: false,
-          data: unitesParTicket
+          label: 'Prix moyen / transaction FC',
+          data: values,
+          borderColor: '#2563eb',
+          backgroundColor: 'rgba(37,99,235,.12)',
+          tension: 0.4,
+          fill: true
         }
       ]
     };
 
-    this.avgChartOptions = this.buildLineOptions(textColor, gridColor);
+    this.avgChartOptions = this.defaultChartOptions();
+  }
 
-    // 4) Top articles vendus
+  buildTopArticlesChart(): void {
+    const grouped: Record<string, number> = {};
+
+    this.details.forEach(x => {
+      const key = x.designation || 'Article';
+      grouped[key] = (grouped[key] || 0) + this.num(x.quantiteFacturee);
+    });
+
+    const top = Object.entries(grouped)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 7);
+
     this.topArticlesChartData = {
-      labels: topArticles.map(([nom]) => nom),
+      labels: top.map(x => x[0]),
       datasets: [
         {
-          label: 'Quantités vendues',
-          backgroundColor: [
-            palette.secondary,
-            palette.accent,
-            '#8d99ae',
-            '#2b2d42',
-            '#52b788',
-            '#219ebc',
-            '#6c757d'
-          ],
-          borderRadius: 5,
-          data: topArticles.map(([, data]) => data.quantite)
+          label: 'Quantité vendue',
+          data: top.map(x => x[1]),
+          backgroundColor: '#f59e0b',
+          borderRadius: 10
         }
       ]
     };
 
-    this.topArticlesChartOptions = this.buildSimpleBarOptions(
-      textColor,
-      gridColor
-    );
-
-    // 5) Ancien bloc "Ventes par ville"
-    // => adapté en "Répartition CA par ticket"
-    this.cityChartData = {
-      labels: tickets.map((v) => `Ticket #${v.id}`),
-      datasets: [
-        {
-          data: totalsParTicket,
-          backgroundColor: [
-            '#14b8a6',
-            '#99d8d0',
-            '#2d9cdb',
-            '#8ecae6',
-            '#6c757d',
-            '#ced4da',
-            '#2b2d42'
-          ],
-          hoverOffset: 6
-        }
-      ]
+    this.topArticlesChartOptions = {
+      ...this.defaultChartOptions(),
+      indexAxis: 'y'
     };
+  }
 
-    this.cityChartOptions = {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          position: 'right',
-          labels: {
-            color: textColor,
-            usePointStyle: true,
-            boxWidth: 10
-          }
-        }
-      }
-    };
+  buildStockChart(): void {
+    const ruptures = this.stocks
+      .filter(x => this.num(x.quantiteDisponible) <= 0)
+      .slice(0, 10);
 
-    // 6) Ancien bloc "Produits en rupture"
-    // => adapté en "Encaissement vs ventes + anomalies"
     this.stockChartData = {
-      labels: ['Encaissement', 'Ventes calculées', 'Remises', 'Anomalies'],
+      labels: ruptures.map(x => x.nomProduit || x.produitNom || 'Produit'),
       datasets: [
         {
-          type: 'bar',
-          label: 'Valeur',
-          backgroundColor: '#4db6ac',
-          borderRadius: 4,
-          data: [
-            this.round2(encaissementTotal),
-            this.round2(totalVentes),
-            this.round2(totalRemises),
-            anomalies.length
-          ]
-        },
-        {
-          type: 'line',
-          label: 'Tickets par heure',
-          borderColor: palette.accent,
-          backgroundColor: palette.accent,
-          tension: 0.35,
-          fill: false,
-          data: [
-            Object.keys(heuresMap).length,
-            Object.keys(heuresMap).length,
-            Object.keys(heuresMap).length,
-            Object.keys(heuresMap).length
-          ]
+          label: 'Quantité disponible',
+          data: ruptures.map(x => this.num(x.quantiteDisponible)),
+          backgroundColor: '#ef4444',
+          borderRadius: 10
         }
       ]
     };
 
-    this.stockChartOptions = this.buildMixedOptions(
-      textColor,
-      gridColor,
-      textMuted
+    this.stockChartOptions = this.defaultChartOptions();
+  }
+
+  exportExcel(): void {
+    const rows = this.details.map(x => ({
+      Ticket: x.numeroCC,
+      Date: x.dateCC,
+      Client: x.nomClient,
+      CST: x.cst,
+      Article: x.designation,
+      Référence: x.reference,
+      Quantité: x.quantiteFacturee,
+      'Total net FC': x.totalNetCDF,
+      'Total PMP FC': x.totalPmpCDF,
+      'Marge FC': x.margeCDF,
+      '% Marge': x.pourcentageMarge,
+      Taux: x.coursDevise
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+
+    XLSX.utils.book_append_sheet(wb, ws, 'Dashboard POS');
+
+    XLSX.writeFile(
+      wb,
+      `Dashboard_POS_${this.dateFrom}_${this.dateTo}.xlsx`
     );
   }
 
-  private formatMoney(value: number): string {
-    return this.round2(value).toLocaleString('fr-FR', {
+  exportPdf(): void {
+    const doc = new jsPDF('l', 'mm', 'a4');
+
+    doc.setFontSize(15);
+    doc.text('Dashboard Performance POS', 14, 14);
+
+    doc.setFontSize(9);
+    doc.text(`Période : ${this.dateFrom} au ${this.dateTo}`, 14, 21);
+    doc.text('Monnaie principale : FC', 14, 27);
+
+    const totalCAFC = this.sum(this.details, 'totalNetCDF');
+    const totalMargeFC = this.sum(this.details, 'margeCDF');
+    const totalPmpFC = this.sum(this.details, 'totalPmpCDF');
+
+    autoTable(doc, {
+      startY: 34,
+      head: [['KPI', 'Valeur FC']],
+      body: [
+        ['Chiffre d’affaires', `${this.formatFc(totalCAFC)} FC`],
+        ['Marge brute', `${this.formatFc(totalMargeFC)} FC`],
+        ['Valeur PMP', `${this.formatFc(totalPmpFC)} FC`],
+        ['Tickets', `${new Set(this.details.map(x => x.numeroCC)).size}`]
+      ],
+      theme: 'grid',
+      headStyles: { fillColor: [15, 76, 129] }
+    });
+
+    autoTable(doc, {
+      startY: (doc as any).lastAutoTable.finalY + 8,
+      head: [[
+        'Ticket',
+        'Date',
+        'Client',
+        'Article',
+        'Qté',
+        'Total FC',
+        'PMP FC',
+        'Marge FC',
+        '%'
+      ]],
+      body: this.details.map(x => [
+        x.numeroCC,
+        this.formatDate(x.dateCC),
+        x.nomClient,
+        x.designation,
+        this.num(x.quantiteFacturee),
+        this.formatFc(x.totalNetCDF),
+        this.formatFc(x.totalPmpCDF),
+        this.formatFc(x.margeCDF),
+        `${this.num(x.pourcentageMarge)} %`
+      ]),
+      theme: 'striped',
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [30, 64, 175] }
+    });
+
+    doc.save(`Dashboard_POS_${this.dateFrom}_${this.dateTo}.pdf`);
+  }
+
+  private groupByDateTicket(): Record<string, number> {
+    const map: Record<string, Set<string>> = {};
+
+    this.details.forEach(x => {
+      const date = this.formatDate(x.dateCC);
+      const ticket = x.numeroCC || '';
+
+      if (!map[date]) {
+        map[date] = new Set();
+      }
+
+      map[date].add(ticket);
+    });
+
+    const result: Record<string, number> = {};
+
+    Object.keys(map).forEach(date => {
+      result[date] = map[date].size;
+    });
+
+    return result;
+  }
+
+  private getTauxActif(): number {
+    return this.details.find(x => this.num(x.coursDevise) > 0)?.coursDevise || 0;
+  }
+
+  private sum(data: any[], field: string): number {
+    return data.reduce((acc, x) => acc + this.num(x[field]), 0);
+  }
+
+  private num(value: any): number {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  toUsd(montantFc: number, taux: number): number {
+    if (!montantFc || !taux || taux <= 0) return 0;
+    return +(montantFc / taux).toFixed(2);
+  }
+
+  formatFc(value: number): string {
+    return new Intl.NumberFormat('fr-FR', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(this.num(value));
+  }
+
+  formatUsd(value: number): string {
+    return new Intl.NumberFormat('fr-FR', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
-    });
+    }).format(this.num(value));
   }
 
-  private formatNumber(value: number): string {
-    return this.round2(value).toLocaleString('fr-FR', {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 2
-    });
+  formatDate(value: string): string {
+    if (!value) return '';
+    return new Date(value).toLocaleDateString('fr-FR');
   }
 
-  private round2(value: number): number {
-    return Math.round((Number(value) + Number.EPSILON) * 100) / 100;
+  private toDateInput(date: Date): string {
+    return date.toISOString().slice(0, 10);
   }
 
-  private buildBarOptions(textColor: string, gridColor: string) {
+  private defaultChartOptions(): any {
     return {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
         legend: {
-          position: 'bottom',
           labels: {
-            color: textColor,
-            usePointStyle: true
+            color: '#334155'
           }
         }
       },
       scales: {
         x: {
-          ticks: { color: textColor },
-          grid: { display: false }
+          ticks: { color: '#64748b' },
+          grid: { color: '#e2e8f0' }
         },
         y: {
-          ticks: { color: textColor },
-          grid: { color: gridColor }
-        }
-      }
-    };
-  }
-
-  private buildSimpleBarOptions(textColor: string, gridColor: string) {
-    return {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false }
-      },
-      scales: {
-        x: {
-          ticks: { color: textColor },
-          grid: { display: false }
-        },
-        y: {
-          ticks: { color: textColor },
-          grid: { color: gridColor }
-        }
-      }
-    };
-  }
-
-  private buildLineOptions(textColor: string, gridColor: string) {
-    return {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          position: 'bottom',
-          labels: {
-            color: textColor,
-            usePointStyle: true
-          }
-        }
-      },
-      scales: {
-        x: {
-          ticks: { color: textColor },
-          grid: { display: false }
-        },
-        y: {
-          ticks: { color: textColor },
-          grid: { color: gridColor }
-        }
-      }
-    };
-  }
-
-  private buildMixedOptions(textColor: string, gridColor: string, textMuted: string) {
-    return {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          position: 'bottom',
-          labels: {
-            color: textMuted,
-            usePointStyle: true
-          }
-        }
-      },
-      scales: {
-        x: {
-          ticks: { color: textColor },
-          grid: { display: false }
-        },
-        y: {
-          ticks: { color: textColor },
-          grid: { color: gridColor }
+          ticks: { color: '#64748b' },
+          grid: { color: '#e2e8f0' }
         }
       }
     };

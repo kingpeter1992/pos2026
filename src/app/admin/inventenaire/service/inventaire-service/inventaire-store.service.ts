@@ -1,7 +1,8 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { finalize, forkJoin, tap } from 'rxjs';
+import { finalize, forkJoin, Observable, tap } from 'rxjs';
 import { ServiceInventaire } from './service-inventaire';
 import { InventaireResponse, InventaireArticleResponse, InventaireVariance, DashboardInventaireKpi, InventaireCreateRequest } from '../../model/inventaire.models';
+import { InventaireResultatResponse } from '../../model/InventaireResultatResponse';
 
 
 @Injectable({
@@ -10,7 +11,7 @@ import { InventaireResponse, InventaireArticleResponse, InventaireVariance, Dash
 export class InventaireStoreService {
   private readonly service = inject(ServiceInventaire);
 
-   private readonly inventairesSubject = signal<InventaireResponse[]>([]);
+  private readonly inventairesSubject = signal<InventaireResponse[]>([]);
   private readonly selectedInventaireSubject = signal<InventaireResponse | null>(null);
   private readonly articlesSubject = signal<InventaireArticleResponse[]>([]);
   private readonly variancesSubject = signal<InventaireVariance[]>([]);
@@ -25,19 +26,46 @@ export class InventaireStoreService {
   readonly detailLoading = this.detailLoadingSubject.asReadonly();
   readonly error = this.errorSubject.asReadonly();
   private readonly submittingSubject = signal(false);
-readonly submitting = this.submittingSubject.asReadonly();
+  readonly submitting = this.submittingSubject.asReadonly();
 
+
+
+  private readonly _resultatInventaire = signal<InventaireResultatResponse | null>(null);
+  private readonly _loadingResultat = signal(false);
+  private readonly _errorResultat = signal<string | null>(null);
+
+  readonly resultatInventaire = computed(() => this._resultatInventaire());
+  readonly loadingResultat = computed(() => this._loadingResultat());
+  readonly errorResultat = computed(() => this._errorResultat());
 
   readonly errorVariances = signal<string | null>(null);
-
-
   private readonly _variances = signal<InventaireVariance[]>([]);
   readonly variances = this._variances.asReadonly();
-
   private readonly _loadingVariances = signal(false);
   readonly loadingVariances = this._loadingVariances.asReadonly();
 
-  readonly kpis = computed<DashboardInventaireKpi>(() => {
+
+
+
+  private readonly _resultats = signal<InventaireResultatResponse[]>([]);
+  private readonly _selectedInventaireId = signal<number | null>(null);
+
+  private readonly _dateFrom = signal<string | null>(this.getDefaultDateFrom());
+  private readonly _dateTo = signal<string | null>(this.getToday());
+
+  private readonly _loadingResultats = signal(false);
+
+  readonly resultats = computed(() => this._resultats());
+
+  readonly selectedInventaireId = computed(() => this._selectedInventaireId());
+
+  readonly dateFrom = computed(() => this._dateFrom());
+  readonly dateTo = computed(() => this._dateTo());
+
+  readonly loadingResultats = computed(() => this._loadingResultats());
+
+
+readonly kpis = computed<DashboardInventaireKpi>(() => {
     const inventaires = this.inventairesSubject();
     const articles = this.articlesSubject();
 
@@ -61,6 +89,23 @@ readonly submitting = this.submittingSubject.asReadonly();
     return Math.round((comptes / articles.length) * 100);
   });
 
+
+
+  loadResultatInventaire(id: number): Observable<InventaireResultatResponse> {
+    this._loadingResultat.set(true);
+    this._errorResultat.set(null);
+
+    return this.service.getResultatInventaire(id).pipe(
+      tap(res => this._resultatInventaire.set(res)),
+      finalize(() => this._loadingResultat.set(false))
+    );
+  }
+
+  clearResultatInventaire(): void {
+    this._resultatInventaire.set(null);
+    this._errorResultat.set(null);
+  }
+
   loadInventaires(): void {
     this.loadingSubject.set(true);
     this.errorSubject.set(null);
@@ -68,7 +113,8 @@ readonly submitting = this.submittingSubject.asReadonly();
     this.service.getAll()
       .pipe(finalize(() => this.loadingSubject.set(false)))
       .subscribe({
-        next: data => {this.inventairesSubject.set(data ?? []),
+        next: data => {
+          this.inventairesSubject.set(data ?? []),
           console.log("Inventaires chargés : ", data);
         },
         error: err => {
@@ -199,42 +245,132 @@ readonly submitting = this.submittingSubject.asReadonly();
     this.variancesSubject.set([]);
   }
 
-annulerInventaire(inventaireId: number, user: string, commentaire?: string): void {
-  this.detailLoadingSubject.set(true);
+  annulerInventaire(inventaireId: number, user: string, commentaire?: string): void {
+    this.detailLoadingSubject.set(true);
 
-  this.service.annulerInventaire(inventaireId, user, commentaire)
-    .pipe(finalize(() => this.detailLoadingSubject.set(false)))
+    this.service.annulerInventaire(inventaireId, user, commentaire)
+      .pipe(finalize(() => this.detailLoadingSubject.set(false)))
+      .subscribe({
+        next: () => {
+          this.loadInventaires();
+          this.loadInventaireDetail(inventaireId);
+        },
+        error: err => {
+          console.error(err);
+          this.errorSubject.set("Erreur lors de l'annulation de l'inventaire.");
+        }
+      });
+  }
+
+
+
+  loadAllVariances(): void {
+    this._loadingVariances.set(true);
+
+    this.service.getAllVariances()
+      .pipe(finalize(() => this._loadingVariances.set(false)))
+      .subscribe({
+        next: (rows) => {
+          this._variances.set(rows ?? []);
+          console.log("Variances chargées : ", rows);
+        },
+        error: (err) => {
+          console.error('Erreur chargement variances', err);
+          this._variances.set([]);
+        }
+      });
+  }
+
+
+
+
+   readonly resultatsFiltres = computed(() => {
+    let list = this._resultats();
+
+    const from = this._dateFrom();
+    const to = this._dateTo();
+
+    if (from) {
+      const fromDate = new Date(from);
+
+      list = list.filter(x =>
+        x.inventaire?.dateInventaire &&
+        new Date(x.inventaire.dateInventaire) >= fromDate
+      );
+    }
+
+    if (to) {
+      const toDate = new Date(to);
+
+      list = list.filter(x =>
+        x.inventaire?.dateInventaire &&
+        new Date(x.inventaire.dateInventaire) <= toDate
+      );
+    }
+
+    return list;
+  });
+
+  readonly resultatSelectionne = computed(() => {
+    const id = this._selectedInventaireId();
+    const list = this.resultatsFiltres();
+
+    if (id) {
+      return list.find(x => x.inventaire?.id === id) ?? null;
+    }
+
+    return list.length ? list[0] : null;
+  });
+
+loadResultatsInventaires(): void {
+  this._loadingResultats.set(true);
+
+  this.service.getResultatsInventaires(
+    this._dateFrom() ?? undefined,
+    this._dateTo() ?? undefined
+  )
+    .pipe(
+      finalize(() => this._loadingResultats.set(false))
+    )
     .subscribe({
-      next: () => {
-        this.loadInventaires();
-        this.loadInventaireDetail(inventaireId);
+      next: res => {
+        this._resultats.set(res || []);
+
+        const first = this.resultatsFiltres()[0];
+
+        this._selectedInventaireId.set(
+          first ? first.inventaire.id : null
+        );
       },
-      error: err => {
-        console.error(err);
-        this.errorSubject.set("Erreur lors de l'annulation de l'inventaire.");
+      error: () => {
+        this._resultats.set([]);
+        this._selectedInventaireId.set(null);
       }
     });
 }
 
+  selectInventaire(id: number | null): void {
+    this._selectedInventaireId.set(id);
+  }
 
+  setDateFilter(from: string | null, to: string | null): void {
+    this._dateFrom.set(from);
+    this._dateTo.set(to);
 
-loadAllVariances(): void {
-  this._loadingVariances.set(true);
+    const first = this.resultatsFiltres()[0];
 
-  this.service.getAllVariances()
-    .pipe(finalize(() => this._loadingVariances.set(false)))
-    .subscribe({
-      next: (rows) => {
-        this._variances.set(rows ?? []);
-        console.log("Variances chargées : ", rows);
-      },
-      error: (err) => {
-        console.error('Erreur chargement variances', err);
-        this._variances.set([]);
-      }
-    });
-}
+    this._selectedInventaireId.set(
+      first ? first.inventaire.id : null
+    );
+  }
 
+  private getToday(): string {
+    return new Date().toISOString().split('T')[0];
+  }
 
-
+  private getDefaultDateFrom(): string {
+    const d = new Date();
+    d.setMonth(d.getMonth() - 1);
+    return d.toISOString().split('T')[0];
+  }
 }

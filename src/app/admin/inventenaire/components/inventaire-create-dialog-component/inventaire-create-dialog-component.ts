@@ -39,7 +39,7 @@ export class InventaireCreateDialogComponent implements OnInit {
     commentaire: [''],
     memorise: [true],
     gelStockTheorique: [true],
-    creePar: ['ADMIN POS']
+    creePar: ['ADMIN']
   });
 
   ngOnInit(): void {
@@ -70,7 +70,7 @@ export class InventaireCreateDialogComponent implements OnInit {
       commentaire: value.commentaire || null,
       memorise: !!value.memorise,
       gelStockTheorique: !!value.gelStockTheorique,
-      creePar: value.creePar || 'ADMIN POS'
+      creePar: value.creePar || 'ADMIN'
     };
 
     this.submitting = true;

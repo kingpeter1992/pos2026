@@ -1,96 +1,224 @@
 <div class="dashboard-shell">
-  <div class="dashboard-toolbar">
-    <div class="toolbar-left">
-      <div class="title-block">
-        <h2>POS KPI Dashboard</h2>
-        <p>Suivi des ventes, clients, approvisionnement et ruptures</p>
+
+  <!-- TOP BAR -->
+  <section class="dashboard-hero">
+    <div class="hero-content">
+      <div class="hero-badge">
+        <mat-icon>dashboard_customize</mat-icon>
+        POS ANALYTICS
       </div>
+
+      <h1>Dashboard Performance POS</h1>
+      <p>
+        Pilotage des ventes, clients, marges, ruptures, réquisitions et approvisionnement.
+      </p>
     </div>
 
-    <div class="toolbar-right">
-      <button mat-stroked-button color="primary">
-        <mat-icon>calendar_month</mat-icon>
-        Aujourd’hui
-      </button>
+ <div class="hero-actions">
 
-      <button pButton type="button" icon="pi pi-download" label="Exporter" class="p-button-sm p-button-outlined"></button>
-      <button pButton type="button" icon="pi pi-refresh" label="Actualiser" class="p-button-sm"></button>
+  <input
+    type="date"
+    class="date-filter"
+    [(ngModel)]="dateFrom" />
+
+  <input
+    type="date"
+    class="date-filter"
+    [(ngModel)]="dateTo" />
+
+  <button mat-stroked-button class="soft-btn" (click)="loadDashboard()">
+    <mat-icon>filter_alt</mat-icon>
+    Filtrer
+  </button>
+
+  <button
+    pButton
+    type="button"
+    icon="pi pi-file-excel"
+    label="Excel"
+    class="p-button-sm p-button-outlined export-btn"
+    (click)="exportExcel()">
+  </button>
+
+  <button
+    pButton
+    type="button"
+    icon="pi pi-file-pdf"
+    label="PDF"
+    class="p-button-sm p-button-outlined export-btn"
+    (click)="exportPdf()">
+  </button>
+
+  <button
+    pButton
+    type="button"
+    icon="pi pi-refresh"
+    label="Actualiser"
+    class="p-button-sm refresh-btn"
+    (click)="loadDashboard()">
+  </button>
+
+</div>
+  </section>
+
+  <!-- KPI STRIP -->
+  <section class="kpi-grid">
+    <div class="kpi-card" *ngFor="let kpi of kpis">
+
+      <div class="kpi-top">
+        <div class="kpi-icon">
+          <i [class]="kpi.icon"></i>
+        </div>
+
+        <p-tag
+          [value]="kpi.trend"
+          [severity]="kpi.severity || 'success'">
+        </p-tag>
+      </div>
+
+      <!-- KPI MONÉTAIRE : FC principal -->
+      <ng-container *ngIf="kpi.monetary; else simpleKpi">
+        <div class="kpi-value">
+          {{ kpi.valueFc }}
+          <span class="currency-main">FC</span>
+        </div>
+
+        <div class="kpi-usd" *ngIf="kpi.valueUsd">
+          ≈ {{ kpi.valueUsd }} USD
+        </div>
+      </ng-container>
+
+      <!-- KPI NON MONÉTAIRE -->
+      <ng-template #simpleKpi>
+        <div class="kpi-value">
+          {{ kpi.value }}
+          <span class="currency-main" *ngIf="kpi.suffix">
+            {{ kpi.suffix }}
+          </span>
+        </div>
+      </ng-template>
+
+      <div class="kpi-label">{{ kpi.label }}</div>
+
+      <div class="kpi-progress">
+        <span [style.width.%]="kpi.progress || 65"></span>
+      </div>
+
     </div>
-  </div>
+  </section>
 
-  <div class="headline-card">
-    <div class="headline-title">
-      Retail KPI Dashboard Showing Sales Revenue, Customers & Out Of Stock Items
-    </div>
-  </div>
+  <!-- MAIN CHARTS -->
+  <section class="analytics-grid">
 
-  <div class="chart-grid top-grid">
-    <p-card class="chart-card">
+    <p-card class="analytics-card wide-card">
       <ng-template pTemplate="header">
-        <div class="card-header">Total Clients & Visiteurs</div>
+        <div class="card-header">
+          <div>
+            <h3>Clients & visiteurs</h3>
+            <p>Évolution de la fréquentation</p>
+          </div>
+          <mat-icon>groups</mat-icon>
+        </div>
       </ng-template>
-      <div class="chart-box">
-        <p-chart type="bar" [data]="customersChartData" [options]="customersChartOptions"></p-chart>
+
+      <div class="chart-box large">
+        <p-chart
+          type="bar"
+          [data]="customersChartData"
+          [options]="customersChartOptions">
+        </p-chart>
       </div>
     </p-card>
 
-    <p-card class="chart-card">
+    <p-card class="analytics-card">
       <ng-template pTemplate="header">
-        <div class="card-header">Ventes par division</div>
+        <div class="card-header">
+          <div>
+            <h3>Ventes par division</h3>
+            <p>Montants affichés en FC</p>
+          </div>
+          <mat-icon>bar_chart</mat-icon>
+        </div>
       </ng-template>
+
       <div class="chart-box">
-        <p-chart type="bar" [data]="divisionChartData" [options]="divisionChartOptions"></p-chart>
+        <p-chart
+          type="bar"
+          [data]="divisionChartData"
+          [options]="divisionChartOptions">
+        </p-chart>
       </div>
     </p-card>
 
-    <p-card class="chart-card">
+    <p-card class="analytics-card">
       <ng-template pTemplate="header">
-        <div class="card-header">Prix moyen & unités par transaction</div>
+        <div class="card-header">
+          <div>
+            <h3>Prix moyen / transaction</h3>
+            <p>Valeur moyenne en FC</p>
+          </div>
+          <mat-icon>show_chart</mat-icon>
+        </div>
       </ng-template>
+
       <div class="chart-box">
-        <p-chart type="line" [data]="avgChartData" [options]="avgChartOptions"></p-chart>
-      </div>
-    </p-card>
-  </div>
-
-  <div class="kpi-strip">
-    <div class="kpi-tile" *ngFor="let kpi of kpis">
-      <div class="kpi-icon">
-        <i [class]="kpi.icon"></i>
-      </div>
-
-      <div class="kpi-body">
-        <div class="kpi-value">{{ kpi.value }}</div>
-        <div class="kpi-label">{{ kpi.label }}</div>
-      </div>
-
-      <p-tag [value]="kpi.trend" severity="success"></p-tag>
-    </div>
-  </div>
-
-  <div class="chart-grid bottom-grid">
-    <p-card class="chart-card">
-      <ng-template pTemplate="header">
-        <div class="card-header">Top 7 articles vendus</div>
-      </ng-template>
-      <div class="chart-box">
-        <p-chart type="bar" [data]="topArticlesChartData" [options]="topArticlesChartOptions"></p-chart>
+        <p-chart
+          type="line"
+          [data]="avgChartData"
+          [options]="avgChartOptions">
+        </p-chart>
       </div>
     </p-card>
 
+  </section>
 
+  <!-- BOTTOM CHARTS -->
+  <section class="analytics-grid bottom">
 
-    <p-card class="chart-card">
+    <p-card class="analytics-card">
       <ng-template pTemplate="header">
-        <div class="card-header">Produits en rupture</div>
+        <div class="card-header">
+          <div>
+            <h3>Top articles vendus</h3>
+            <p>Les 7 meilleures ventes</p>
+          </div>
+          <mat-icon>local_fire_department</mat-icon>
+        </div>
       </ng-template>
+
       <div class="chart-box">
-        <p-chart type="bar" [data]="stockChartData" [options]="stockChartOptions"></p-chart>
+        <p-chart
+          type="bar"
+          [data]="topArticlesChartData"
+          [options]="topArticlesChartOptions">
+        </p-chart>
       </div>
     </p-card>
-  </div>
+
+    <p-card class="analytics-card danger-card">
+      <ng-template pTemplate="header">
+        <div class="card-header">
+          <div>
+            <h3>Produits en rupture</h3>
+            <p>Articles critiques à réapprovisionner</p>
+          </div>
+          <mat-icon>production_quantity_limits</mat-icon>
+        </div>
+      </ng-template>
+
+      <div class="chart-box">
+        <p-chart
+          type="bar"
+          [data]="stockChartData"
+          [options]="stockChartOptions">
+        </p-chart>
+      </div>
+    </p-card>
+
+  </section>
 
   <div class="dashboard-footer-note">
-    Ce tableau de bord est piloté par les données POS et peut être relié dynamiquement à vos ventes, stocks et achats.
+    Monnaie principale : FC. Les valeurs USD sont calculées selon le taux actif.
   </div>
+
 </div>

@@ -1,1 +1,75 @@
-<p>analyse-achats-component works!</p>
+<div class="dashboard-requisition">
+
+  <!-- HEADER -->
+  <div class="header">
+    <h1>📊 Réquisition - Analyse des demandes clients</h1>
+  </div>
+
+  <!-- KPI -->
+  <div class="kpi-container">
+
+    <div class="kpi-card">
+      <div class="kpi-title">Demandes</div>
+      <div class="kpi-value">{{ totalDemandes }}</div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-title">Ventes</div>
+      <div class="kpi-value">{{ totalVentes }}</div>
+    </div>
+
+    <div class="kpi-card danger">
+      <div class="kpi-title">Ventes manquées</div>
+      <div class="kpi-value">{{ totalManques }}</div>
+    </div>
+
+    <div class="kpi-card success">
+      <div class="kpi-title">Taux satisfaction</div>
+      <div class="kpi-value">{{ tauxSatisfaction }} %</div>
+    </div>
+
+    <div class="kpi-card warning">
+      <div class="kpi-title">Taux manque</div>
+      <div class="kpi-value">{{ tauxManque }} %</div>
+    </div>
+
+  </div>
+
+  <!-- FILTRES -->
+  <div class="filters">
+    <input type="date" [(ngModel)]="dateFrom">
+    <input type="date" [(ngModel)]="dateTo">
+
+    <button (click)="load()">Filtrer</button>
+  </div>
+
+  <!-- TABLE -->
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Produit</th>
+        <th>Dépôt</th>
+        <th>Demandes</th>
+        <th>Ventes</th>
+        <th>Manquées</th>
+        <th>Qté vendue</th>
+        <th>Qté manquée</th>
+        <th>% Satisfaction</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <tr *ngFor="let r of data">
+        <td>{{ r.produitNom }}</td>
+        <td>{{ r.depotNom }}</td>
+        <td>{{ r.totalDemandes }}</td>
+        <td>{{ r.totalVentes }}</td>
+        <td>{{ r.totalVentesManquees }}</td>
+        <td>{{ r.totalQuantiteVendue }}</td>
+        <td>{{ r.totalQuantiteDemandeeNonVendue }}</td>
+        <td>{{ r.tauxSatisfaction }} %</td>
+      </tr>
+    </tbody>
+  </table>
+
+</div>

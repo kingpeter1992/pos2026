@@ -21,9 +21,8 @@
         Actualiser
       </button>
 
-      <button pButton type="button" icon="pi pi-plus"
-        routerLink="/admin/produits/create"
-      label="Nouveau produit" class="create-btn"></button>
+      <button pButton type="button" icon="pi pi-plus" routerLink="/admin/produits/create" label="Nouveau produit"
+        class="create-btn"></button>
     </div>
   </section>
 
@@ -82,11 +81,7 @@
         <div class="toolbar-right">
           <span class="p-input-icon-left search-box">
             <i class="pi pi-search"></i>
-            <input
-              pInputText
-              type="text"
-              [(ngModel)]="searchTerm"
-              (input)="applyFilter()"
+            <input pInputText type="text" [(ngModel)]="searchTerm" (input)="applyFilter()"
               placeholder="Rechercher par nom, code, catégorie..." />
           </span>
         </div>
@@ -100,16 +95,12 @@
         <p-skeleton height="3rem"></p-skeleton>
       </div>
 
-      <p-table
-        *ngIf="!loading"
-        [value]="filteredProduits"
-        [paginator]="true"
-        [rows]="10"
-        [responsiveLayout]="'scroll'"
+      <p-table *ngIf="!loading" [value]="filteredProduits" [paginator]="true" [rows]="10" [responsiveLayout]="'scroll'"
         styleClass="p-datatable-sm p-datatable-gridlines p-datatable-striped products-table">
 
         <ng-template pTemplate="header">
           <tr>
+            <th style="width: 260px;">Stock / Dépôt</th>
             <th style="width: 90px;">Image</th>
             <th>Produit</th>
             <th style="width: 180px;">Code-barres</th>
@@ -124,12 +115,32 @@
         <ng-template pTemplate="body" let-produit>
           <tr>
             <td>
+              <div class="stock-location-box">
+                <div class="stock-main">
+                  {{ getStockLabel(produit) }}
+                </div>
+
+                <select class="stock-select" *ngIf="getStocksProduit(produit).length"
+                  [ngModel]="getSelectedStock(produit)" (ngModelChange)="selectionnerStockProduit(produit, $event)">
+
+                  <option *ngFor="let s of getStocksProduit(produit)" [ngValue]="s">
+                    {{ s.depotNom }}
+                    <ng-container *ngIf="s.locatorNom">
+                      / {{ s.locatorNom }}
+                    </ng-container>
+                    — Qté : {{ formatNumber(s.quantiteDisponible) }}
+                  </option>
+                </select>
+
+                <div class="stock-empty" *ngIf="!getStocksProduit(produit).length">
+                  Aucun dépôt trouvé
+                </div>
+              </div>
+            </td>
+            <td>
               <div class="image-cell">
-                <img
-                  *ngIf="getImagePrincipale(produit); else noImage"
-                  [src]="getImagePrincipale(produit)!"
-                  alt="image produit"
-                  class="product-thumb" />
+                <img *ngIf="getImagePrincipale(produit); else noImage" [src]="getImagePrincipale(produit)!"
+                  alt="image produit" class="product-thumb" />
 
                 <ng-template #noImage>
                   <div class="product-thumb empty-thumb">
@@ -181,19 +192,18 @@
             </td>
 
             <td>
-              <p-tag
-                [value]="produit.actif ? 'Actif' : 'Inactif'"
-                [severity]="getSeverity(produit.actif)">
+              <p-tag [value]="produit.actif ? 'Actif' : 'Inactif'" [severity]="getSeverity(produit.actif)">
               </p-tag>
             </td>
 
             <td class="actions-cell">
-              <button
-                mat-icon-button
-                color="primary"
-                matTooltip="Modifier"
-                (click)="openEditDialog(produit)">
+              <button mat-icon-button color="primary" matTooltip="Modifier" (click)="openEditDialog(produit)">
                 <mat-icon>edit</mat-icon>
+              </button>
+
+              <button mat-icon-button color="warn" matTooltip="Enregistrer une vente manquée"
+                (click)="enregistrerVenteManquee(produit)">
+                <mat-icon>report_problem</mat-icon>
               </button>
             </td>
           </tr>
@@ -203,9 +213,18 @@
           <tr>
             <td colspan="8">
               <div class="empty-state">
-                <i class="pi pi-folder-open"></i>
+                <i class="pi pi-search"></i>
+
                 <h4>Aucun produit trouvé</h4>
-                <p>Ajoutez un produit pour commencer votre catalogue.</p>
+
+                <p>
+                  Le produit recherché n’existe pas encore dans le catalogue.
+                </p>
+
+                <button mat-raised-button color="warn" (click)="creerProduitPourVenteManquee()">
+                  <mat-icon>add_shopping_cart</mat-icon>
+                  Créer produit + vente manquée
+                </button>
               </div>
             </td>
           </tr>

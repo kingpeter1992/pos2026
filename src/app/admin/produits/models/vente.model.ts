@@ -15,6 +15,29 @@ export interface LignePanier {
 export interface LigneVenteRequest {
   produitId: number;
   quantite: number;
+
+  prix: number;
+  remise: number;
+  total: number;
+
+  prixCDF: number;
+  remiseCDF: number;
+  totalCDF: number;
+
+  prixUSD: number;
+  remiseUSD: number;
+  totalUSD: number;
+
+  pmpCDF: number;
+  totalPmpCDF: number;
+  margeCDF: number;
+
+  pmpUSD: number;
+  totalPmpUSD: number;
+  margeUSD: number;
+
+  tauxChange: number;
+  tauxChangeUtilise?: number;
 }
 
 export interface VentePanierRequest {
@@ -75,6 +98,16 @@ export interface ProduitPos {
   prix?: number;
   stockDisponible?: number;
   [key: string]: any;
+produitId?:number
+
+    depotId: number;
+  depotNom: string;
+
+  locatorId?: number | null;
+  locatorNom?: string | null;
+
+  quantiteDisponible: number;
+
 }
 
 export interface LignePanier {
@@ -202,11 +235,15 @@ export interface TarificationResponse {
 }
 
 
+
+
 export interface VenteRequest {
   ticketNumero: string;
   clientNom: string;
   caissier: string;
+  depotId: number;
   modePaiement: string;
+
   devise: string;
   tauxChange: number;
 
@@ -222,15 +259,22 @@ export interface VenteRequest {
   montantRecuCDF: number;
   monnaieCDF: number;
 
+  pmpCDF: number;
+  totalPmpCDF: number;
+  margeCDF: number;
+
   sousTotalUSD: number;
   totalRemiseUSD: number;
   totalGeneralUSD: number;
   montantRecuUSD: number;
   monnaieUSD: number;
 
-  tarifId?: number | null;
-  depotId: number;
-  lignes: VenteLigneRequest[],
+  pmpUSD: number;
+  totalPmpUSD: number;
+  margeUSD: number;
+
+  tarifId: number | null;
+  lignes: LigneVenteRequest[];
 }
 
 export interface VenteLigneRequest {
@@ -249,6 +293,8 @@ export interface VenteLigneRequest {
   remiseUSD: number;
   totalUSD: number;
 }
+
+
 
 export interface VenteResponse {
   id: number;
@@ -274,11 +320,19 @@ export interface VenteResponse {
   montantRecuCDF: number;
   monnaieCDF: number;
 
+  pmpCDF: number;
+  totalPmpCDF: number;
+  margeCDF: number;
+
   sousTotalUSD: number;
   totalRemiseUSD: number;
   totalGeneralUSD: number;
   montantRecuUSD: number;
   monnaieUSD: number;
+
+  pmpUSD: number;
+  totalPmpUSD: number;
+  margeUSD: number;
 
   tarifId?: number | null;
   depotId?: number | null;
@@ -286,11 +340,9 @@ export interface VenteResponse {
 
   lignes: VenteLigneResponse[];
 }
-
 export interface VenteLigneResponse {
   produitId: number | null;
   produitNom: string;
-
   quantite: number;
 
   prixUnitaire: number;
@@ -304,4 +356,12 @@ export interface VenteLigneResponse {
   prixUSD: number;
   remiseUSD: number;
   totalUSD: number;
+
+  pmpCDF: number;
+  totalPmpCDF: number;
+  margeCDF: number;
+
+  pmpUSD: number;
+  totalPmpUSD: number;
+  margeUSD: number;
 }

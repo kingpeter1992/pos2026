@@ -9,6 +9,7 @@ import { MatSort } from '@angular/material/sort';
 import { TarifVenteFormDialog } from '../tarif-vente-form-dialog/tarif-vente-form-dialog';
 import { FormBuilder } from '@angular/forms';
 import { Toast } from '../../../../shares/services/toast/toast';
+import { StorageService } from '../../../../auth/services/storage/storage-service';
 export interface formModel {
   mode: 'create' | 'edit';
   tarif: TarifVente | null;
@@ -30,7 +31,9 @@ displayedColumns: string[] = [
   'dateCreation',
   'actions'
 ];
-
+  private roles: string[] = [];
+  showAdminBoard = false;
+ isLoggedIn = false;
   readonly search = signal('');
   readonly localLoading = signal(false);
 
@@ -48,13 +51,20 @@ displayedColumns: string[] = [
     public tarifStore: TarifVenteStore,
     private dialog: MatDialog,
     private toast:Toast,
+    private storageService: StorageService
   ) {}
 
   ngOnInit(): void {
     this.configureFilter();
     this.loadData();
-  }
 
+    this.isLoggedIn = this.storageService.isLoggedIn();
+    if (this.isLoggedIn) {
+      const user = this.storageService.getUser();
+      this.roles = user.roles;
+      this.showAdminBoard = this.roles.includes('ROLE_ADMIN');
+  }
+  }
   ngAfterViewInit(): void {
     this.dataSource.paginator = this.paginator;
     this.dataSource.sort = this.sort;

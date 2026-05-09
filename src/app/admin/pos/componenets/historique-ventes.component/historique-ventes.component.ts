@@ -5,6 +5,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { Toast } from '../../../../shares/services/toast/toast';
 import { finalize } from 'rxjs';
 import { ConfirmAnnulationVenteDialogComponent } from '../confirm-annulation-vente-dialog-component/confirm-annulation-vente-dialog-component';
+import { StorageService } from '../../../../auth/services/storage/storage-service';
 
 @Component({
   selector: 'app-historique-ventes.component',
@@ -26,6 +27,11 @@ displayedColumns: string[] = [
     'actions'
   ];
 
+   private roles: string[] = [];
+  isLoggedIn = false;
+  showAdminBoard = false;
+  showoperatorBoard = false;
+
   filterForm: FormGroup;
   expandedSaleId = signal<number | null>(null);
   annulationLoadingIds = signal<number[]>([]);
@@ -34,7 +40,8 @@ displayedColumns: string[] = [
     public venteStore: VenteStore,
     private fb: FormBuilder,
     private dialog: MatDialog,
-    private toastr: Toast
+    private toastr: Toast,
+         private storageService: StorageService
   ) {
     const today = new Date();
     const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -50,6 +57,14 @@ displayedColumns: string[] = [
 
   ngOnInit(): void {
     this.loadData();
+      this.isLoggedIn = this.storageService.isLoggedIn();
+    if (this.isLoggedIn) {
+      const user = this.storageService.getUser();
+      this.roles = user.roles;
+      this.showAdminBoard = this.roles.includes('ROLE_ADMIN');
+      this.showoperatorBoard = this.roles.includes('ROLE_OPERATOR');
+
+    }
   }
 
   loadData(): void {

@@ -158,6 +158,8 @@ import { RepportComponent } from './admin/caisse/components/repport-component/re
 import { OuvrirCaisseDialogComponent } from './admin/caisse/components/ouvrir-caisse-dialog-component/ouvrir-caisse-dialog-component';
 import { CloturerCaisseDialogComponent } from './admin/caisse/components/cloturer-caisse-dialog-component/cloturer-caisse-dialog-component';
 import { CaisseGraphDialogComponent } from './admin/caisse/components/caisse-graph-dialog-component/caisse-graph-dialog-component';
+import { ResultatComponent } from './admin/inventenaire/components/resultat-component/resultat-component';
+import { AnalyseAchatsComponent } from './admin/achats/components/analyse-achats-component/analyse-achats-component';
 
 @NgModule({
   declarations: [
@@ -231,7 +233,9 @@ import { CaisseGraphDialogComponent } from './admin/caisse/components/caisse-gra
     TauxEchange,
     OuvrirCaisseDialogComponent,
     CloturerCaisseDialogComponent,
-    CaisseGraphDialogComponent
+    CaisseGraphDialogComponent,
+    ResultatComponent,
+    AnalyseAchatsComponent
 
   ],
 

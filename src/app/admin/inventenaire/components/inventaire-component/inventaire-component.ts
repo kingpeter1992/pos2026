@@ -13,6 +13,7 @@ import { InventaireResponse } from '../../model/inventaire.models';
 
 })
 export class InventaireComponent implements OnInit {
+
    readonly store = inject(InventaireStoreService);
   private readonly dialog = inject(MatDialog);
 

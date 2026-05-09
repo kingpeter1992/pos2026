@@ -1,0 +1,227 @@
+<div class="inventaire-resultat-page">
+
+  <!-- HEADER -->
+  <div class="page-header">
+    <div>
+      <h1>Résultat Global des Inventaires</h1>
+      <p>Analyse consolidée des inventaires avec filtre par période</p>
+    </div>
+  </div>
+
+  <!-- FILTRES -->
+  <div class="filter-card">
+
+    <mat-form-field appearance="outline">
+      <mat-label>Date début</mat-label>
+     <input
+  matInput
+  type="date"
+  [value]="store.dateFrom()"
+  #dateFrom
+  (change)="onDateChange(dateFrom.value, dateTo.value)">
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Date fin</mat-label>
+     <input
+  matInput
+  type="date"
+  [value]="store.dateTo()"
+  #dateTo
+  (change)="onDateChange(dateFrom.value, dateTo.value)">
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Inventaire</mat-label>
+      <mat-select
+        [value]="store.selectedInventaireId()"
+        (selectionChange)="onSelectInventaire($event.value)">
+
+        <mat-option
+          *ngFor="let item of resultats()"
+          [value]="item.inventaire.id">
+
+          {{ item.inventaire.reference }}
+          —
+          {{ item.inventaire.dateInventaire | date:'dd/MM/yyyy' }}
+          —
+          {{ item.inventaire.depotNom }}
+
+        </mat-option>
+
+      </mat-select>
+    </mat-form-field>
+
+  </div>
+
+  <!-- RESULTAT -->
+  <ng-container *ngIf="resultat() as data">
+
+    <!-- STATUS -->
+    <div class="status-row">
+
+      <div class="status-badge"
+           [class.ok]="data.kpi.stockTotalementMisAJour"
+           [class.pending]="!data.kpi.stockTotalementMisAJour">
+
+        {{ data.kpi.stockTotalementMisAJour
+          ? 'Stock entièrement mis à jour'
+          : 'Stock partiellement mis à jour' }}
+
+      </div>
+
+      <div class="inventaire-meta">
+        {{ data.inventaire.reference }}
+        • {{ data.inventaire.depotNom }}
+      </div>
+
+    </div>
+
+    <!-- KPI -->
+    <div class="kpi-grid">
+
+      <div class="kpi-card">
+        <span>Total Articles</span>
+        <strong>{{ data.kpi.totalArticles }}</strong>
+      </div>
+
+      <div class="kpi-card warning">
+        <span>Articles avec Écart</span>
+        <strong>{{ data.kpi.articlesAvecEcart }}</strong>
+      </div>
+
+      <div class="kpi-card success">
+        <span>% Écart Articles</span>
+        <strong>{{ data.kpi.pourcentageArticlesAvecEcart }}%</strong>
+      </div>
+
+      <div class="kpi-card">
+        <span>Valeur Théorique FC</span>
+        <strong>{{ money(data.kpi.valeurTheoriqueCDF) }}</strong>
+      </div>
+
+      <div class="kpi-card">
+        <span>Valeur Comptée FC</span>
+        <strong>{{ money(data.kpi.valeurCompteeCDF) }}</strong>
+      </div>
+
+      <div class="kpi-card danger">
+        <span>Écart Valeur FC</span>
+        <strong>{{ money(data.kpi.valeurEcartCDF) }}</strong>
+      </div>
+
+      <div class="kpi-card success">
+        <span>Écart Positif</span>
+        <strong>{{ money(data.kpi.valeurEcartPositifCDF) }}</strong>
+      </div>
+
+      <div class="kpi-card danger">
+        <span>Écart Négatif</span>
+        <strong>{{ money(data.kpi.valeurEcartNegatifCDF) }}</strong>
+      </div>
+
+      <div class="kpi-card">
+        <span>% Écart Valeur</span>
+        <strong>{{ data.kpi.pourcentageEcartValeur }}%</strong>
+      </div>
+
+    </div>
+
+    <div class="header-actions">
+  <button mat-raised-button color="primary" (click)="exportExcel()">
+    Export Excel
+  </button>
+
+  <button mat-raised-button color="warn" (click)="exportPdf()">
+    Export PDF
+  </button>
+</div>
+
+    <!-- TABLE -->
+    <div class="table-card">
+
+      <table mat-table [dataSource]="data.lignes">
+
+        <ng-container matColumnDef="numeroInventaire">
+  <th mat-header-cell *matHeaderCellDef>Inventaire</th>
+  <td mat-cell *matCellDef="let row">
+    {{ row.numeroInventaire }}
+  </td>
+</ng-container>
+
+<ng-container matColumnDef="numeroBordereau">
+  <th mat-header-cell *matHeaderCellDef>Bordereau</th>
+  <td mat-cell *matCellDef="let row">
+    {{ row.numeroBordereau }}
+  </td>
+</ng-container>
+        <ng-container matColumnDef="codeArticle">
+          <th mat-header-cell *matHeaderCellDef>Code</th>
+          <td mat-cell *matCellDef="let row">{{ row.codeArticle }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="designation">
+          <th mat-header-cell *matHeaderCellDef>Désignation</th>
+          <td mat-cell *matCellDef="let row">{{ row.designation }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="locator">
+          <th mat-header-cell *matHeaderCellDef>Locator</th>
+          <td mat-cell *matCellDef="let row">{{ row.locator || '-' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="quantiteStockTheorique">
+          <th mat-header-cell *matHeaderCellDef>Stock Théorique</th>
+          <td mat-cell *matCellDef="let row">{{ row.quantiteStockTheorique }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="quantiteComptee">
+          <th mat-header-cell *matHeaderCellDef>Stock Compté</th>
+          <td mat-cell *matCellDef="let row">{{ row.quantiteComptee }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="quantiteEcart">
+          <th mat-header-cell *matHeaderCellDef>Écart</th>
+          <td mat-cell *matCellDef="let row">
+            <span [class.pos]="row.quantiteEcart > 0"
+                  [class.neg]="row.quantiteEcart < 0">
+              {{ row.quantiteEcart }}
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="pmpInventaire">
+          <th mat-header-cell *matHeaderCellDef>PMP</th>
+          <td mat-cell *matCellDef="let row">{{ money(row.pmpInventaire) }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="valeurEcart">
+          <th mat-header-cell *matHeaderCellDef>Valeur Écart</th>
+          <td mat-cell *matCellDef="let row">{{ money(row.valeurEcart) }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="typeVariance">
+          <th mat-header-cell *matHeaderCellDef>Type</th>
+          <td mat-cell *matCellDef="let row">{{ row.typeVariance }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="stockActuel">
+          <th mat-header-cell *matHeaderCellDef>Stock Actuel</th>
+          <td mat-cell *matCellDef="let row">{{ row.stockActuel }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="commentaireComptage">
+          <th mat-header-cell *matHeaderCellDef>Commentaire</th>
+          <td mat-cell *matCellDef="let row">{{ row.commentaireComptage || '-' }}</td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+
+      </table>
+
+    </div>
+
+  </ng-container>
+
+</div>

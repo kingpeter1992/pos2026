@@ -386,7 +386,7 @@
               <mat-icon>print</mat-icon>
               Réimprimer le ticket
             </button>
-
+            @if (showAdminBoard || showoperatorBoard) {
             <button
               mat-flat-button
               color="warn"
@@ -397,6 +397,8 @@
               <mat-icon *ngIf="isAnnulationLoading(vente.id)" class="spin">autorenew</mat-icon>
               {{ isAnnulationLoading(vente.id) ? 'Annulation...' : 'Annuler la vente' }}
             </button>
+
+          }
           </div>
         </mat-expansion-panel>
       </mat-accordion>

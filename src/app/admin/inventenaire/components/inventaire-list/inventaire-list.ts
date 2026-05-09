@@ -70,14 +70,18 @@ readonly store = inject(InventaireStoreService);
     }
   }
 
-  canCloturer(row: InventaireResponse): boolean {
-    return row.cloture !== true
-      && row.tousBordereauxStockMisAJour === true;
-  }
+canCloturer(row: InventaireResponse): boolean {
+  return (
+    row.statut === 'VALIDE' &&
+    row.cloture !== true &&
+    row.annule !== true &&
+    row.tousBordereauxStockMisAJour === true
+  );
+}
 
   cloturer(inventaire: InventaireResponse): void {
     if (!inventaire?.id) return;
-    this.store.cloturerInventaire(inventaire.id, 'ADMIN POS');
+    this.store.cloturerInventaire(inventaire.id, 'ADMIN');
   }
 
   toggleSelection(row: InventaireResponse): void {

@@ -4,6 +4,7 @@ import { finalize } from 'rxjs';
 import { TarifCategorieProduitResponse } from '../../../produits/models/vente.model';
 import { TarifVenteStore } from '../../service/tarif/TarifVenteStore';
 import { TarifRegleFormDialog } from '../tarif-regle-form-dialog/tarif-regle-form-dialog';
+import { StorageService } from '../../../../auth/services/storage/storage-service';
 
 @Component({
   selector: 'app-tarif-regles.component',
@@ -18,6 +19,10 @@ import { TarifRegleFormDialog } from '../tarif-regle-form-dialog/tarif-regle-for
 
   loading = false;
 
+    private roles: string[] = [];
+  showAdminBoard = false;
+ isLoggedIn = false;
+
   displayedColumns = [
     'categorieNom',
     'tauxMarge',
@@ -29,11 +34,21 @@ import { TarifRegleFormDialog } from '../tarif-regle-form-dialog/tarif-regle-for
 
   constructor(
     public store: TarifVenteStore,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+        private storageService: StorageService
+
   ) {}
 
   ngOnInit(): void {
     this.loadAll();
+
+
+    this.isLoggedIn = this.storageService.isLoggedIn();
+    if (this.isLoggedIn) {
+      const user = this.storageService.getUser();
+      this.roles = user.roles;
+      this.showAdminBoard = this.roles.includes('ROLE_ADMIN');
+  }
   }
 
   loadAll(): void {

@@ -4,11 +4,14 @@ import { ProduitService } from "../../produits/service/produit-service/produit-s
 import { Toast } from "../../../shares/services/toast/toast";
 import { VenteApiService } from "./vente-api-service";
 import { VenteRequest, VenteResponse } from "../../produits/models/vente.model";
+import { RapportVenteFilterRequest, RapportVentePosResponse } from "../../produits/models/rapport-vente-pos.model";
 
 @Injectable({
   providedIn: 'root'
 })
 export class VenteStore {
+
+
   private readonly produitApi = inject(ProduitService);
   private readonly venteApi = inject(VenteApiService);
   private readonly venteService = inject(VenteApiService);
@@ -32,6 +35,16 @@ export class VenteStore {
 
   private readonly venteSuccessSubject = new BehaviorSubject<any | null>(null);
   readonly venteSuccess$ = this.venteSuccessSubject.asObservable();
+
+
+
+  private rapportSubject = new BehaviorSubject<RapportVentePosResponse | null>(null);
+  private loadingRapportSubject = new BehaviorSubject<boolean>(false);
+
+  rapport$ = this.rapportSubject.asObservable();
+  loadingRapport$ = this.loadingRapportSubject.asObservable();
+
+
 
   private produitsLoaded = false;
   private loadingInProgress = false;
@@ -463,4 +476,37 @@ annulerVente(id: number, commentaire: string): Observable<any> {
     })
   );
 }
+
+ get rapportValue(): RapportVentePosResponse | null {
+    return this.rapportSubject.value;
+  }
+
+getRapportVentes(
+  dateFrom: string,
+  dateTo: string,
+  depotId?: number | null,
+  categorieId?: number | null,
+  tarifId?: number | null,
+  caissier?: string | null,
+  devise?: string | null
+): Observable<RapportVentePosResponse> {
+
+  const filter: RapportVenteFilterRequest = {
+    dateDebut: `${dateFrom}T00:00:00`,
+    dateFin: `${dateTo}T23:59:59`,
+    depotId: depotId ?? null,
+    categorieId: categorieId ?? null,
+    tarifId: tarifId ?? null,
+    caissier: caissier ?? null,
+    devise: devise ?? null
+  };
+
+  return this.venteService.getRapportVentes(filter);
+}
+
+  clearRapport(): void {
+    this.rapportSubject.next(null);
+  }
+
+
 }

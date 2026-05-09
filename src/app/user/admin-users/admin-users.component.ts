@@ -12,7 +12,7 @@ import { AuthService } from '../../auth/services/auth/auth-service';
   standalone:false
 })
 export class AdminUsersComponent implements OnInit {
-  rolesList = ['ROLE_USER', 'ROLE_ADMIN', 'ROLE_CAISSIER', 'ROLE_RESPONSABLE_PERSONNEL'];
+  rolesList = ['ROLE_USER', 'ROLE_ADMIN', 'ROLE_CAISSIER', 'ROLE_RESPONSABLE_PERSONNEL','ROLE_OPERATOR'];
   loading$: Observable<boolean> | undefined;
   users: any[] = [];
   selectedRoles: string[] = [];
@@ -103,7 +103,9 @@ onRoleChange(user: any, role: string, checked: boolean) {
 
   assignRolesToUser(userId: number, selectedRoles: string[]) {
     this._dao.assignRoles(userId, selectedRoles).subscribe({
-      next: (res) => alert('Rôles attribués avec succès !'),
+      next: (res) => {alert('Rôles attribués avec succès !')
+        console.log('user assignation role', userId, selectedRoles)
+      },
       error: (err) => alert('Erreur : ' + err.message),
     });
   }

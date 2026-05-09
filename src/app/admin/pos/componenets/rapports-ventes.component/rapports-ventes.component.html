@@ -5,29 +5,31 @@
       <div class="icon-box">
         <mat-icon>analytics</mat-icon>
       </div>
-    <button mat-stroked-button color="warn" type="button" (click)="resetFilter()">
-      <mat-icon>restart_alt</mat-icon>
-      Réinitialiser
-    </button>
+
       <div>
         <div class="breadcrumb">POS / Rapports / Ventes</div>
         <h1>Rapport des ventes POS</h1>
-        <p>Analyse du chiffre d’affaires, PMP, marge et détail des ventes par CST.</p>
+        <p>Analyse du chiffre d’affaires, PMP, marge et détail des ventes.</p>
       </div>
     </div>
 
     <div class="header-actions">
-      <button mat-stroked-button color="primary" (click)="loadRapport()">
+      <button mat-stroked-button color="warn" type="button" (click)="resetFilter()">
+        <mat-icon>restart_alt</mat-icon>
+        Réinitialiser
+      </button>
+
+      <button mat-stroked-button color="primary" type="button" (click)="loadRapport()">
         <mat-icon>refresh</mat-icon>
         Actualiser
       </button>
 
-      <button mat-flat-button color="accent" (click)="exportExcel()">
+      <button mat-flat-button color="accent" type="button" (click)="exportExcel()">
         <mat-icon>table_view</mat-icon>
         Excel
       </button>
 
-      <button mat-flat-button color="warn" (click)="exportPdf()">
+      <button mat-flat-button color="warn" type="button" (click)="exportPdf()">
         <mat-icon>picture_as_pdf</mat-icon>
         PDF
       </button>
@@ -96,9 +98,15 @@
 
         <div>
           <div class="kpi-title">{{ card.title }}</div>
+
           <div class="kpi-value">
-            {{ money(card.value) }}
-            <span>{{ card.suffix }}</span>
+            @if (card.suffix === '%') {
+              {{ percent(card.value) }}
+            } @else if (card.suffix === 'USD') {
+              {{ moneyUSD(card.value) }}
+            } @else {
+              {{ moneyCDF(card.value) }}
+            }
           </div>
         </div>
       </div>
@@ -108,7 +116,7 @@
   <div class="summary-card">
     <div class="section-title">
       <mat-icon>leaderboard</mat-icon>
-      <span>Résumé par CST</span>
+      <span>Résumé</span>
     </div>
 
     <div class="summary-table-wrapper">
@@ -116,12 +124,12 @@
         <thead>
           <tr>
             <th>Cst</th>
-            <th>Total net</th>
-            <th>Total PMP</th>
-            <th>Marge</th>
-            <th>Total net CDF</th>
-            <th>Total PMP CDF</th>
-            <th>Marge CDF</th>
+            <th>Total net FC</th>
+            <th>Total net USD</th>
+            <th>Total PMP FC</th>
+            <th>Total PMP USD</th>
+            <th>Marge FC</th>
+            <th>Marge USD</th>
             <th>% Marge</th>
           </tr>
         </thead>
@@ -130,26 +138,26 @@
           @for (row of kpis(); track row.cst) {
             <tr>
               <td>{{ row.cst }}</td>
-              <td>{{ money(row.totalNet) }}</td>
-              <td>{{ money(row.totalPmp) }}</td>
-              <td>{{ money(row.marge) }}</td>
-              <td>{{ money(row.totalNetCDF) }}</td>
-              <td>{{ money(row.totalPmpCDF) }}</td>
-              <td>{{ money(row.margeCDF) }}</td>
-              <td>{{ money(row.pourcentageMarge) }}%</td>
+              <td>{{ moneyCDF(row.totalNetCDF) }}</td>
+              <td>{{ moneyUSD(row.totalNetUSD) }}</td>
+              <td>{{ moneyCDF(row.totalPmpCDF) }}</td>
+              <td>{{ moneyUSD(row.totalPmpUSD) }}</td>
+              <td class="marge">{{ moneyCDF(row.margeCDF) }}</td>
+              <td class="marge">{{ moneyUSD(row.margeUSD) }}</td>
+              <td class="marge-pct">{{ percent(row.pourcentageMarge) }}</td>
             </tr>
           }
 
           @if (totalGeneral()) {
             <tr class="total-row">
-              <td>{{ totalGeneral()?.cst }}</td>
-              <td>{{ money(totalGeneral()?.totalNet) }}</td>
-              <td>{{ money(totalGeneral()?.totalPmp) }}</td>
-              <td>{{ money(totalGeneral()?.marge) }}</td>
-              <td>{{ money(totalGeneral()?.totalNetCDF) }}</td>
-              <td>{{ money(totalGeneral()?.totalPmpCDF) }}</td>
-              <td>{{ money(totalGeneral()?.margeCDF) }}</td>
-              <td>{{ money(totalGeneral()?.pourcentageMarge) }}%</td>
+              <td>{{ totalGeneral()?.cst || 'TOTAL' }}</td>
+              <td>{{ moneyCDF(totalGeneral()?.totalNetCDF) }}</td>
+              <td>{{ moneyUSD(totalGeneral()?.totalNetUSD) }}</td>
+              <td>{{ moneyCDF(totalGeneral()?.totalPmpCDF) }}</td>
+              <td>{{ moneyUSD(totalGeneral()?.totalPmpUSD) }}</td>
+              <td class="marge">{{ moneyCDF(totalGeneral()?.margeCDF) }}</td>
+              <td class="marge">{{ moneyUSD(totalGeneral()?.margeUSD) }}</td>
+              <td class="marge-pct">{{ percent(totalGeneral()?.pourcentageMarge) }}</td>
             </tr>
           }
         </tbody>
@@ -166,7 +174,11 @@
 
       <mat-form-field appearance="outline" class="search-field">
         <mat-label>Recherche globale</mat-label>
-        <input matInput (keyup)="applySearch($event)" placeholder="Ticket, client, produit, référence...">
+        <input
+          matInput
+          type="text"
+          (keyup)="applySearch($event)"
+          placeholder="Ticket, client, produit, référence...">
         <mat-icon matSuffix>search</mat-icon>
       </mat-form-field>
     </div>
@@ -176,27 +188,12 @@
 
         <ng-container matColumnDef="succursale">
           <th mat-header-cell *matHeaderCellDef>Succursale</th>
-          <td mat-cell *matCellDef="let r">{{ r.succursale }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="serviceCredite">
-          <th mat-header-cell *matHeaderCellDef>Service crédité</th>
-          <td mat-cell *matCellDef="let r">{{ r.serviceCredite }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="module">
-          <th mat-header-cell *matHeaderCellDef>Module</th>
-          <td mat-cell *matCellDef="let r">{{ r.module }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="natureOperation">
-          <th mat-header-cell *matHeaderCellDef>Nature opération</th>
-          <td mat-cell *matCellDef="let r">{{ r.natureOperation }}</td>
+          <td mat-cell *matCellDef="let r">{{ r.succursale || '-' }}</td>
         </ng-container>
 
         <ng-container matColumnDef="numeroCC">
           <th mat-header-cell *matHeaderCellDef>N° CC</th>
-          <td mat-cell *matCellDef="let r">{{ r.numeroCC }}</td>
+          <td mat-cell *matCellDef="let r">{{ r.numeroCC || '-' }}</td>
         </ng-container>
 
         <ng-container matColumnDef="dateCC">
@@ -204,186 +201,111 @@
           <td mat-cell *matCellDef="let r">{{ formatDate(r.dateCC) }}</td>
         </ng-container>
 
-        <ng-container matColumnDef="typeCommandeOuOR">
-          <th mat-header-cell *matHeaderCellDef>Type cde / OR</th>
-          <td mat-cell *matCellDef="let r">{{ r.typeCommandeOuOR }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="libelleType">
-          <th mat-header-cell *matHeaderCellDef>Libellé type</th>
-          <td mat-cell *matCellDef="let r">{{ r.libelleType }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="numeroClient">
-          <th mat-header-cell *matHeaderCellDef>N° Client</th>
-          <td mat-cell *matCellDef="let r">{{ r.numeroClient }}</td>
-        </ng-container>
-
         <ng-container matColumnDef="nomClient">
-          <th mat-header-cell *matHeaderCellDef>Nom Client</th>
-          <td mat-cell *matCellDef="let r">{{ r.nomClient }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="codeRemise">
-          <th mat-header-cell *matHeaderCellDef>Code remise</th>
-          <td mat-cell *matCellDef="let r">{{ r.codeRemise }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="tarif">
-          <th mat-header-cell *matHeaderCellDef>Tarif</th>
-          <td mat-cell *matCellDef="let r">{{ r.tarif }}</td>
+          <th mat-header-cell *matHeaderCellDef>Client</th>
+          <td mat-cell *matCellDef="let r">{{ r.nomClient || '-' }}</td>
         </ng-container>
 
         <ng-container matColumnDef="operateur">
           <th mat-header-cell *matHeaderCellDef>Opérateur</th>
-          <td mat-cell *matCellDef="let r">{{ r.operateur }}</td>
+          <td mat-cell *matCellDef="let r">{{ r.operateur || '-' }}</td>
         </ng-container>
 
-        <ng-container matColumnDef="quantiteCommandee">
-          <th mat-header-cell *matHeaderCellDef>Qté cdée</th>
-          <td mat-cell *matCellDef="let r">{{ money(r.quantiteCommandee) }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="quantiteFacturee">
-          <th mat-header-cell *matHeaderCellDef>Qté facturée</th>
-          <td mat-cell *matCellDef="let r">{{ money(r.quantiteFacturee) }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="userQuiALivre">
-          <th mat-header-cell *matHeaderCellDef>User livré</th>
-          <td mat-cell *matCellDef="let r">{{ r.userQuiALivre }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="numeroBL">
-          <th mat-header-cell *matHeaderCellDef>N° BL</th>
-          <td mat-cell *matCellDef="let r">{{ r.numeroBL }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="dateBL">
-          <th mat-header-cell *matHeaderCellDef>Date BL</th>
-          <td mat-cell *matCellDef="let r">{{ formatDate(r.dateBL) }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="userQuiAFacture">
-          <th mat-header-cell *matHeaderCellDef>User facturé</th>
-          <td mat-cell *matCellDef="let r">{{ r.userQuiAFacture }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="numeroFacture">
-          <th mat-header-cell *matHeaderCellDef>N° facture</th>
-          <td mat-cell *matCellDef="let r">{{ r.numeroFacture }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="dateFacture">
-          <th mat-header-cell *matHeaderCellDef>Date facture</th>
-          <td mat-cell *matCellDef="let r">{{ formatDate(r.dateFacture) }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="positionFacture">
-          <th mat-header-cell *matHeaderCellDef>Position</th>
-          <td mat-cell *matCellDef="let r">{{ r.positionFacture }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="numeroBonCommande">
-          <th mat-header-cell *matHeaderCellDef>N° Bon cde</th>
-          <td mat-cell *matCellDef="let r">{{ r.numeroBonCommande }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="libelleCommandeOuOR">
-          <th mat-header-cell *matHeaderCellDef>Libellé cde / OR</th>
-          <td mat-cell *matCellDef="let r">{{ r.libelleCommandeOuOR }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="numeroLigne">
-          <th mat-header-cell *matHeaderCellDef>N° ligne</th>
-          <td mat-cell *matCellDef="let r">{{ r.numeroLigne }}</td>
+        <ng-container matColumnDef="tarif">
+          <th mat-header-cell *matHeaderCellDef>Tarif</th>
+          <td mat-cell *matCellDef="let r">{{ r.tarif || '-' }}</td>
         </ng-container>
 
         <ng-container matColumnDef="cst">
           <th mat-header-cell *matHeaderCellDef>Cst</th>
-          <td mat-cell *matCellDef="let r">{{ r.cst }}</td>
+          <td mat-cell *matCellDef="let r">{{ r.cst || '-' }}</td>
         </ng-container>
 
         <ng-container matColumnDef="reference">
           <th mat-header-cell *matHeaderCellDef>Référence</th>
-          <td mat-cell *matCellDef="let r">{{ r.reference }}</td>
+          <td mat-cell *matCellDef="let r">{{ r.reference || '-' }}</td>
         </ng-container>
 
         <ng-container matColumnDef="designation">
           <th mat-header-cell *matHeaderCellDef>Désignation</th>
-          <td mat-cell *matCellDef="let r" class="designation">{{ r.designation }}</td>
+          <td mat-cell *matCellDef="let r" class="designation">{{ r.designation || '-' }}</td>
         </ng-container>
 
-        <ng-container matColumnDef="codeRemiseLigne">
-          <th mat-header-cell *matHeaderCellDef>Code remise</th>
-          <td mat-cell *matCellDef="let r">{{ r.codeRemiseLigne }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="codeGestion">
-          <th mat-header-cell *matHeaderCellDef>Code gestion</th>
-          <td mat-cell *matCellDef="let r">{{ r.codeGestion }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="geree">
-          <th mat-header-cell *matHeaderCellDef>Gérée</th>
-          <td mat-cell *matCellDef="let r">{{ r.geree }}</td>
+        <ng-container matColumnDef="quantiteFacturee">
+          <th mat-header-cell *matHeaderCellDef>Qté</th>
+          <td mat-cell *matCellDef="let r">{{ money(r.quantiteFacturee) }}</td>
         </ng-container>
 
         <ng-container matColumnDef="coursDevise">
-          <th mat-header-cell *matHeaderCellDef>Cours devise</th>
+          <th mat-header-cell *matHeaderCellDef>Cours</th>
           <td mat-cell *matCellDef="let r">{{ money(r.coursDevise) }}</td>
         </ng-container>
 
-        <ng-container matColumnDef="prixBrut">
-          <th mat-header-cell *matHeaderCellDef>Prix brut</th>
-          <td mat-cell *matCellDef="let r">{{ money(r.prixBrut) }}</td>
+        <ng-container matColumnDef="prixNetCDF">
+          <th mat-header-cell *matHeaderCellDef>Prix net FC</th>
+          <td mat-cell *matCellDef="let r">{{ moneyCDF(r.prixNetCDF) }}</td>
         </ng-container>
 
-        <ng-container matColumnDef="remise">
-          <th mat-header-cell *matHeaderCellDef>Remise</th>
-          <td mat-cell *matCellDef="let r">{{ money(r.remise) }}</td>
+        <ng-container matColumnDef="prixNetUSD">
+          <th mat-header-cell *matHeaderCellDef>Prix net USD</th>
+          <td mat-cell *matCellDef="let r">{{ moneyUSD(r.prixNetUSD) }}</td>
         </ng-container>
 
-        <ng-container matColumnDef="prixNet">
-          <th mat-header-cell *matHeaderCellDef>Prix net</th>
-          <td mat-cell *matCellDef="let r">{{ money(r.prixNet) }}</td>
+        <ng-container matColumnDef="pmpCDF">
+          <th mat-header-cell *matHeaderCellDef>PMP FC</th>
+          <td mat-cell *matCellDef="let r" class="pmp-cell">{{ moneyCDF(r.pmpCDF) }}</td>
         </ng-container>
 
-        <ng-container matColumnDef="pmp">
-          <th mat-header-cell *matHeaderCellDef>PMP</th>
-          <td mat-cell *matCellDef="let r">{{ money(r.pmp) }}</td>
+        <ng-container matColumnDef="pmpUSD">
+          <th mat-header-cell *matHeaderCellDef>PMP USD</th>
+          <td mat-cell *matCellDef="let r" class="pmp-cell">{{ moneyUSD(r.pmpUSD) }}</td>
         </ng-container>
 
-        <ng-container matColumnDef="totalNet">
-          <th mat-header-cell *matHeaderCellDef>Total NET</th>
-          <td mat-cell *matCellDef="let r">{{ money(r.totalNet) }}</td>
+        <ng-container matColumnDef="totalNetCDF">
+          <th mat-header-cell *matHeaderCellDef>Total net FC</th>
+          <td mat-cell *matCellDef="let r">{{ moneyCDF(r.totalNetCDF) }}</td>
         </ng-container>
 
-        <ng-container matColumnDef="totalPmp">
-          <th mat-header-cell *matHeaderCellDef>Total PMP</th>
-          <td mat-cell *matCellDef="let r">{{ money(r.totalPmp) }}</td>
+        <ng-container matColumnDef="totalNetUSD">
+          <th mat-header-cell *matHeaderCellDef>Total net USD</th>
+          <td mat-cell *matCellDef="let r">{{ moneyUSD(r.totalNetUSD) }}</td>
         </ng-container>
 
-        <ng-container matColumnDef="marge">
-          <th mat-header-cell *matHeaderCellDef>Marge</th>
-          <td mat-cell *matCellDef="let r" class="marge">{{ money(r.marge) }}</td>
+        <ng-container matColumnDef="totalPmpCDF">
+          <th mat-header-cell *matHeaderCellDef>Total PMP FC</th>
+          <td mat-cell *matCellDef="let r" class="pmp-cell">{{ moneyCDF(r.totalPmpCDF) }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="totalPmpUSD">
+          <th mat-header-cell *matHeaderCellDef>Total PMP USD</th>
+          <td mat-cell *matCellDef="let r" class="pmp-cell">{{ moneyUSD(r.totalPmpUSD) }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="margeCDF">
+          <th mat-header-cell *matHeaderCellDef>Marge FC</th>
+          <td mat-cell *matCellDef="let r" class="marge">{{ moneyCDF(r.margeCDF) }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="margeUSD">
+          <th mat-header-cell *matHeaderCellDef>Marge USD</th>
+          <td mat-cell *matCellDef="let r" class="marge">{{ moneyUSD(r.margeUSD) }}</td>
         </ng-container>
 
         <ng-container matColumnDef="pourcentageMarge">
           <th mat-header-cell *matHeaderCellDef>% Marge</th>
           <td mat-cell *matCellDef="let r" class="marge-pct">
-            {{ money(r.pourcentageMarge) }}%
+            {{ percent(r.pourcentageMarge) }}
           </td>
         </ng-container>
 
-        <ng-container matColumnDef="tauxTva">
-          <th mat-header-cell *matHeaderCellDef>Taux TVA</th>
-          <td mat-cell *matCellDef="let r">{{ money(r.tauxTva) }}</td>
+        <ng-container matColumnDef="totalTtcCDF">
+          <th mat-header-cell *matHeaderCellDef>Total TTC FC</th>
+          <td mat-cell *matCellDef="let r">{{ moneyCDF(r.totalTtcCDF) }}</td>
         </ng-container>
 
-        <ng-container matColumnDef="totalTtc">
-          <th mat-header-cell *matHeaderCellDef>Total TTC</th>
-          <td mat-cell *matCellDef="let r">{{ money(r.totalTtc) }}</td>
+        <ng-container matColumnDef="totalTtcUSD">
+          <th mat-header-cell *matHeaderCellDef>Total TTC USD</th>
+          <td mat-cell *matCellDef="let r">{{ moneyUSD(r.totalTtcUSD) }}</td>
         </ng-container>
 
         <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>

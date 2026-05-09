@@ -6,6 +6,8 @@ import { ProduitService } from '../../service/produit-service/produit-service';
 import { ProduitDialog } from '../produit-dialog/produit-dialog';
 import { Toast } from '../../../../shares/services/toast/toast';
 import { CaisseStoreService } from '../../../caisse/services/CaisseServiceStore';
+import { RequisitionStoreService } from '../../../achats/service/requisition/RequisitionStoreService';
+import { ProduitPos } from '../../models/vente.model';
 
 @Component({
   selector: 'app-liste-produits-component',
@@ -20,6 +22,11 @@ export class ListeProduitsComponent implements OnInit {
   loading = false;
   searchTerm = '';
 
+produitsPos: ProduitPos[] = [];
+selectedStockByProduit = new Map<number, ProduitPos>();
+
+loadingStock = false;
+
   dernierTaux = 0;
   loadingTaux = false;
 
@@ -33,11 +40,13 @@ export class ListeProduitsComponent implements OnInit {
     private produitService: ProduitService,
     private dialog: MatDialog,
     private toast: Toast,
-    private caisseStore: CaisseStoreService
+    private caisseStore: CaisseStoreService,
+      private requisitionStore: RequisitionStoreService
   ) {}
 
   ngOnInit(): void {
     this.chargerDernierTauxActif();
+    this.chargerProduitsPos();
 
     this.produitStore.produits$.subscribe(data => {
       this.produits = [...data];
@@ -51,6 +60,9 @@ export class ListeProduitsComponent implements OnInit {
 
     this.produitStore.loadIfNeeded().subscribe();
   }
+
+
+
 
   private chargerDernierTauxActif(): void {
     this.loadingTaux = true;
@@ -169,4 +181,140 @@ export class ListeProduitsComponent implements OnInit {
   getSeverity(actif: boolean): 'success' | 'danger' {
     return actif ? 'success' : 'danger';
   }
+
+private chargerProduitsPos(): void {
+  this.loadingStock = true;
+
+  this.produitService.getProduitsPos().subscribe({
+    next: (res) => {
+      this.produitsPos = res || [];
+      this.loadingStock = false;
+    },
+    error: (err) => {
+      console.error(err);
+      this.produitsPos = [];
+      this.loadingStock = false;
+      this.toast.warning('Impossible de charger les stocks par dépôt.');
+    }
+  });
+}
+
+getStocksProduit(produit: ProduitResponse): ProduitPos[] {
+  if (!produit?.id) return [];
+
+  return this.produitsPos.filter(x =>
+    Number(x.produitId) === Number(produit.id)
+  );
+}
+
+getStockTotalProduit(produit: ProduitResponse): number {
+  return this.getStocksProduit(produit)
+    .reduce((acc, x) => acc + Number(x.quantiteDisponible || 0), 0);
+}
+
+getStockLabel(produit: ProduitResponse): string {
+  const stocks = this.getStocksProduit(produit);
+
+  if (!stocks.length) {
+    return 'Aucun stock';
+  }
+
+  const total = this.getStockTotalProduit(produit);
+
+  if (total <= 0) {
+    return 'Rupture';
+  }
+
+  return `${this.formatNumber(total)} disponible`;
+}
+
+selectionnerStockProduit(produit: ProduitResponse, stock: ProduitPos): void {
+  this.selectedStockByProduit.set(produit.id, stock);
+}
+
+getSelectedStock(produit: ProduitResponse): ProduitPos | null {
+  return this.selectedStockByProduit.get(produit.id) || this.getStocksProduit(produit)[0] || null;
+}
+
+enregistrerVenteManquee(produit: ProduitResponse): void {
+  if (!produit?.id) {
+    this.toast.warning('Produit invalide.');
+    return;
+  }
+
+  const stock = this.getSelectedStock(produit);
+
+  if (!stock) {
+    this.toast.warning('Veuillez sélectionner le dépôt ou l’emplacement concerné.');
+    return;
+  }
+
+  const quantiteDemandee = 1;
+
+  this.requisitionStore.enregistrerVenteManquee(
+    produit.id,
+    stock.depotId,
+    stock.locatorId ?? null,
+    quantiteDemandee,
+    'ADMIN',
+    `Vente manquée - ${stock.depotNom}${stock.locatorNom ? ' / ' + stock.locatorNom : ''}`
+  );
+
+  this.toast.success(`Vente manquée enregistrée : ${produit.nom}`);
+}
+
+formatNumber(value: number): string {
+  return new Intl.NumberFormat('fr-FR', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 3
+  }).format(Number(value || 0));
+}
+
+creerProduitPourVenteManquee(): void {
+  const nomRecherche = this.searchTerm?.trim();
+
+  const dialogRef = this.dialog.open(ProduitDialog, {
+    width: '1000px',
+    maxWidth: '96vw',
+    disableClose: true,
+    data: {
+      mode: 'create',
+      produit: {
+        nom: nomRecherche || '',
+        prixVente: 0,
+        stockMinimum: 0,
+        stockMaximum: 0,
+        actif: true
+      }
+    }
+  });
+
+  dialogRef.afterClosed().subscribe((result: ProduitRequest | undefined) => {
+    if (!result) return;
+
+    this.loading = true;
+
+    this.produitService.create(result).subscribe({
+      next: (newProduit) => {
+        this.produitStore.addOne(newProduit);
+        this.requisitionStore.enregistrerNouveauProduitDemande(
+          newProduit.id,
+          null,
+          null,
+          1,
+          'ADMIN',
+          'Nouveau produit demandé par client - vente manquée'
+        );
+        this.toast.success('Produit créé et vente manquée enregistrée.');
+        this.loading = false;
+      },
+      error: (err) => {
+        console.error(err);
+        this.toast.error('Erreur création produit.');
+        this.loading = false;
+      }
+    });
+  });
+}
+
 }

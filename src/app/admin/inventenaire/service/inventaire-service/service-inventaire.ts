@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../../../environnement/environment';
 import { InventaireCreateRequest, InventaireResponse, InventaireArticleResponse, InventaireVariance } from '../../model/inventaire.models';
 import { InventaireVarianceResumeResponse } from '../variance/inventaire-variance-service';
+import { InventaireResultatResponse } from '../../model/InventaireResultatResponse';
 
 @Injectable({
   providedIn: 'root',
@@ -34,7 +35,7 @@ private readonly http = inject(HttpClient);
   }
 
   lancerVariances(inventaireId: number): Observable<void> {
-    return this.http.post<void>(`${this.api}/${inventaireId}/lancer-variances`, {});
+    return this.http.post<void>(`${this.api}/bordereaux/${inventaireId}/lancer-variances`, {});
   }
 
   getVariances(inventaireId: number): Observable<InventaireVariance[]> {
@@ -70,6 +71,25 @@ annulerInventaire(inventaireId: number, user: string, commentaire?: string) {
 getResumeVariances(inventaireId: number): Observable<InventaireVarianceResumeResponse> {
   return this.http.get<InventaireVarianceResumeResponse>(
     `${this.api}/${inventaireId}/variances/resume`
+  );
+}
+
+getResultatsInventaires(from?: string, to?: string): Observable<InventaireResultatResponse[]> {
+  const params: any = {};
+
+  if (from) params.dateFrom = from;
+  if (to) params.dateTo = to;
+
+  return this.http.get<InventaireResultatResponse[]>(
+    `${this.api}/resultats`,
+    { params }
+  );
+}
+
+
+getResultatInventaire(id: number) {
+  return this.http.get<InventaireResultatResponse>(
+    `${this.api}/${id}/resultat`
   );
 }
 }

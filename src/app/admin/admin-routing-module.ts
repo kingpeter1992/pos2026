@@ -41,6 +41,8 @@ import { InventaireVarianceListe } from './inventenaire/components/inventaire-va
 import { CaisseDashboard } from './caisse/components/caisse-dashboard/caisse-dashboard';
 import { RepportComponent } from './caisse/components/repport-component/repport-component';
 import { TauxEchange } from './caisse/components/taux-echange/taux-echange';
+import { ResultatComponent } from './inventenaire/components/resultat-component/resultat-component';
+import { AnalyseAchatsComponent } from './achats/components/analyse-achats-component/analyse-achats-component';
 
 const routes: Routes = [
   {
@@ -85,7 +87,7 @@ const routes: Routes = [
       //http://localhost:4200/achats/receptions/locators/2
       { path: 'achats/historique', component: HistoriqueAchatsComponent },
       { path: 'achats/suggestions', component: SuggestionsReapprovisionnementComponent },
-      //  { path: 'achats/analyse', component: AnalyseAchatsComponent },
+      { path: 'achats/requisition', component: AnalyseAchatsComponent },
       { path: 'achats/previsions', component: PrevisionsAchatsComponent },
 
 
@@ -106,6 +108,8 @@ const routes: Routes = [
       { path: 'inventaire/bordereaux/:id', component: InventaireBordereauDetailComponent },
       { path: 'inventaire/:id/variances', component: InventaireVarianceResume },
       { path: 'inventaire/variances', component: InventaireVarianceListe },
+      { path: 'inventaire/resultat', component: ResultatComponent },
+
 
 
       // caisse

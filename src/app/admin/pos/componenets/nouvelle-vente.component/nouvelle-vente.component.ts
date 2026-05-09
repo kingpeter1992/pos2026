@@ -33,6 +33,14 @@ interface ProduitTarifie {
   tauxRemiseApplique: number;
   modeArrondi: string | null;
 
+  pmpCDF: number;
+  totalPmpCDF: number;
+  margeCDF: number;
+
+  pmpUSD: number;
+  totalPmpUSD: number;
+  margeUSD: number;
+
   baseTarification: number;
   baseTarificationCDF: number;
   baseTarificationUSD: number;
@@ -93,6 +101,14 @@ interface LignePanier {
   prixUSD: number;
 
   quantite: number;
+
+  pmpCDF: number;
+  totalPmpCDF: number;
+  margeCDF: number;
+
+  pmpUSD: number;
+  totalPmpUSD: number;
+  margeUSD: number;
 
   remise: number;
   remiseCDF: number;
@@ -464,7 +480,13 @@ export class NouvelleVenteComponent implements OnInit, OnDestroy {
         quantite: nouvelleQuantite,
         remise: this.arrondir2(existing.produitTarifie.montantRemiseCDF * nouvelleQuantite),
         remiseCDF: this.arrondir2(existing.produitTarifie.montantRemiseCDF * nouvelleQuantite),
-        remiseUSD: this.arrondir2(existing.produitTarifie.montantRemiseUSD * nouvelleQuantite)
+        remiseUSD: this.arrondir2(existing.produitTarifie.montantRemiseUSD * nouvelleQuantite),
+
+        // PMP et marge viennent du StockProduit. On recalcule seulement les totaux selon la quantité.
+        totalPmpCDF: this.arrondir2(existing.pmpCDF * nouvelleQuantite),
+        margeCDF: this.arrondir2(existing.produitTarifie.margeCDF * nouvelleQuantite),
+        totalPmpUSD: this.arrondir2(existing.pmpUSD * nouvelleQuantite),
+        margeUSD: this.arrondir2(existing.produitTarifie.margeUSD * nouvelleQuantite)
       };
 
       this.lignes.set(current);
@@ -491,6 +513,14 @@ export class NouvelleVenteComponent implements OnInit, OnDestroy {
       prixUSD: produit.prixFinalUSD,
 
       quantite: qte,
+
+      pmpCDF: produit.pmpCDF,
+      totalPmpCDF: this.arrondir2(produit.pmpCDF * qte),
+      margeCDF: this.arrondir2(produit.margeCDF * qte),
+
+      pmpUSD: produit.pmpUSD,
+      totalPmpUSD: this.arrondir2(produit.pmpUSD * qte),
+      margeUSD: this.arrondir2(produit.margeUSD * qte),
 
       remise: this.arrondir2(produit.montantRemiseCDF * qte),
       remiseCDF: this.arrondir2(produit.montantRemiseCDF * qte),
@@ -542,7 +572,12 @@ export class NouvelleVenteComponent implements OnInit, OnDestroy {
           quantite,
           remise: this.arrondir2(l.produitTarifie.montantRemiseCDF * quantite),
           remiseCDF: this.arrondir2(l.produitTarifie.montantRemiseCDF * quantite),
-          remiseUSD: this.arrondir2(l.produitTarifie.montantRemiseUSD * quantite)
+          remiseUSD: this.arrondir2(l.produitTarifie.montantRemiseUSD * quantite),
+
+          totalPmpCDF: this.arrondir2(l.pmpCDF * quantite),
+          margeCDF: this.arrondir2(l.produitTarifie.margeCDF * quantite),
+          totalPmpUSD: this.arrondir2(l.pmpUSD * quantite),
+          margeUSD: this.arrondir2(l.produitTarifie.margeUSD * quantite)
         };
       })
     );
@@ -560,7 +595,12 @@ export class NouvelleVenteComponent implements OnInit, OnDestroy {
           quantite,
           remise: this.arrondir2(l.produitTarifie.montantRemiseCDF * quantite),
           remiseCDF: this.arrondir2(l.produitTarifie.montantRemiseCDF * quantite),
-          remiseUSD: this.arrondir2(l.produitTarifie.montantRemiseUSD * quantite)
+          remiseUSD: this.arrondir2(l.produitTarifie.montantRemiseUSD * quantite),
+
+          totalPmpCDF: this.arrondir2(l.pmpCDF * quantite),
+          margeCDF: this.arrondir2(l.produitTarifie.margeCDF * quantite),
+          totalPmpUSD: this.arrondir2(l.pmpUSD * quantite),
+          margeUSD: this.arrondir2(l.produitTarifie.margeUSD * quantite)
         };
       })
     );
@@ -619,6 +659,30 @@ export class NouvelleVenteComponent implements OnInit, OnDestroy {
     );
   }
 
+  totalPmpCDF(): number {
+    return this.arrondir2(
+      this.lignes().reduce((sum, l) => sum + this.toNumber(l.totalPmpCDF), 0)
+    );
+  }
+
+  margeCDF(): number {
+    return this.arrondir2(
+      this.lignes().reduce((sum, l) => sum + this.toNumber(l.margeCDF), 0)
+    );
+  }
+
+  totalPmpUSD(): number {
+    return this.arrondir2(
+      this.lignes().reduce((sum, l) => sum + this.toNumber(l.totalPmpUSD), 0)
+    );
+  }
+
+  margeUSD(): number {
+    return this.arrondir2(
+      this.lignes().reduce((sum, l) => sum + this.toNumber(l.margeUSD), 0)
+    );
+  }
+
   totalGeneral(): number {
     return this.arrondir2(this.sousTotal() - this.totalRemise());
   }
@@ -666,9 +730,19 @@ export class NouvelleVenteComponent implements OnInit, OnDestroy {
 
       stockMap.set(produitId, {
         stock: this.toNumber(s?.quantiteDisponible ?? 0),
-        pmp: this.toNumber(s?.pmp ?? 0),
-        pmpFc: this.toNumber(s?.pmpFc ?? s?.pmp ?? 0),
-        pmpUsd: this.toNumber(s?.pmpUsd ?? 0),
+
+        // Valeurs récupérées directement depuis StockProduitView. Aucune conversion ici.
+        pmpCDF: this.toNumber(s?.pmpCDF ?? s?.pmpFc ?? s?.pmp ?? 0),
+        totalPmpCDF: this.toNumber(s?.totalPmpCDF ?? 0),
+        margeCDF: this.toNumber(s?.margeCDF ?? s?.margeUnitaireCDF ?? s?.margeUnitaire ?? 0),
+
+        pmpUSD: this.toNumber(s?.pmpUSD ?? s?.pmpUsd ?? 0),
+        totalPmpUSD: this.toNumber(s?.totalPmpUSD ?? 0),
+        margeUSD: this.toNumber(s?.margeUSD ?? s?.margeUnitaireUSD ?? 0),
+
+        pmp: this.toNumber(s?.pmpCDF ?? s?.pmpFc ?? s?.pmp ?? 0),
+        pmpFc: this.toNumber(s?.pmpCDF ?? s?.pmpFc ?? s?.pmp ?? 0),
+        pmpUsd: this.toNumber(s?.pmpUSD ?? s?.pmpUsd ?? 0),
         tauxChangeUtilise: this.toNumber(s?.tauxChangeUtilise ?? 0),
         prixVenteUnitaire: this.toNumber(s?.prixVenteUnitaire ?? 0),
         depotId: this.toNumber(s?.depotId ?? 0),
@@ -687,9 +761,17 @@ export class NouvelleVenteComponent implements OnInit, OnDestroy {
         stock: this.toNumber(stockData?.stock ?? 0),
         quantiteDisponible: this.toNumber(stockData?.stock ?? 0),
 
-        pmp: this.toNumber(stockData?.pmp ?? 0),
-        pmpFc: this.toNumber(stockData?.pmpFc ?? stockData?.pmp ?? 0),
-        pmpUsd: this.toNumber(stockData?.pmpUsd ?? 0),
+        pmpCDF: this.toNumber(stockData?.pmpCDF ?? 0),
+        totalPmpCDF: this.toNumber(stockData?.totalPmpCDF ?? 0),
+        margeCDF: this.toNumber(stockData?.margeCDF ?? 0),
+
+        pmpUSD: this.toNumber(stockData?.pmpUSD ?? 0),
+        totalPmpUSD: this.toNumber(stockData?.totalPmpUSD ?? 0),
+        margeUSD: this.toNumber(stockData?.margeUSD ?? 0),
+
+        pmp: this.toNumber(stockData?.pmpCDF ?? stockData?.pmp ?? 0),
+        pmpFc: this.toNumber(stockData?.pmpCDF ?? stockData?.pmpFc ?? stockData?.pmp ?? 0),
+        pmpUsd: this.toNumber(stockData?.pmpUSD ?? stockData?.pmpUsd ?? 0),
 
         tauxChangeUtilise: tauxStock > 0 ? tauxStock : tauxGlobal,
 
@@ -734,6 +816,15 @@ export class NouvelleVenteComponent implements OnInit, OnDestroy {
     const baseCDF = this.resolveBaseTarification(produit);
     const baseUSD = this.convertirCDFVersUSDByTaux(baseCDF, taux);
 
+    // PMP / marge unitaires récupérés du stock produit, sans conversion.
+    const pmpCDF = this.toNumber(produit?.pmpCDF ?? produit?.pmpFc ?? produit?.pmp ?? 0);
+    const totalPmpCDF = this.toNumber(produit?.totalPmpCDF ?? pmpCDF);
+    const margeCDF = this.toNumber(produit?.margeCDF ?? produit?.margeUnitaireCDF ?? produit?.margeUnitaire ?? 0);
+
+    const pmpUSD = this.toNumber(produit?.pmpUSD ?? produit?.pmpUsd ?? 0);
+    const totalPmpUSD = this.toNumber(produit?.totalPmpUSD ?? pmpUSD);
+    const margeUSD = this.toNumber(produit?.margeUSD ?? produit?.margeUnitaireUSD ?? 0);
+
     return {
       id: Number(produit?.id ?? 0),
       codeBarres: produit?.codeBarres ?? produit?.codeBarre ?? '',
@@ -753,6 +844,14 @@ export class NouvelleVenteComponent implements OnInit, OnDestroy {
       tauxRemiseMax: 0,
       tauxRemiseApplique: 0,
       modeArrondi: null,
+
+      pmpCDF,
+      totalPmpCDF,
+      margeCDF,
+
+      pmpUSD,
+      totalPmpUSD,
+      margeUSD,
 
       baseTarification: baseCDF,
       baseTarificationCDF: baseCDF,
@@ -833,6 +932,15 @@ export class NouvelleVenteComponent implements OnInit, OnDestroy {
     const prixNetAvantArrondiCDF = this.arrondir2(prixBrutCDF - montantRemiseCDF);
     const prixFinalCDF = this.appliquerArrondi(prixNetAvantArrondiCDF, modeArrondi);
 
+    // PMP / marge unitaires récupérés du stock produit, sans conversion.
+    const pmpCDF = this.toNumber(produit?.pmpCDF ?? produit?.pmpFc ?? produit?.pmp ?? 0);
+    const totalPmpCDF = this.toNumber(produit?.totalPmpCDF ?? pmpCDF);
+    const margeCDF = this.toNumber(produit?.margeCDF ?? produit?.margeUnitaireCDF ?? produit?.margeUnitaire ?? 0);
+
+    const pmpUSD = this.toNumber(produit?.pmpUSD ?? produit?.pmpUsd ?? 0);
+    const totalPmpUSD = this.toNumber(produit?.totalPmpUSD ?? pmpUSD);
+    const margeUSD = this.toNumber(produit?.margeUSD ?? produit?.margeUnitaireUSD ?? 0);
+
     return {
       id: Number(produit?.id ?? 0),
       codeBarres: produit?.codeBarres ?? produit?.codeBarre ?? '',
@@ -853,6 +961,14 @@ export class NouvelleVenteComponent implements OnInit, OnDestroy {
       tauxRemiseMax,
       tauxRemiseApplique,
       modeArrondi,
+
+      pmpCDF,
+      totalPmpCDF,
+      margeCDF,
+
+      pmpUSD,
+      totalPmpUSD,
+      margeUSD,
 
       baseTarification: baseCDF,
       baseTarificationCDF: baseCDF,
@@ -1042,6 +1158,15 @@ export class NouvelleVenteComponent implements OnInit, OnDestroy {
       montantRecuUSD: this.montantRecuUSD(),
       monnaieUSD: this.monnaieUSD(),
 
+      // Valeurs globales PMP / marge à historiser dans Vente.
+      pmpCDF: this.totalPmpCDF(),
+      totalPmpCDF: this.totalPmpCDF(),
+      margeCDF: this.margeCDF(),
+
+      pmpUSD: this.totalPmpUSD(),
+      totalPmpUSD: this.totalPmpUSD(),
+      margeUSD: this.margeUSD(),
+
       tarifId: this.selectedTarifId(),
 
       lignes: this.lignes().map(l => {
@@ -1064,6 +1189,15 @@ export class NouvelleVenteComponent implements OnInit, OnDestroy {
           remiseUSD: l.remiseUSD,
           totalUSD: totalLigneUSD,
 
+          pmpCDF: l.pmpCDF,
+          totalPmpCDF: l.totalPmpCDF,
+          margeCDF: l.margeCDF,
+
+          pmpUSD: l.pmpUSD,
+          totalPmpUSD: l.totalPmpUSD,
+          margeUSD: l.margeUSD,
+
+          tauxChange: l.produitTarifie.tauxChangeUtilise,
           tauxChangeUtilise: l.produitTarifie.tauxChangeUtilise
         };
       })

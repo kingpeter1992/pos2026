@@ -5,6 +5,7 @@ import { CategorieStoreService } from '../../core/categorie-store.service';
 import { CategorieResponse, CategorieRequest } from '../../models/categorie.model';
 import { CategorieService } from '../../service/categorie-service/categorie-service';
 import { CategorieDialogComponent } from '../categorie-dialog-component/categorie-dialog-component';
+import { StorageService } from '../../../../auth/services/storage/storage-service';
 
 @Component({
   selector: 'app-categories-component',
@@ -18,6 +19,12 @@ export class CategoriesComponent implements OnInit {
 
   loading = false;
   searchTerm = '';
+   private roles: string[] = [];
+  isLoggedIn = false;
+  showAdminBoard = false;
+  showuserBoard = false;
+  showfinanceBoard = false;
+  showoperatorBoard = false;
 
   kpiTotal = 0;
   kpiActives = 0;
@@ -25,7 +32,8 @@ export class CategoriesComponent implements OnInit {
   constructor(
     private categorieStore: CategorieStoreService,
     private categorieService: CategorieService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private storageService: StorageService
   ) {}
 
   ngOnInit(): void {
@@ -40,6 +48,15 @@ export class CategoriesComponent implements OnInit {
     });
 
     this.categorieStore.loadIfNeeded().subscribe();
+
+
+    this.isLoggedIn = this.storageService.isLoggedIn();
+    if (this.isLoggedIn) {
+      const user = this.storageService.getUser();
+      this.roles = user.roles;
+      this.showAdminBoard = this.roles.includes('ROLE_ADMIN');
+      this.showoperatorBoard = this.roles.includes('ROLE_OPERATOR');
+    }
   }
 
   computeKpis(): void {

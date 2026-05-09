@@ -17,6 +17,7 @@
     </div>
 
     <div class="hero-actions">
+
       <button
         mat-stroked-button
         color="primary"
@@ -26,7 +27,7 @@
         <mat-icon>refresh</mat-icon>
         Actualiser
       </button>
-
+   @if (showAdminBoard || showoperatorBoard) {
       <button
         pButton
         type="button"
@@ -35,6 +36,8 @@
         class="p-button-sm create-btn"
         (click)="openCreateDialog()">
       </button>
+
+    }
     </div>
   </div>
 
@@ -139,6 +142,7 @@
           <td>{{ categorie.dateCreation | date:'dd/MM/yyyy HH:mm' }}</td>
 
           <td class="actions-cell">
+               @if (showAdminBoard || showoperatorBoard) {
             <button
               mat-icon-button
               color="primary"
@@ -146,6 +150,7 @@
               (click)="openEditDialog(categorie)">
               <mat-icon>edit</mat-icon>
             </button>
+          }
           </td>
         </tr>
       </ng-template>

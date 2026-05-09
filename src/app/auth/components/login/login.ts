@@ -16,6 +16,7 @@ import { FournisseurStore } from '../../../admin/achats/service/facturefoiunriss
 import { ReceptionAchatStore } from '../../../admin/achats/service/reception/ReceptionAchatStore';
 import { ServiceMouvementStockStore } from '../../../admin/stock/service/mouvement/ServiceMouvementStockStore';
 import { CaisseStoreService } from '../../../admin/caisse/services/CaisseServiceStore';
+import { InventaireStoreService } from '../../../admin/inventenaire/service/inventaire-service/inventaire-store.service';
 
 @Component({
   selector: 'app-login',
@@ -55,7 +56,8 @@ export class Login implements  OnInit {
      private commandeAchatStore: CommandeAchatStore,
      private receptionAchatStore: ReceptionAchatStore,
      private mvntStore :ServiceMouvementStockStore,
-     private storeCaisse : CaisseStoreService
+     private storeCaisse : CaisseStoreService,
+     private inventaireStore: InventaireStoreService
   ) {}
 
   ngOnInit(): void {
@@ -130,6 +132,8 @@ export class Login implements  OnInit {
     tauxList: this.storeCaisse.loadTauxList().pipe(catchError(() => of([]))),
     tauxActif: this.storeCaisse.loadTauxActif().pipe(catchError(() => of(null))),
     dernierTaux: this.storeCaisse.loadDernierTaux().pipe(catchError(() => of(null))),
+
+
 
   }).subscribe({
     next: () => {
